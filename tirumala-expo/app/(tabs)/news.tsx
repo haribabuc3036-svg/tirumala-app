@@ -271,14 +271,14 @@ export default function NewsScreen() {
           showsVerticalScrollIndicator={false}
           ListHeaderComponent={
             <Animated.View entering={FadeInDown.duration(420)} style={styles.ssdHeaderWrap}>
-              <ThemedView style={[styles.ssdHeaderCard, { borderColor }]}> 
+              <ThemedView style={[styles.ssdHeaderCard, { borderColor, backgroundColor: tintColor + '12' }]}>
                 <View style={styles.ssdTitleRow}>
                   <MaterialCommunityIcons name="ticket-confirmation-outline" size={18} color={tintColor} />
                   <ThemedText type="defaultSemiBold">Slotted Sarva Darshan</ThemedText>
                 </View>
 
                 <View style={styles.ssdMetricsRow}>
-                  <View style={[styles.ssdMetricCard, { borderColor }]}>
+                  <View style={[styles.ssdMetricCard, { borderColor, backgroundColor: tintColor + '18' }]}>
                     <ThemedText style={styles.ssdMetricLabel}>Running Slot</ThemedText>
                     <ThemedText type="title" style={[styles.ssdMetricValue, { color: tintColor }]}>
                       {SSD_STATUS.runningSlot}
@@ -286,7 +286,7 @@ export default function NewsScreen() {
                     <ThemedText style={styles.ssdMetricSubtext}>on {SSD_STATUS.date}</ThemedText>
                   </View>
 
-                  <View style={[styles.ssdMetricCard, { borderColor }]}>
+                  <View style={[styles.ssdMetricCard, { borderColor, backgroundColor: tintColor + '18' }]}>
                     <ThemedText style={styles.ssdMetricLabel}>Balance Tickets</ThemedText>
                     <ThemedText type="title" style={[styles.ssdMetricValue, { color: tintColor }]}>
                       {SSD_STATUS.balanceTickets}
@@ -306,12 +306,14 @@ export default function NewsScreen() {
           }
           renderItem={({ item, index }) => (
             <Animated.View entering={FadeInDown.delay(index * 70).duration(360)}>
-              <ThemedView style={[styles.infoCard, { borderColor }]}> 
-                <View style={styles.infoTitleRow}>
-                  <MaterialCommunityIcons name={item.icon} size={18} color={tintColor} />
-                  <ThemedText type="defaultSemiBold">{item.title}</ThemedText>
+              <ThemedView style={[styles.ssdInfoCard, { borderColor, borderLeftColor: tintColor }]}>
+                <View style={[styles.ssdInfoIconCircle, { backgroundColor: tintColor + '22' }]}>
+                  <MaterialCommunityIcons name={item.icon} size={22} color={tintColor} />
                 </View>
-                <ThemedText style={styles.infoDetail}>{item.detail}</ThemedText>
+                <View style={styles.ssdInfoContent}>
+                  <ThemedText type="defaultSemiBold" style={styles.ssdInfoTitle}>{item.title}</ThemedText>
+                  <ThemedText style={styles.ssdInfoDetail}>{item.detail}</ThemedText>
+                </View>
               </ThemedView>
             </Animated.View>
           )}
@@ -323,17 +325,23 @@ export default function NewsScreen() {
           keyExtractor={(item) => item.id}
           contentContainerStyle={styles.infoListContent}
           showsVerticalScrollIndicator={false}
-          renderItem={({ item, index }) => (
-            <Animated.View entering={FadeInDown.delay(index * 70).duration(380)}>
-              <ThemedView style={[styles.infoCard, { borderColor }]}>
-                <View style={styles.infoTitleRow}>
-                  <MaterialCommunityIcons name={item.icon} size={18} color={tintColor} />
-                  <ThemedText type="defaultSemiBold">{item.title}</ThemedText>
-                </View>
-                <ThemedText style={styles.infoDetail}>{item.detail}</ThemedText>
-              </ThemedView>
-            </Animated.View>
-          )}
+          renderItem={({ item, index }) => {
+            const parts = item.title.split(' • ');
+            const timePart = parts[0].replace(' hrs', '').trim();
+            const sevaName = parts[1] ?? '';
+            return (
+              <Animated.View entering={FadeInDown.delay(index * 55).duration(360)}>
+                <ThemedView style={[styles.scheduleCard, { borderColor, borderLeftColor: tintColor }]}>
+                  <View style={[styles.scheduleTimePill, { backgroundColor: tintColor + '1A' }]}>
+                    <MaterialCommunityIcons name={item.icon} size={13} color={tintColor} />
+                    <ThemedText style={[styles.scheduleTimeText, { color: tintColor }]}>{timePart}</ThemedText>
+                  </View>
+                  <ThemedText type="defaultSemiBold" style={styles.scheduleSevaName}>{sevaName}</ThemedText>
+                  <ThemedText style={styles.scheduleDetail}>{item.detail}</ThemedText>
+                </ThemedView>
+              </Animated.View>
+            );
+          }}
         />
       )}
     </ThemedView>
@@ -427,6 +435,16 @@ const styles = StyleSheet.create({
   infoCard: { borderWidth: 1, borderRadius: 14, padding: 12, gap: 8 },
   infoTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   infoDetail: { fontSize: 14, lineHeight: 20 },
+  scheduleCard: { borderWidth: 1, borderLeftWidth: 4, borderRadius: 12, padding: 12, gap: 6 },
+  scheduleTimePill: { flexDirection: 'row', alignItems: 'center', gap: 5, alignSelf: 'flex-start', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 20 },
+  scheduleTimeText: { fontSize: 11, fontWeight: '600', lineHeight: 16 },
+  scheduleSevaName: { fontSize: 14, lineHeight: 20 },
+  scheduleDetail: { fontSize: 12, lineHeight: 17, opacity: 0.75 },
+  ssdInfoCard: { borderWidth: 1, borderLeftWidth: 4, borderRadius: 12, padding: 12, flexDirection: 'row', gap: 12, alignItems: 'flex-start' },
+  ssdInfoIconCircle: { width: 42, height: 42, borderRadius: 21, justifyContent: 'center', alignItems: 'center' },
+  ssdInfoContent: { flex: 1, gap: 4 },
+  ssdInfoTitle: { fontSize: 14 },
+  ssdInfoDetail: { fontSize: 13, lineHeight: 19, opacity: 0.8 },
   ssdHeaderWrap: { marginBottom: 12 },
   ssdHeaderCard: { borderWidth: 1, borderRadius: 14, padding: 12, gap: 10 },
   ssdTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
