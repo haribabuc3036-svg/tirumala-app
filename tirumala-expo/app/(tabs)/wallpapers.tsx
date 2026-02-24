@@ -23,6 +23,7 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 type WallpaperItem = {
   id: string;
@@ -238,9 +239,11 @@ export default function WallpapersScreen() {
     ]
   );
 
+  const insets = useSafeAreaInsets();
+
   return (
     <ThemedView style={styles.container}>
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: insets.top + 12 }]}>
         <ThemedText type="title">Wallpapers</ThemedText>
         <ThemedText>Tap Download to save any sample image to your Android gallery.</ThemedText>
       </View>

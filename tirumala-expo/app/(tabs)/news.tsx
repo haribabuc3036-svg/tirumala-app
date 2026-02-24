@@ -3,6 +3,7 @@ import { Image } from 'expo-image';
 import { type ComponentProps, useState } from 'react';
 import { FlatList, Pressable, StyleSheet, View } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
@@ -147,12 +148,13 @@ export default function NewsScreen() {
   const colorScheme = useColorScheme() ?? 'light';
   const borderColor = Colors[colorScheme].icon;
   const tintColor = Colors[colorScheme].tint;
+  const insets = useSafeAreaInsets();
   const [activeTab, setActiveTab] = useState<NewsSubTab>('pilgrims');
   const [latestNews, ...olderNews] = DARSHAN_NEWS;
 
   return (
     <ThemedView style={styles.container}>
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: insets.top + 10 }]}>
         <View style={styles.titleRow}>
           <MaterialCommunityIcons name="temple-hindu" size={24} color={tintColor} />
           <ThemedText type="title">Darshan News</ThemedText>
@@ -387,7 +389,7 @@ function StatRow({
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  header: { paddingHorizontal: 16, paddingTop: 16, gap: 10 },
+  header: { paddingHorizontal: 16, paddingTop: 16, gap: 10, paddingBottom: 10 },
   titleRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   banner: { borderWidth: 1, borderRadius: 14, overflow: 'hidden' },
   bannerImage: { width: '100%', height: 120 },

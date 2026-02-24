@@ -1,11 +1,12 @@
 import { StyleSheet } from 'react-native';
-
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 
 export default function PlacesScreen() {
+  const insets = useSafeAreaInsets();
   return (
-    <ThemedView style={styles.container}>
+    <ThemedView style={[styles.container, { paddingTop: insets.top }]}>
       <ThemedText type="title">Places</ThemedText>
       <ThemedText>Places information will be shown here.</ThemedText>
     </ThemedView>
