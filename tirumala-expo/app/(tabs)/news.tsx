@@ -1,5 +1,6 @@
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { Image } from 'expo-image';
+import { router } from 'expo-router';
 import { type ComponentProps, useState } from 'react';
 import { FlatList, Pressable, StyleSheet, View } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
@@ -144,6 +145,13 @@ const DAY_SCHEDULE_INFO: InfoItem[] = [
   },
 ];
 
+const TODAY_LABEL = new Date().toLocaleDateString('en-IN', {
+  weekday: 'long',
+  day: 'numeric',
+  month: 'long',
+  year: 'numeric',
+});
+
 export default function NewsScreen() {
   const colorScheme = useColorScheme() ?? 'light';
   const borderColor = Colors[colorScheme].icon;
@@ -151,6 +159,7 @@ export default function NewsScreen() {
   const insets = useSafeAreaInsets();
   const [activeTab, setActiveTab] = useState<NewsSubTab>('pilgrims');
   const [latestNews, ...olderNews] = DARSHAN_NEWS;
+  const isSoldOut = SSD_STATUS.balanceTickets === '0';
 
   return (
     <ThemedView style={styles.container}>
@@ -273,8 +282,19 @@ export default function NewsScreen() {
             <Animated.View entering={FadeInDown.duration(420)} style={styles.ssdHeaderWrap}>
               <ThemedView style={[styles.ssdHeaderCard, { borderColor, backgroundColor: tintColor + '12' }]}>
                 <View style={styles.ssdTitleRow}>
-                  <MaterialCommunityIcons name="ticket-confirmation-outline" size={18} color={tintColor} />
-                  <ThemedText type="defaultSemiBold">Slotted Sarva Darshan</ThemedText>
+                  <View style={[styles.ssdTitleIconWrap, { backgroundColor: tintColor + '20' }]}>
+                    <MaterialCommunityIcons name="ticket-confirmation-outline" size={20} color={tintColor} />
+                  </View>
+                  <View style={{ gap: 1 }}>
+                    <ThemedText type="defaultSemiBold" style={{ fontSize: 15 }}>SSD Token (Free Tickets)</ThemedText>
+                    <ThemedText style={styles.ssdTitleSubtext}>As of {SSD_STATUS.date}</ThemedText>
+                  </View>
+                  <View style={[styles.ssdStatusBadge, { backgroundColor: isSoldOut ? '#FF6B6B22' : '#4CAF5022', borderColor: isSoldOut ? '#FF6B6B55' : '#4CAF5055' }]}>
+                    <View style={[styles.ssdStatusDot, { backgroundColor: isSoldOut ? '#FF6B6B' : '#4CAF50' }]} />
+                    <ThemedText style={[styles.ssdStatusBadgeText, { color: isSoldOut ? '#FF6B6B' : '#4CAF50' }]}>
+                      {isSoldOut ? 'SOLD OUT' : 'AVAILABLE'}
+                    </ThemedText>
+                  </View>
                 </View>
 
                 <View style={styles.ssdMetricsRow}>
@@ -286,21 +306,29 @@ export default function NewsScreen() {
                     <ThemedText style={styles.ssdMetricSubtext}>on {SSD_STATUS.date}</ThemedText>
                   </View>
 
-                  <View style={[styles.ssdMetricCard, { borderColor, backgroundColor: tintColor + '18' }]}>
+                  <View style={[styles.ssdMetricCard, { borderColor, backgroundColor: isSoldOut ? '#FF6B6B14' : tintColor + '18' }]}>
                     <ThemedText style={styles.ssdMetricLabel}>Balance Tickets</ThemedText>
-                    <ThemedText type="title" style={[styles.ssdMetricValue, { color: tintColor }]}>
+                    <ThemedText type="title" style={[styles.ssdMetricValue, { color: isSoldOut ? '#FF6B6B' : tintColor }]}>
                       {SSD_STATUS.balanceTickets}
                     </ThemedText>
                     <ThemedText style={styles.ssdMetricSubtext}>for {SSD_STATUS.date}</ThemedText>
                   </View>
                 </View>
 
-                <View style={[styles.ssdNoteBox, { borderColor }]}>
-                  <MaterialCommunityIcons name="alert-circle-outline" size={16} color={tintColor} />
-                  <ThemedText style={styles.ssdNoteText}>
+                <View style={[styles.ssdNoteBox, { borderColor: '#FF6B6B44', backgroundColor: '#FF6B6B0E' }]}>
+                  <MaterialCommunityIcons name="alert-circle-outline" size={16} color="#FF6B6B" />
+                  <ThemedText style={[styles.ssdNoteText, { color: undefined }]}>
                     Live tickets status may vary by the time pilgrim reaches physically at the counters.
                   </ThemedText>
                 </View>
+
+                <Pressable
+                  onPress={() => router.push('/ssd-locations')}
+                  style={({ pressed }) => [styles.ssdLocationsBtn, { borderColor: tintColor, backgroundColor: tintColor + (pressed ? '28' : '14') }]}>
+                  <MaterialCommunityIcons name="map-marker-radius-outline" size={16} color={tintColor} />
+                  <ThemedText style={[styles.ssdLocationsBtnText, { color: tintColor }]}>View Physical Counter Locations</ThemedText>
+                  <MaterialCommunityIcons name="chevron-right" size={16} color={tintColor} style={{ marginLeft: 'auto' }} />
+                </Pressable>
               </ThemedView>
             </Animated.View>
           }
@@ -325,19 +353,40 @@ export default function NewsScreen() {
           keyExtractor={(item) => item.id}
           contentContainerStyle={styles.infoListContent}
           showsVerticalScrollIndicator={false}
+          ListHeaderComponent={
+            <Animated.View entering={FadeInDown.duration(350)} style={{ marginBottom: 4 }}>
+              <ThemedView style={[styles.scheduleDateHeader, { borderColor, backgroundColor: tintColor + '14' }]}>
+                <View style={[styles.scheduleDateIconWrap, { backgroundColor: tintColor + '22' }]}>
+                  <MaterialCommunityIcons name="calendar-today" size={22} color={tintColor} />
+                </View>
+                <View style={{ gap: 2 }}>
+                  <ThemedText type="defaultSemiBold" style={[styles.scheduleDateTitle, { color: tintColor }]}>Today's Schedule</ThemedText>
+                  <ThemedText style={styles.scheduleDateSubtext}>{TODAY_LABEL}</ThemedText>
+                </View>
+              </ThemedView>
+            </Animated.View>
+          }
           renderItem={({ item, index }) => {
             const parts = item.title.split(' • ');
             const timePart = parts[0].replace(' hrs', '').trim();
             const sevaName = parts[1] ?? '';
+            const stepNum = String(index + 1).padStart(2, '0');
             return (
               <Animated.View entering={FadeInDown.delay(index * 55).duration(360)}>
                 <ThemedView style={[styles.scheduleCard, { borderColor, borderLeftColor: tintColor }]}>
-                  <View style={[styles.scheduleTimePill, { backgroundColor: tintColor + '1A' }]}>
-                    <MaterialCommunityIcons name={item.icon} size={13} color={tintColor} />
-                    <ThemedText style={[styles.scheduleTimeText, { color: tintColor }]}>{timePart}</ThemedText>
+                  <View style={styles.scheduleCardRow}>
+                    <View style={[styles.scheduleStepBadge, { backgroundColor: tintColor + '1C' }]}>
+                      <ThemedText style={[styles.scheduleStepText, { color: tintColor }]}>{stepNum}</ThemedText>
+                    </View>
+                    <View style={styles.scheduleCardContent}>
+                      <View style={[styles.scheduleTimePill, { backgroundColor: tintColor + '1A' }]}>
+                        <MaterialCommunityIcons name={item.icon} size={12} color={tintColor} />
+                        <ThemedText style={[styles.scheduleTimeText, { color: tintColor }]}>{timePart}</ThemedText>
+                      </View>
+                      <ThemedText type="defaultSemiBold" style={styles.scheduleSevaName}>{sevaName}</ThemedText>
+                      <ThemedText style={styles.scheduleDetail}>{item.detail}</ThemedText>
+                    </View>
                   </View>
-                  <ThemedText type="defaultSemiBold" style={styles.scheduleSevaName}>{sevaName}</ThemedText>
-                  <ThemedText style={styles.scheduleDetail}>{item.detail}</ThemedText>
                 </ThemedView>
               </Animated.View>
             );
@@ -435,7 +484,15 @@ const styles = StyleSheet.create({
   infoCard: { borderWidth: 1, borderRadius: 14, padding: 12, gap: 8 },
   infoTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   infoDetail: { fontSize: 14, lineHeight: 20 },
-  scheduleCard: { borderWidth: 1, borderLeftWidth: 4, borderRadius: 12, padding: 12, gap: 6 },
+  scheduleDateHeader: { borderWidth: 1, borderRadius: 14, padding: 14, flexDirection: 'row', alignItems: 'center', gap: 12 },
+  scheduleDateIconWrap: { width: 44, height: 44, borderRadius: 22, justifyContent: 'center', alignItems: 'center' },
+  scheduleDateTitle: { fontSize: 15 },
+  scheduleDateSubtext: { fontSize: 12, lineHeight: 17, opacity: 0.7 },
+  scheduleCard: { borderWidth: 1, borderLeftWidth: 4, borderRadius: 12, padding: 12 },
+  scheduleCardRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 10 },
+  scheduleStepBadge: { width: 34, height: 34, borderRadius: 10, justifyContent: 'center', alignItems: 'center', marginTop: 2 },
+  scheduleStepText: { fontSize: 12, fontWeight: '700', lineHeight: 16 },
+  scheduleCardContent: { flex: 1, gap: 5 },
   scheduleTimePill: { flexDirection: 'row', alignItems: 'center', gap: 5, alignSelf: 'flex-start', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 20 },
   scheduleTimeText: { fontSize: 11, fontWeight: '600', lineHeight: 16 },
   scheduleSevaName: { fontSize: 14, lineHeight: 20 },
@@ -446,8 +503,13 @@ const styles = StyleSheet.create({
   ssdInfoTitle: { fontSize: 14 },
   ssdInfoDetail: { fontSize: 13, lineHeight: 19, opacity: 0.8 },
   ssdHeaderWrap: { marginBottom: 12 },
-  ssdHeaderCard: { borderWidth: 1, borderRadius: 14, padding: 12, gap: 10 },
-  ssdTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  ssdHeaderCard: { borderWidth: 1, borderRadius: 14, padding: 14, gap: 12 },
+  ssdTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  ssdTitleIconWrap: { width: 40, height: 40, borderRadius: 20, justifyContent: 'center', alignItems: 'center' },
+  ssdTitleSubtext: { fontSize: 11, lineHeight: 15, opacity: 0.65 },
+  ssdStatusBadge: { marginLeft: 'auto', flexDirection: 'row', alignItems: 'center', gap: 5, borderWidth: 1, borderRadius: 20, paddingHorizontal: 8, paddingVertical: 4 },
+  ssdStatusDot: { width: 6, height: 6, borderRadius: 3 },
+  ssdStatusBadgeText: { fontSize: 10, fontWeight: '700', letterSpacing: 0.5 },
   ssdMetricsRow: { flexDirection: 'row', gap: 8 },
   ssdMetricCard: { flex: 1, borderWidth: 1, borderRadius: 10, padding: 10, gap: 4 },
   ssdMetricLabel: { fontSize: 12, lineHeight: 16 },
@@ -455,4 +517,6 @@ const styles = StyleSheet.create({
   ssdMetricSubtext: { fontSize: 11, lineHeight: 15 },
   ssdNoteBox: { borderWidth: 1, borderRadius: 10, padding: 10, flexDirection: 'row', gap: 8, alignItems: 'flex-start' },
   ssdNoteText: { flex: 1, fontSize: 12, lineHeight: 18 },
+  ssdLocationsBtn: { flexDirection: 'row', alignItems: 'center', gap: 8, borderWidth: 1, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 10 },
+  ssdLocationsBtnText: { fontSize: 13, fontWeight: '600' },
 });
