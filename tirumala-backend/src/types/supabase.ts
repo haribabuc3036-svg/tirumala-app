@@ -1,0 +1,82 @@
+/**
+ * Auto-generated Supabase types.
+ *
+ * To regenerate: npx supabase gen types typescript --project-id YOUR_PROJECT_ID > src/types/supabase.ts
+ *
+ * For now this is a placeholder. Replace with the generated output.
+ */
+export type Database = {
+  public: {
+    Tables: {
+      darshan_updates: {
+        Row: {
+          id: number;
+          date: string;
+          pilgrims: string;
+          tonsures: string;
+          hundi: string;
+          waiting: string;
+          darshan_time: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: never;
+          date: string;
+          pilgrims: string;
+          tonsures: string;
+          hundi: string;
+          waiting: string;
+          darshan_time: string;
+          created_at?: string | null;
+        };
+        Update: {
+          id?: never;
+          date?: string;
+          pilgrims?: string;
+          tonsures?: string;
+          hundi?: string;
+          waiting?: string;
+          darshan_time?: string;
+          created_at?: string | null;
+        };
+        Relationships: [];
+      };
+      ssd_status: {
+        Row: {
+          id: number;
+          running_slot: string;
+          balance_tickets: string;
+          date: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: never;
+          running_slot: string;
+          balance_tickets: string;
+          date: string;
+          updated_at?: string | null;
+        };
+        Update: {
+          id?: never;
+          running_slot?: string;
+          balance_tickets?: string;
+          date?: string;
+          updated_at?: string | null;
+        };
+        Relationships: [];
+      };
+    };
+    Views: {
+      [_ in never]: never;
+    };
+    Functions: {
+      [_ in never]: never;
+    };
+    Enums: {
+      [_ in never]: never;
+    };
+    CompositeTypes: {
+      [_ in never]: never;
+    };
+  };
+};

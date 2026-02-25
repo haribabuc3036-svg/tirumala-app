@@ -1,0 +1,372 @@
+{
+  "info": {
+    "_postman_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+    "name": "Tirumala Backend API",
+    "description": "API collection for the Tirumala TTD backend service.\n\nSet the `baseUrl` variable to your running server (default: `http://localhost:3000`).\n\nRoutes:\n- `/health` — server health check\n- `/api/darshan` — TTD pilgrim stats (Supabase + Firebase)\n- `/api/ssd` — SSD Token / Free Tickets status (Supabase + Firebase)",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Health",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/health",
+              "host": ["{{baseUrl}}"],
+              "path": ["health"]
+            },
+            "description": "Returns server status, service name, timestamp and current environment."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/health",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["health"]
+                }
+              },
+              "body": "{\n  \"status\": \"ok\",\n  \"service\": \"tirumala-backend\",\n  \"timestamp\": \"2026-02-26T10:00:00.000Z\",\n  \"env\": \"development\"\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Darshan Updates",
+      "item": [
+        {
+          "name": "Get Paginated Darshan Updates",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/darshan?page=1&limit=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "darshan"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1",
+                  "description": "Page number (1-indexed)"
+                },
+                {
+                  "key": "limit",
+                  "value": "10",
+                  "description": "Records per page"
+                }
+              ]
+            },
+            "description": "Returns paginated darshan stats from Supabase.\n\n**Query params:**\n- `page` (default: 1)\n- `limit` (default: 10)"
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/darshan?page=1&limit=10",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "darshan"],
+                  "query": [
+                    { "key": "page", "value": "1" },
+                    { "key": "limit", "value": "10" }
+                  ]
+                }
+              },
+              "body": "{\n  \"success\": true,\n  \"page\": 1,\n  \"limit\": 10,\n  \"data\": [\n    {\n      \"id\": 1,\n      \"date\": \"2026-02-26\",\n      \"pilgrims\": \"62,483\",\n      \"tonsures\": \"21,145\",\n      \"hundi\": \"₹4.2 Cr\",\n      \"waiting\": \"12H\",\n      \"darshan_time\": \"6H\",\n      \"created_at\": \"2026-02-26T00:00:00.000Z\"\n    }\n  ]\n}"
+            }
+          ]
+        },
+        {
+          "name": "Get All Darshan Updates",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/darshan/all",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "darshan", "all"]
+            },
+            "description": "Returns all records from Supabase without pagination. Useful for seeding or full data export."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/darshan/all",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "darshan", "all"]
+                }
+              },
+              "body": "{\n  \"success\": true,\n  \"count\": 2,\n  \"data\": [\n    {\n      \"id\": 1,\n      \"date\": \"2026-02-26\",\n      \"pilgrims\": \"62,483\",\n      \"tonsures\": \"21,145\",\n      \"hundi\": \"₹4.2 Cr\",\n      \"waiting\": \"12H\",\n      \"darshan_time\": \"6H\",\n      \"created_at\": \"2026-02-26T00:00:00.000Z\"\n    }\n  ]\n}"
+            }
+          ]
+        },
+        {
+          "name": "Upsert Darshan Update",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"date\": \"2026-02-26\",\n  \"pilgrims\": \"62,483\",\n  \"tonsures\": \"21,145\",\n  \"hundi\": \"₹4.2 Cr\",\n  \"waiting\": \"12H\",\n  \"darshan_time\": \"6H\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/darshan",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "darshan"]
+            },
+            "description": "Upserts a darshan update record (conflicts on `date`).\n\nSimultaneously:\n1. Persists to **Supabase** `darshan_updates` table\n2. Pushes live pilgrim data to **Firebase RTDB** so all connected app clients update instantly\n\n**Body fields:**\n- `date` — YYYY-MM-DD format (unique key)\n- `pilgrims` — formatted pilgrim count string\n- `tonsures` — formatted tonsure count\n- `hundi` — formatted hundi collection amount\n- `waiting` — sarva darshan waiting time (e.g. \"12H\")\n- `darshan_time` — seva darshan wait time (e.g. \"6H\")"
+          },
+          "response": [
+            {
+              "name": "201 Created",
+              "status": "Created",
+              "code": 201,
+              "originalRequest": {
+                "method": "POST",
+                "header": [{ "key": "Content-Type", "value": "application/json" }],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"date\": \"2026-02-26\",\n  \"pilgrims\": \"62,483\",\n  \"tonsures\": \"21,145\",\n  \"hundi\": \"₹4.2 Cr\",\n  \"waiting\": \"12H\",\n  \"darshan_time\": \"6H\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/darshan",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "darshan"]
+                }
+              },
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"id\": 1,\n    \"date\": \"2026-02-26\",\n    \"pilgrims\": \"62,483\",\n    \"tonsures\": \"21,145\",\n    \"hundi\": \"₹4.2 Cr\",\n    \"waiting\": \"12H\",\n    \"darshan_time\": \"6H\",\n    \"created_at\": \"2026-02-26T10:00:00.000Z\"\n  }\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "SSD Token",
+      "item": [
+        {
+          "name": "Get Latest SSD Status (Supabase)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/ssd",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "ssd"]
+            },
+            "description": "Returns the most recent SSD Token status from **Supabase** (persistent storage).\n\nUse this for historical data or when Firebase is unavailable."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/ssd",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "ssd"]
+                }
+              },
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"id\": 1,\n    \"running_slot\": \"C-380\",\n    \"balance_tickets\": \"1,240\",\n    \"date\": \"2026-02-26\",\n    \"updated_at\": \"2026-02-26T09:00:00.000Z\"\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Get Live SSD Status (Firebase)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/ssd/live",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "ssd", "live"]
+            },
+            "description": "Returns live SSD Token status directly from **Firebase RTDB**.\n\nThis is the fastest and most up-to-date source — used by the mobile app's real-time listener."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/ssd/live",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "ssd", "live"]
+                }
+              },
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"running_slot\": \"C-380\",\n    \"balance_tickets\": \"1,240\",\n    \"date\": \"2026-02-26\"\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Upsert SSD Status",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"running_slot\": \"C-380\",\n  \"balance_tickets\": \"1,240\",\n  \"date\": \"2026-02-26\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/ssd",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "ssd"]
+            },
+            "description": "Update SSD Token status. Simultaneously:\n1. Persists to **Supabase** `ssd_status` table (conflicts on `date`)\n2. Pushes live update to **Firebase RTDB** so all app clients update instantly\n\n**Body fields:**\n- `running_slot` — current token being called (e.g. \"C-380\")\n- `balance_tickets` — remaining available tickets (e.g. \"1,240\")\n- `date` — YYYY-MM-DD format (unique key)"
+          },
+          "response": [
+            {
+              "name": "201 Created",
+              "status": "Created",
+              "code": 201,
+              "originalRequest": {
+                "method": "POST",
+                "header": [{ "key": "Content-Type", "value": "application/json" }],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"running_slot\": \"C-380\",\n  \"balance_tickets\": \"1,240\",\n  \"date\": \"2026-02-26\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/ssd",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "ssd"]
+                }
+              },
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"id\": 1,\n    \"running_slot\": \"C-380\",\n    \"balance_tickets\": \"1,240\",\n    \"date\": \"2026-02-26\",\n    \"updated_at\": \"2026-02-26T10:00:00.000Z\"\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Get Queue Wait Time",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/ssd/queue",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "ssd", "queue"]
+            },
+            "description": "Returns the current Sarva Darshan queue wait time text from Firebase RTDB."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/ssd/queue",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "ssd", "queue"]
+                }
+              },
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"queue_time\": \"18H\"\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Update Queue Wait Time",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"queue_time\": \"18H\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/ssd/queue",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "ssd", "queue"]
+            },
+            "description": "Lightweight PATCH to update **only** the Sarva Darshan queue waiting time text in Firebase RTDB.\n\nDoes not write to Supabase — Firebase-only update for real-time display in the app.\n\n**Body fields:**\n- `queue_time` — wait time string displayed in the app (e.g. \"18H\", \"10H 30M\", \"SOLD OUT\")"
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "originalRequest": {
+                "method": "PATCH",
+                "header": [{ "key": "Content-Type", "value": "application/json" }],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"queue_time\": \"18H\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/ssd/queue",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "ssd", "queue"]
+                }
+              },
+              "body": "{\n  \"success\": true,\n  \"message\": \"Queue updated to \\\"18H\\\"\"\n}"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
