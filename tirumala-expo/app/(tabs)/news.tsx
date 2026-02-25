@@ -2,13 +2,14 @@ import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { Image } from 'expo-image';
 import { router } from 'expo-router';
 import { type ComponentProps, useState } from 'react';
-import { FlatList, Pressable, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, FlatList, Pressable, StyleSheet, View } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Colors } from '@/constants/theme';
+import { useLiveUpdates } from '@/hooks/use-live-updates';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 
 type DarshanNewsItem = {
@@ -158,8 +159,15 @@ export default function NewsScreen() {
   const tintColor = Colors[colorScheme].tint;
   const insets = useSafeAreaInsets();
   const [activeTab, setActiveTab] = useState<NewsSubTab>('pilgrims');
-  const [latestNews, ...olderNews] = DARSHAN_NEWS;
-  const isSoldOut = SSD_STATUS.balanceTickets === '0';
+
+  // ── Live Firebase data (merges over static fallbacks) ────────────────────
+  const { ssdToken, pilgrimsToday, loading: liveLoading } = useLiveUpdates();
+
+  const [staticLatest, ...olderNews] = DARSHAN_NEWS;
+  const latestNews = pilgrimsToday ?? staticLatest;
+  const liveSsd = ssdToken ?? SSD_STATUS;
+  const isSoldOut = liveSsd.balanceTickets === '0';
+  const isLive = !liveLoading && (ssdToken !== null || pilgrimsToday !== null);
 
   return (
     <ThemedView style={styles.container}>
@@ -167,6 +175,14 @@ export default function NewsScreen() {
         <View style={styles.titleRow}>
           <MaterialCommunityIcons name="temple-hindu" size={24} color={tintColor} />
           <ThemedText type="title">Darshan News</ThemedText>
+          {liveLoading ? (
+            <ActivityIndicator size="small" color={tintColor} style={{ marginLeft: 4 }} />
+          ) : isLive ? (
+            <View style={[styles.liveBadge, { backgroundColor: '#4CAF5022', borderColor: '#4CAF5060' }]}>
+              <View style={[styles.liveDot, { backgroundColor: '#4CAF50' }]} />
+              <ThemedText style={styles.liveText}>LIVE</ThemedText>
+            </View>
+          ) : null}
         </View>
         <ThemedText>Daily TTD crowd, tonsure, hundi and darshan-time updates.</ThemedText>
 
@@ -286,7 +302,7 @@ export default function NewsScreen() {
                   </View>
                   <View style={{ gap: 1 }}>
                     <ThemedText type="defaultSemiBold" style={{ fontSize: 15 }}>SSD Token (Free Tickets)</ThemedText>
-                    <ThemedText style={styles.ssdTitleSubtext}>As of {SSD_STATUS.date}</ThemedText>
+                    <ThemedText style={styles.ssdTitleSubtext}>As of {liveSsd.date}</ThemedText>
                   </View>
                   <View style={[styles.ssdStatusBadge, { backgroundColor: isSoldOut ? '#FF6B6B22' : '#4CAF5022', borderColor: isSoldOut ? '#FF6B6B55' : '#4CAF5055' }]}>
                     <View style={[styles.ssdStatusDot, { backgroundColor: isSoldOut ? '#FF6B6B' : '#4CAF50' }]} />
@@ -300,17 +316,17 @@ export default function NewsScreen() {
                   <View style={[styles.ssdMetricCard, { borderColor, backgroundColor: tintColor + '18' }]}>
                     <ThemedText style={styles.ssdMetricLabel}>Running Slot</ThemedText>
                     <ThemedText type="title" style={[styles.ssdMetricValue, { color: tintColor }]}>
-                      {SSD_STATUS.runningSlot}
+                      {liveSsd.runningSlot}
                     </ThemedText>
-                    <ThemedText style={styles.ssdMetricSubtext}>on {SSD_STATUS.date}</ThemedText>
+                    <ThemedText style={styles.ssdMetricSubtext}>on {liveSsd.date}</ThemedText>
                   </View>
 
                   <View style={[styles.ssdMetricCard, { borderColor, backgroundColor: isSoldOut ? '#FF6B6B14' : tintColor + '18' }]}>
                     <ThemedText style={styles.ssdMetricLabel}>Balance Tickets</ThemedText>
                     <ThemedText type="title" style={[styles.ssdMetricValue, { color: isSoldOut ? '#FF6B6B' : tintColor }]}>
-                      {SSD_STATUS.balanceTickets}
+                      {liveSsd.balanceTickets}
                     </ThemedText>
-                    <ThemedText style={styles.ssdMetricSubtext}>for {SSD_STATUS.date}</ThemedText>
+                    <ThemedText style={styles.ssdMetricSubtext}>for {liveSsd.date}</ThemedText>
                   </View>
                 </View>
 
@@ -453,6 +469,9 @@ function MetricChip({
 }
 
 const styles = StyleSheet.create({
+  liveBadge: { flexDirection: 'row', alignItems: 'center', gap: 5, borderWidth: 1, borderRadius: 20, paddingHorizontal: 8, paddingVertical: 3, marginLeft: 6 },
+  liveDot: { width: 6, height: 6, borderRadius: 3 },
+  liveText: { fontSize: 10, fontWeight: '700', color: '#4CAF50', letterSpacing: 0.8 },
   container: { flex: 1 },
   header: { paddingHorizontal: 16, paddingTop: 16, gap: 10, paddingBottom: 10 },
   titleRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
