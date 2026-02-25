@@ -106,3 +106,18 @@ export async function updateLiveDaySchedule(data: {
 }) {
   await rtdbSet('live_updates/day_schedule', data);
 }
+
+// ─── Latest Updates ───────────────────────────────────────────────────────────
+
+import { LatestUpdateEntry } from '../scraper/latest-updates.scraper';
+
+/** Read the current latest-updates list from Firebase */
+export async function getLiveLatestUpdates(): Promise<LatestUpdateEntry[]> {
+  const data = await rtdbGet<LatestUpdateEntry[]>('live_updates/latest_updates');
+  return data ?? [];
+}
+
+/** Overwrite the latest-updates list in Firebase */
+export async function updateLiveLatestUpdates(entries: LatestUpdateEntry[]): Promise<void> {
+  await rtdbSet('live_updates/latest_updates', entries);
+}
