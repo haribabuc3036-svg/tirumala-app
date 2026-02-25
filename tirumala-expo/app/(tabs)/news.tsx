@@ -275,7 +275,7 @@ export default function NewsScreen() {
           key="ssd-list"
           data={SSD_TOKEN_INFO}
           keyExtractor={(item) => item.id}
-          contentContainerStyle={styles.infoListContent}
+          contentContainerStyle={styles.ssdListContent}
           showsVerticalScrollIndicator={false}
           ListHeaderComponent={
             <Animated.View entering={FadeInDown.duration(420)} style={styles.ssdHeaderWrap}>
@@ -505,6 +505,7 @@ const styles = StyleSheet.create({
   scheduleSevaName: { fontSize: 14, lineHeight: 20 },
   scheduleDetail: { fontSize: 12, lineHeight: 17, opacity: 0.75 },
   // SSD Token
+  ssdListContent: { paddingHorizontal: 12, paddingTop: 14, paddingBottom: 24, gap: 10 },
   ssdInfoCard: { borderWidth: 1, borderRadius: 12, padding: 14, flexDirection: 'row', gap: 12, alignItems: 'flex-start' },
   ssdInfoIconCircle: { width: 44, height: 44, borderRadius: 22, justifyContent: 'center', alignItems: 'center' },
   ssdInfoContent: { flex: 1, gap: 5 },
