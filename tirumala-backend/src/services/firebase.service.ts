@@ -28,16 +28,18 @@ export async function rtdbUpdate(path: string, value: Record<string, unknown>): 
 export async function getLiveSsdStatus() {
   return rtdbGet<{
     running_slot: string;
+    slot_date: string;
+    balance_date: string;
     balance_tickets: string;
-    date: string;
   }>('live_updates/ssd_token');
 }
 
 /** Update SSD token status and broadcast to all connected clients instantly */
 export async function updateLiveSsdStatus(data: {
   running_slot: string;
+  slot_date: string;
+  balance_date: string;
   balance_tickets: string;
-  date: string;
 }) {
   await rtdbUpdate('live_updates/ssd_token', data);
 }

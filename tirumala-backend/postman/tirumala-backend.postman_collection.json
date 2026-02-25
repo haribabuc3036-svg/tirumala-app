@@ -178,8 +178,139 @@
       ]
     },
     {
-      "name": "SSD Token",
+      "name": "Scraper",
       "item": [
+        {
+          "name": "Poller Status",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/scraper/status",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "scraper", "status"]
+            },
+            "description": "Returns the current state of the background TTD website poller.\n\n**Fields:**\n- `isRunning` — whether a scrape cycle is in progress\n- `lastRunAt` — ISO timestamp of last run\n- `lastError` — last error message (null if healthy)\n- `totalRuns` — total cycles since server start\n- `totalUpdates` — cycles that detected changes and wrote to Firebase"
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": { "raw": "{{baseUrl}}/api/scraper/status", "host": ["{{baseUrl}}"], "path": ["api", "scraper", "status"] }
+              },
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"isRunning\": false,\n    \"lastRunAt\": \"2026-02-26T10:05:00.000Z\",\n    \"lastError\": null,\n    \"totalRuns\": 3,\n    \"totalUpdates\": 1\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Trigger Manual Run",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/scraper/run",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "scraper", "run"]
+            },
+            "description": "Manually trigger one full scrape-compare-update cycle immediately, outside the cron schedule.\n\nIf data has changed since the last run, Firebase and Supabase are updated.\n\n**Response fields:**\n- `updated` — true if any data changed and was written\n- `changes` — list of human-readable change descriptions\n- `elapsed_ms` — how long the scrape took\n- `errors` — non-fatal warnings from the scraper\n- `raw` — the full raw scrape result"
+          },
+          "response": [
+            {
+              "name": "200 OK — data changed",
+              "status": "OK",
+              "code": 200,
+              "originalRequest": {
+                "method": "POST",
+                "header": [],
+                "url": { "raw": "{{baseUrl}}/api/scraper/run", "host": ["{{baseUrl}}"], "path": ["api", "scraper", "run"] }
+              },
+              "body": "{\n  \"success\": true,\n  \"updated\": true,\n  \"changes\": [\n    \"SSD slot: null → C-380\",\n    \"SSD balance: null → 1,240\"\n  ],\n  \"elapsed_ms\": 4210,\n  \"scraped_at\": \"2026-02-26T10:00:00.000Z\",\n  \"errors\": [],\n  \"raw\": {\n    \"ssd\": { \"running_slot\": \"C-380\", \"balance_tickets\": \"1,240\", \"date\": \"2026-02-26\", \"raw_text\": \"Running Slot: C-380 on 26-Feb-2026 Balance tickets...\" },\n    \"queue\": null,\n    \"pilgrims\": null\n  }\n}"
+            },
+            {
+              "name": "200 OK — no changes",
+              "status": "OK",
+              "code": 200,
+              "originalRequest": {
+                "method": "POST",
+                "header": [],
+                "url": { "raw": "{{baseUrl}}/api/scraper/run", "host": ["{{baseUrl}}"], "path": ["api", "scraper", "run"] }
+              },
+              "body": "{\n  \"success\": true,\n  \"updated\": false,\n  \"changes\": [],\n  \"elapsed_ms\": 3890,\n  \"scraped_at\": \"2026-02-26T10:05:00.000Z\",\n  \"errors\": []\n}"
+            }
+          ]
+        },
+        {
+          "name": "Preview Scrape (dry-run)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/scraper/preview",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "scraper", "preview"]
+            },
+            "description": "Runs the Playwright scraper and returns raw parsed data **without writing anything** to Firebase or Supabase.\n\nUse this to:\n- Debug what the scraper currently sees on the TTD website\n- Test selector changes\n- Verify parsing logic without side effects"
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "originalRequest": {
+                "method": "POST",
+                "header": [],
+                "url": { "raw": "{{baseUrl}}/api/scraper/preview", "host": ["{{baseUrl}}"], "path": ["api", "scraper", "preview"] }
+              },
+              "body": "{\n  \"success\": true,\n  \"elapsed_ms\": 4100,\n  \"data\": {\n    \"ssd\": {\n      \"running_slot\": \"C-380\",\n      \"balance_tickets\": \"1,240\",\n      \"date\": \"2026-02-26\",\n      \"raw_text\": \"Running Slot: C-380 on 26-Feb-2026 Balance tickets for 26-Feb-2026: 1,240\"\n    },\n    \"queue\": null,\n    \"pilgrims\": null,\n    \"scrapedAt\": \"2026-02-26T10:00:00.000Z\",\n    \"errors\": []\n  }\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "SSD Status",
+      "item": [
+        {
+          "name": "Scrape SSD Live from tirumala.org ⭐",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/ssd/scrape",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "ssd", "scrape"]
+            },
+            "description": "Scrapes the **Slotted Sarva Darshan** block from the TIRUMALA UPDATES section of https://www.tirumala.org/ in real time using a Playwright headless Chromium browser.\n\nSource text on the website:\n```\nRunning Slot: 1 on 27-Feb-2026\nBalance tickets for 27-Feb-2026: 0\nNote: Live tickets status may vary...\n```\n\n**No database reads or writes** — this is a pure live scrape from TTD's website.\n\n**Response fields:**\n- `running_slot` — current slot number/code being called\n- `slot_date` — ISO date (YYYY-MM-DD)\n- `slot_date_display` — original TTD format (27-Feb-2026)\n- `balance_tickets` — remaining tickets available\n- `balance_date` / `balance_date_display` — date the balance applies to\n- `note` — full note text from TTD\n- `scraped_at` — ISO timestamp of when this was scraped\n\n**Note:** Takes ~5-10 seconds as Playwright loads a real browser."
+          },
+          "response": [
+            {
+              "name": "200 OK — scraped successfully",
+              "status": "OK",
+              "code": 200,
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": { "raw": "{{baseUrl}}/api/ssd/scrape", "host": ["{{baseUrl}}"], "path": ["api", "ssd", "scrape"] }
+              },
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"running_slot\": \"1\",\n    \"slot_date\": \"2026-02-27\",\n    \"slot_date_display\": \"27-Feb-2026\",\n    \"balance_tickets\": \"0\",\n    \"balance_date\": \"2026-02-27\",\n    \"balance_date_display\": \"27-Feb-2026\",\n    \"note\": \"Live tickets status may vary by the time pilgrim reaches physically at the counters. Pilgrims are waiting in the Q-line to take the SSD tokens. Tickets will be issued on first-come-first-service basis\",\n    \"raw_text\": \"Running Slot: 1 on 27-Feb-2026 Balance tickets for 27-Feb-2026: 0 Note: ...\",\n    \"scraped_at\": \"2026-02-27T05:30:00.000Z\"\n  }\n}"
+            },
+            {
+              "name": "502 — scrape failed",
+              "status": "Bad Gateway",
+              "code": 502,
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": { "raw": "{{baseUrl}}/api/ssd/scrape", "host": ["{{baseUrl}}"], "path": ["api", "ssd", "scrape"] }
+              },
+              "body": "{\n  \"success\": false,\n  \"error\": \"Could not locate the \\\"Slotted Sarva Darshan\\\" table on tirumala.org.\",\n  \"hint\": \"tirumala.org may be down or its page structure may have changed.\"\n}"
+            }
+          ]
+        },
         {
           "name": "Get Latest SSD Status (Supabase)",
           "request": {

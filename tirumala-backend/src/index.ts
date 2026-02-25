@@ -6,6 +6,7 @@ import morgan from 'morgan';
 import { env } from './config/env';
 import apiRouter from './routes';
 import { errorHandler } from './middleware/error';
+import { startTtdPoller, getPollerStatus } from './jobs/ttd-poll.job';
 
 const app = express();
 
@@ -25,6 +26,7 @@ app.get('/health', (_req, res) => {
     service: 'tirumala-backend',
     timestamp: new Date().toISOString(),
     env: env.nodeEnv,
+    poller: getPollerStatus(),
   });
 });
 
@@ -44,6 +46,9 @@ app.listen(env.port, () => {
   console.log(`\n🚀  Tirumala backend running on http://localhost:${env.port}`);
   console.log(`   ENV  : ${env.nodeEnv}`);
   console.log(`   Health: http://localhost:${env.port}/health\n`);
+
+  // Start the TTD website poller after the server is ready
+  startTtdPoller(env.scrapeSchedule);
 });
 
 export default app;

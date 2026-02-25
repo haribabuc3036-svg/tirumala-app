@@ -2,8 +2,34 @@ import { Router, type Request, type Response } from 'express';
 import { asyncHandler } from '../middleware/error';
 import { getLatestSsdStatus, upsertSsdStatus } from '../services/supabase.service';
 import { updateLiveSsdStatus, updateSarvaQueue, getLiveSsdStatus, getSarvaQueue } from '../services/firebase.service';
+import { scrapeSsdFromTirumala } from '../scraper/ssd.scraper';
 
 const router = Router();
+
+/**
+ * GET /api/ssd/scrape
+ * Scrapes the Slotted Sarva Darshan status live from tirumala.org using
+ * Playwright headless browser. No DB reads/writes — pure live scrape.
+ *
+ * Returns:
+ *   running_slot, slot_date, balance_tickets, balance_date, note, scraped_at
+ */
+router.get(
+  '/scrape',
+  asyncHandler(async (_req: Request, res: Response) => {
+    const result = await scrapeSsdFromTirumala();
+
+    if (!result.success) {
+      return res.status(502).json({
+        success: false,
+        error: result.error,
+        hint: 'tirumala.org may be down or its page structure may have changed.',
+      });
+    }
+
+    res.json({ success: true, data: result.data });
+  })
+);
 
 /**
  * GET /api/ssd
@@ -31,26 +57,23 @@ router.get(
 
 /**
  * POST /api/ssd
- * Update SSD status — writes to Supabase (persistent) and Firebase (live).
+ * Update SSD status — writes to Firebase (live broadcast).
  *
- * Body: { running_slot, balance_tickets, date }
+ * Body: { running_slot, slot_date, balance_date, balance_tickets }
  */
 router.post(
   '/',
   asyncHandler(async (req: Request, res: Response) => {
-    const { running_slot, balance_tickets, date } = req.body as {
+    const { running_slot, slot_date, balance_date, balance_tickets } = req.body as {
       running_slot: string;
+      slot_date: string;
+      balance_date: string;
       balance_tickets: string;
-      date: string;
     };
 
-    // 1. Persist to Supabase
-    const row = await upsertSsdStatus({ running_slot, balance_tickets, date });
+    await updateLiveSsdStatus({ running_slot, slot_date, balance_date, balance_tickets });
 
-    // 2. Push live update to Firebase (all connected app clients update instantly)
-    await updateLiveSsdStatus({ running_slot, balance_tickets, date });
-
-    res.status(201).json({ success: true, data: row });
+    res.status(201).json({ success: true, data: { running_slot, slot_date, balance_date, balance_tickets } });
   })
 );
 

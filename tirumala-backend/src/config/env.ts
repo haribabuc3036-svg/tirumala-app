@@ -11,6 +11,9 @@ export const env = {
   port: parseInt(process.env.PORT ?? '3000', 10),
   nodeEnv: process.env.NODE_ENV ?? 'development',
 
+  /** node-cron expression for the TTD website poller (default: every 5 min) */
+  scrapeSchedule: process.env.SCRAPE_SCHEDULE ?? '*/5 * * * *',
+
   supabase: {
     url: required('SUPABASE_URL'),
     anonKey: required('SUPABASE_ANON_KEY'),
