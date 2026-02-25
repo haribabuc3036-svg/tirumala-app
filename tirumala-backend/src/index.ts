@@ -7,6 +7,8 @@ import { env } from './config/env';
 import apiRouter from './routes';
 import { errorHandler } from './middleware/error';
 import { startTtdPoller, getPollerStatus } from './jobs/ttd-poll.job';
+import { startSchedulePoller, getSchedulePollerStatus } from './jobs/schedule-poll.job';
+import { startPilgrimsPoller, getPilgrimsPollerStatus } from './jobs/pilgrims-poll.job';
 
 const app = express();
 
@@ -27,6 +29,8 @@ app.get('/health', (_req, res) => {
     timestamp: new Date().toISOString(),
     env: env.nodeEnv,
     poller: getPollerStatus(),
+    schedulePoller: getSchedulePollerStatus(),
+    pilgrimsPoller: getPilgrimsPollerStatus(),
   });
 });
 
@@ -49,6 +53,12 @@ app.listen(env.port, () => {
 
   // Start the TTD website poller after the server is ready
   startTtdPoller(env.scrapeSchedule);
+
+  // Start the daily Day-Schedule poller (00:01 IST)
+  startSchedulePoller();
+
+  // Start the 8-hourly Pilgrims poller (00:00 / 08:00 / 16:00 IST)
+  startPilgrimsPoller();
 });
 
 export default app;

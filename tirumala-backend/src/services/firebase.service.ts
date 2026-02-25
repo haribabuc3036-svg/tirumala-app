@@ -56,6 +56,25 @@ export async function updateLivePilgrims(data: {
   await rtdbUpdate('live_updates/pilgrims_today', data);
 }
 
+// ─── Pilgrims Recent (last 10) ────────────────────────────────────────────────
+
+import { PilgrimEntry } from '../scraper/pilgrims.scraper';
+
+/** Read the current list of up to 10 recent pilgrim entries */
+export async function getLivePilgrimsRecent(): Promise<PilgrimEntry[]> {
+  const data = await rtdbGet<PilgrimEntry[]>('live_updates/pilgrims_recent');
+  return data ?? [];
+}
+
+/**
+ * Overwrite the pilgrims_recent list.
+ * Keeps newest-first, max 10 entries.
+ */
+export async function updateLivePilgrimsRecent(entries: PilgrimEntry[]): Promise<void> {
+  const trimmed = entries.slice(0, 10);
+  await rtdbSet('live_updates/pilgrims_recent', trimmed);
+}
+
 /** Read the current Sarva Darshan queue wait time text */
 export async function getSarvaQueue(): Promise<string | null> {
   return rtdbGet<string>('live_updates/sarva_darshan_queue');
@@ -64,4 +83,26 @@ export async function getSarvaQueue(): Promise<string | null> {
 /** Update the raw Sarva Darshan queue wait time text */
 export async function updateSarvaQueue(queueText: string) {
   await rtdbSet('live_updates/sarva_darshan_queue', queueText);
+}
+
+// ─── Day Schedule ──────────────────────────────────────────────────────────────
+
+import { ScheduleEntry } from '../scraper/schedule.scraper';
+
+/** Read today's day schedule */
+export async function getLiveDaySchedule() {
+  return rtdbGet<{
+    date: string;
+    day: string;
+    schedules: ScheduleEntry[];
+  }>('live_updates/day_schedule');
+}
+
+/** Overwrite day schedule (runs once daily at 12:01 AM IST) */
+export async function updateLiveDaySchedule(data: {
+  date: string;
+  day: string;
+  schedules: ScheduleEntry[];
+}) {
+  await rtdbSet('live_updates/day_schedule', data);
 }
