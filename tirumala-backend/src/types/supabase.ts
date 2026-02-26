@@ -116,6 +116,42 @@ export type Database = {
         };
         Relationships: [];
       };
+      wallpapers: {
+        Row: {
+          id: string;
+          title: string;
+          image_url: string;
+          public_id: string;
+          width: number | null;
+          height: number | null;
+          format: string | null;
+          bytes: number | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          title: string;
+          image_url: string;
+          public_id: string;
+          width?: number | null;
+          height?: number | null;
+          format?: string | null;
+          bytes?: number | null;
+          created_at?: string | null;
+        };
+        Update: {
+          id?: string;
+          title?: string;
+          image_url?: string;
+          public_id?: string;
+          width?: number | null;
+          height?: number | null;
+          format?: string | null;
+          bytes?: number | null;
+          created_at?: string | null;
+        };
+        Relationships: [];
+      };
     };
     Views: {
       [_ in never]: never;

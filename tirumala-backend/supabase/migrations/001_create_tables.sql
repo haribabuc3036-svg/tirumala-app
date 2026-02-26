@@ -46,10 +46,27 @@ CREATE TABLE IF NOT EXISTS public.services_catalog (
 CREATE INDEX IF NOT EXISTS idx_services_catalog_category_order
   ON public.services_catalog (category_order ASC, sort_order ASC);
 
+-- ─── wallpapers ───────────────────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS public.wallpapers (
+  id         TEXT PRIMARY KEY,
+  title      TEXT        NOT NULL,
+  image_url  TEXT        NOT NULL,
+  public_id  TEXT        NOT NULL UNIQUE,
+  width      INTEGER,
+  height     INTEGER,
+  format     TEXT,
+  bytes      INTEGER,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_wallpapers_created_at
+  ON public.wallpapers (created_at DESC);
+
 -- ─── Enable RLS (Row Level Security) — service role key bypasses this ─────────
 ALTER TABLE public.darshan_updates ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.ssd_status      ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.services_catalog ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.wallpapers ENABLE ROW LEVEL SECURITY;
 
 -- Allow the service role (backend) to do anything
 CREATE POLICY "service role full access" ON public.darshan_updates
@@ -62,4 +79,10 @@ CREATE POLICY "service role full access services" ON public.services_catalog
   FOR ALL USING (auth.role() = 'service_role');
 
 CREATE POLICY "anon read services" ON public.services_catalog
+  FOR SELECT USING (auth.role() = 'anon' OR auth.role() = 'authenticated');
+
+CREATE POLICY "service role full access wallpapers" ON public.wallpapers
+  FOR ALL USING (auth.role() = 'service_role');
+
+CREATE POLICY "anon read wallpapers" ON public.wallpapers
   FOR SELECT USING (auth.role() = 'anon' OR auth.role() = 'authenticated');

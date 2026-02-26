@@ -12,6 +12,8 @@ type SsdInsert = Database['public']['Tables']['ssd_status']['Insert'];
 type ServiceCatalogRow = Database['public']['Tables']['services_catalog']['Row'];
 type ServiceCatalogInsert = Database['public']['Tables']['services_catalog']['Insert'];
 type ServiceCatalogUpdate = Database['public']['Tables']['services_catalog']['Update'];
+type WallpaperRow = Database['public']['Tables']['wallpapers']['Row'];
+type WallpaperInsert = Database['public']['Tables']['wallpapers']['Insert'];
 
 // ─── Darshan Updates ───────────────────────────────────────────────────────────
 
@@ -198,6 +200,53 @@ export async function deleteServiceCatalogItem(serviceId: string): Promise<boole
     .from('services_catalog')
     .delete()
     .eq('id', serviceId)
+    .select('id')
+    .maybeSingle();
+
+  if (error) throw new Error(error.message);
+  return Boolean(data?.id);
+}
+
+// ─── Wallpapers ───────────────────────────────────────────────────────────────
+
+export async function getWallpapers(limit = 100): Promise<WallpaperRow[]> {
+  const { data, error } = await supabaseAdmin
+    .from('wallpapers')
+    .select('*')
+    .order('created_at', { ascending: false })
+    .limit(limit);
+
+  if (error) throw new Error(error.message);
+  return data ?? [];
+}
+
+export async function createWallpaper(payload: WallpaperInsert): Promise<WallpaperRow> {
+  const { data, error } = await supabaseAdmin
+    .from('wallpapers')
+    .insert(payload)
+    .select('*')
+    .single();
+
+  if (error) throw new Error(error.message);
+  return data;
+}
+
+export async function getWallpaperById(id: string): Promise<WallpaperRow | null> {
+  const { data, error } = await supabaseAdmin
+    .from('wallpapers')
+    .select('*')
+    .eq('id', id)
+    .maybeSingle();
+
+  if (error) throw new Error(error.message);
+  return data;
+}
+
+export async function deleteWallpaper(id: string): Promise<boolean> {
+  const { data, error } = await supabaseAdmin
+    .from('wallpapers')
+    .delete()
+    .eq('id', id)
     .select('id')
     .maybeSingle();
 

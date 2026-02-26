@@ -48,6 +48,21 @@ const sql = `
 
   CREATE INDEX IF NOT EXISTS idx_services_catalog_category_order
     ON public.services_catalog (category_order ASC, sort_order ASC);
+
+  CREATE TABLE IF NOT EXISTS public.wallpapers (
+    id         TEXT PRIMARY KEY,
+    title      TEXT        NOT NULL,
+    image_url  TEXT        NOT NULL,
+    public_id  TEXT        NOT NULL UNIQUE,
+    width      INTEGER,
+    height     INTEGER,
+    format     TEXT,
+    bytes      INTEGER,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  );
+
+  CREATE INDEX IF NOT EXISTS idx_wallpapers_created_at
+    ON public.wallpapers (created_at DESC);
 `;
 
 client.connect()
@@ -60,6 +75,7 @@ client.connect()
     console.log('   - public.darshan_updates');
     console.log('   - public.ssd_status');
     console.log('   - public.services_catalog');
+    console.log('   - public.wallpapers');
     client.end();
   })
   .catch((err) => {
