@@ -8,8 +8,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { getPlaceById } from '@/constants/places-data';
 import { Colors } from '@/constants/theme';
+import { usePlaceDetail } from '@/hooks/use-place-detail';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 
 export default function PlaceDetailScreen() {
@@ -22,7 +22,7 @@ export default function PlaceDetailScreen() {
   const locationChipBackground = colorScheme === 'dark' ? 'rgba(255,255,255,0.92)' : 'rgba(255,255,255,0.96)';
   const locationChipText = '#1E2A32';
   const buttonTextColor = colorScheme === 'dark' ? Colors.dark.background : Colors.light.background;
-  const place = placeId ? getPlaceById(placeId) : undefined;
+  const { place, loading, error } = usePlaceDetail(placeId);
 
   const openMaps = async () => {
     if (!place) return;
@@ -34,23 +34,34 @@ export default function PlaceDetailScreen() {
     await Linking.openURL(place.mapsUrl);
   };
 
-  if (!place) {
+  if (!loading && !place) {
     return (
       <ThemedView style={[styles.emptyWrap, { paddingTop: insets.top + 16 }]}> 
-        <ThemedText type="title">Place not found</ThemedText>
+        <ThemedText type="title">{error ? `Unable to load place: ${error}` : 'Place not found'}</ThemedText>
       </ThemedView>
     );
   }
 
   return (
     <ThemedView style={styles.container}>
-      <Stack.Screen options={{ title: place.name }} />
+      <Stack.Screen options={{ title: place?.name ?? 'Place' }} />
 
       <ScrollView
         contentContainerStyle={[styles.content, { paddingTop: insets.top + 12, paddingBottom: 24 }]}
         showsVerticalScrollIndicator={false}>
+        {loading ? <ThemedText style={styles.statusText}>Loading place details...</ThemedText> : null}
+        {error ? <ThemedText style={styles.statusText}>Unable to load place details: {error}</ThemedText> : null}
+
+        {place ? (
+          <>
         <Animated.View entering={FadeInDown.duration(420)} style={styles.heroWrap}>
-          <Image source={{ uri: place.photos[0] }} style={styles.heroImage} contentFit="cover" transition={220} />
+          {place.photos[0] ? (
+            <Image source={{ uri: place.photos[0] }} style={styles.heroImage} contentFit="cover" transition={220} />
+          ) : (
+            <View style={[styles.heroImage, styles.heroFallback, { backgroundColor: `${tintColor}18` }]}>
+              <MaterialCommunityIcons name="image-off-outline" size={24} color={tintColor} />
+            </View>
+          )}
           <View style={styles.heroOverlay} />
 
           <View style={[styles.heroBottomChip, { backgroundColor: locationChipBackground, borderColor }]}> 
@@ -98,6 +109,8 @@ export default function PlaceDetailScreen() {
           </View>
           </Pressable>
         </Animated.View>
+          </>
+        ) : null}
       </ScrollView>
     </ThemedView>
   );
@@ -116,6 +129,10 @@ const styles = StyleSheet.create({
     width: '100%',
     height: 228,
     borderRadius: 18,
+  },
+  heroFallback: {
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   heroOverlay: {
     position: 'absolute',
@@ -243,6 +260,10 @@ const styles = StyleSheet.create({
   mapButtonText: {
     fontWeight: '700',
     fontSize: 15,
+  },
+  statusText: {
+    fontSize: 12,
+    opacity: 0.75,
   },
   emptyWrap: {
     flex: 1,

@@ -7,9 +7,9 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { getPlacesByRegion, getRegionById } from '@/constants/places-data';
 import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
+import { useRegionPlaces } from '@/hooks/use-region-places';
 
 export default function RegionPlacesScreen() {
   const { regionId } = useLocalSearchParams<{ regionId: string }>();
@@ -19,20 +19,19 @@ export default function RegionPlacesScreen() {
   const borderColor = Colors[colorScheme].icon;
   const textColor = Colors[colorScheme].text;
 
-  const region = regionId ? getRegionById(regionId) : undefined;
-  const places = regionId ? getPlacesByRegion(regionId) : [];
+  const { region, places, loading, error } = useRegionPlaces(regionId);
 
-  if (!region) {
+  if (!loading && !region) {
     return (
       <ThemedView style={[styles.emptyWrap, { paddingTop: insets.top + 16 }]}> 
-        <ThemedText type="title">Region not found</ThemedText>
+        <ThemedText type="title">{error ? `Unable to load region: ${error}` : 'Region not found'}</ThemedText>
       </ThemedView>
     );
   }
 
   return (
     <ThemedView style={styles.container}>
-      <Stack.Screen options={{ title: region.title }} />
+      <Stack.Screen options={{ title: region?.title ?? 'Places' }} />
       <FlatList
         data={places}
         keyExtractor={(item) => item.id}
@@ -40,12 +39,17 @@ export default function RegionPlacesScreen() {
         showsVerticalScrollIndicator={false}
         ListHeaderComponent={
           <View style={styles.header}>
-            <ThemedText type="title">{region.title}</ThemedText>
+            <ThemedText type="title">{region?.title ?? 'Places'}</ThemedText>
             <View style={styles.summaryRow}>
               <View style={[styles.summaryChip, { backgroundColor: `${tintColor}18` }]}>
                 <ThemedText style={[styles.summaryText, { color: tintColor }]}>{places.length} Places</ThemedText>
               </View>
             </View>
+            {loading ? <ThemedText style={styles.metaText}>Loading places...</ThemedText> : null}
+            {error ? <ThemedText style={styles.metaText}>Unable to load places: {error}</ThemedText> : null}
+            {!loading && !error && places.length === 0 ? (
+              <ThemedText style={styles.metaText}>No places available in this region yet.</ThemedText>
+            ) : null}
 
             <View style={[styles.heroCard, { borderColor, backgroundColor: `${tintColor}12` }]}>
               <View style={[styles.heroGradientOne, { backgroundColor: `${tintColor}22` }]} />
@@ -56,8 +60,8 @@ export default function RegionPlacesScreen() {
                 <MaterialCommunityIcons name="map-check-outline" size={20} color={tintColor} />
               </View>
               <View style={styles.heroTextWrap}>
-                <ThemedText type="defaultSemiBold">Top places in {region.title}</ThemedText>
-                <ThemedText style={styles.heroSub}>{region.subtitle ?? 'Places in this section'}</ThemedText>
+                <ThemedText type="defaultSemiBold">Top places in {region?.title ?? 'this region'}</ThemedText>
+                <ThemedText style={styles.heroSub}>{region?.subtitle ?? 'Places in this section'}</ThemedText>
               </View>
             </View>
           </View>
@@ -75,7 +79,13 @@ export default function RegionPlacesScreen() {
                 },
               ]}>
               <View style={styles.thumbWrap}>
-                <Image source={{ uri: item.photos[0] }} style={styles.thumb} contentFit="cover" transition={180} />
+                {item.photos[0] ? (
+                  <Image source={{ uri: item.photos[0] }} style={styles.thumb} contentFit="cover" transition={180} />
+                ) : (
+                  <View style={[styles.thumb, styles.thumbFallback, { backgroundColor: `${tintColor}18` }]}>
+                    <MaterialCommunityIcons name="image-off-outline" size={18} color={tintColor} />
+                  </View>
+                )}
                 <View style={[styles.thumbPill, { backgroundColor: `${tintColor}22` }]}>
                   <MaterialCommunityIcons name="camera-outline" size={11} color={tintColor} />
                   <ThemedText style={[styles.thumbPillText, { color: tintColor }]}>{item.photos.length}</ThemedText>
@@ -186,6 +196,10 @@ const styles = StyleSheet.create({
     opacity: 0.78,
     lineHeight: 17,
   },
+  metaText: {
+    fontSize: 12,
+    opacity: 0.75,
+  },
   placeCard: {
     borderWidth: 1,
     borderRadius: 16,
@@ -201,6 +215,10 @@ const styles = StyleSheet.create({
     width: 70,
     height: 70,
     borderRadius: 12,
+  },
+  thumbFallback: {
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   thumbPill: {
     position: 'absolute',

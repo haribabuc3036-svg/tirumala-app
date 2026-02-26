@@ -13,7 +13,6 @@ export default function ServicesScreen() {
   const colorScheme = useColorScheme() ?? 'light';
   const insets = useSafeAreaInsets();
   const tintColor = Colors[colorScheme].tint;
-  const iconColor = Colors[colorScheme].icon;
   const itemWidth = '31.5%';
   const { categories, error } = useServicesCatalog();
 
@@ -35,8 +34,7 @@ export default function ServicesScreen() {
         }
         renderItem={({ item: category }) => (
           (() => {
-            const sectionAccent =
-              category.services.find((service) => service.tagColor)?.tagColor ?? tintColor;
+            const sectionAccent = tintColor;
 
             return (
           <View
@@ -49,7 +47,7 @@ export default function ServicesScreen() {
             ]}>
             <View style={styles.sectionHeader}>
               <View style={[styles.sectionHeaderIcon, { backgroundColor: `${sectionAccent}20` }]}>
-                <MaterialCommunityIcons name={category.icon} size={16} color={sectionAccent} />
+                <MaterialCommunityIcons name={category.icon} size={14} color={sectionAccent} />
               </View>
               <ThemedText type="defaultSemiBold" style={[styles.sectionTitle, { color: sectionAccent }]}> 
                 {category.heading}
@@ -79,13 +77,13 @@ export default function ServicesScreen() {
                     router.push({ pathname: '/service/[id]', params: { id: service.id } })
                   }>
                   <View style={[styles.iconCircle, { backgroundColor: `${sectionAccent}20` }]}>
-                    <MaterialCommunityIcons name={service.icon} size={24} color={sectionAccent} />
+                    <MaterialCommunityIcons name={service.icon} size={16} color={sectionAccent} />
                   </View>
                   <ThemedText style={styles.title} numberOfLines={2}>
                     {service.title}
                   </ThemedText>
                   {service.tag ? (
-                    <View style={[styles.tagPill, { backgroundColor: `${sectionAccent}1E` }]}>
+                    <View style={[styles.tagPill, { backgroundColor: `${service.tagColor ?? sectionAccent}1E` }]}>
                       <ThemedText style={[styles.category, { color: service.tagColor ?? sectionAccent }]} numberOfLines={1}>
                         {service.tag}
                       </ThemedText>
@@ -138,9 +136,9 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   sectionHeaderIcon: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
+    width: 26,
+    height: 26,
+    borderRadius: 13,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -160,28 +158,28 @@ const styles = StyleSheet.create({
   },
   itemWrap: {
     alignItems: 'center',
-    paddingHorizontal: 8,
-    paddingVertical: 14,
-    gap: 7,
+    paddingHorizontal: 6,
+    paddingVertical: 10,
+    gap: 6,
     borderWidth: 1,
-    borderRadius: 14,
-    marginBottom: 12,
+    borderRadius: 12,
+    marginBottom: 8,
   },
   iconCircle: {
-    width: 54,
-    height: 54,
-    borderRadius: 27,
+    width: 38,
+    height: 38,
+    borderRadius: 19,
     alignItems: 'center',
     justifyContent: 'center',
   },
   title: {
     textAlign: 'center',
-    fontSize: 12,
-    lineHeight: 16,
-    minHeight: 32,
+    fontSize: 10,
+    lineHeight: 13,
+    minHeight: 24,
   },
   category: {
-    fontSize: 10.5,
+    fontSize: 8.5,
     opacity: 0.92,
     fontWeight: '700',
   },

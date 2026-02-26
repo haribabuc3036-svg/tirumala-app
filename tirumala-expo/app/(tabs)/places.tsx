@@ -4,11 +4,11 @@ import { router } from 'expo-router';
 import { FlatList, Pressable, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { getPlacesByRegion, REGIONS } from '@/constants/places-data';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
+import { usePlacesRegions } from '@/hooks/use-places-regions';
 
 const REGION_ICONS: Record<string, keyof typeof MaterialCommunityIcons.glyphMap> = {
   tirumala: 'temple-hindu',
@@ -26,11 +26,12 @@ export default function PlacesScreen() {
   const borderColor = Colors[colorScheme].icon;
   const textColor = Colors[colorScheme].text;
   const backgroundColor = Colors[colorScheme].background;
+  const { regions, loading, error } = usePlacesRegions();
 
   return (
     <ThemedView style={styles.container}>
       <FlatList
-        data={REGIONS}
+        data={regions}
         keyExtractor={(item) => item.id}
         numColumns={2}
         columnWrapperStyle={styles.gridRow}
@@ -54,12 +55,16 @@ export default function PlacesScreen() {
             </View>
 
             <ThemedText style={[styles.sectionLabel, { color: borderColor }]}>Regions</ThemedText>
+            {error ? <ThemedText style={styles.fallbackNote}>Unable to load regions: {error}</ThemedText> : null}
+            {loading ? <ThemedText style={styles.fallbackNote}>Loading places...</ThemedText> : null}
+            {!loading && regions.length === 0 ? (
+              <ThemedText style={styles.fallbackNote}>No regions available yet.</ThemedText>
+            ) : null}
           </View>
         }
         renderItem={({ item }) => {
-          const places = getPlacesByRegion(item.id);
-          const count = places.length;
-          const previewPhoto = places[0]?.photos?.[0];
+          const count = item.placeCount;
+          const previewPhoto = item.previewPhoto;
           const accentVariant = count % 3;
 
           const cardBackground =
@@ -208,6 +213,10 @@ const styles = StyleSheet.create({
     letterSpacing: 0.6,
     textTransform: 'uppercase',
     opacity: 0.85,
+  },
+  fallbackNote: {
+    fontSize: 11,
+    opacity: 0.7,
   },
   regionCard: {
     width: '48.4%',
