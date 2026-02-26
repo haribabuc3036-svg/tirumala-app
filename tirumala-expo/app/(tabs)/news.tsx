@@ -1,5 +1,4 @@
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
-import { Image } from 'expo-image';
 import { router } from 'expo-router';
 import { type ComponentProps, useState } from 'react';
 import { ActivityIndicator, FlatList, Pressable, StyleSheet, View } from 'react-native';
@@ -21,7 +20,7 @@ type DarshanNewsItem = {
   time: string;
 };
 
-type NewsSubTab = 'ssd' | 'pilgrims';
+type NewsSubTab = 'ssd' | 'schedule' | 'pilgrims';
 
 type InfoItem = {
   id: string;
@@ -30,22 +29,35 @@ type InfoItem = {
   icon: ComponentProps<typeof MaterialCommunityIcons>['name'];
 };
 
+type DayScheduleItem = {
+  event: string;
+  time: string;
+};
+
+type DayScheduleData = {
+  date: string;
+  day: string;
+  schedules: DayScheduleItem[];
+};
+
 const DARSHAN_NEWS: DarshanNewsItem[] = [
-  { date: '23.02.2026', pilgrims: '77,803', tonsures: '27,766', hundi: '4.66 CR', waiting: '31 Compartments', time: '18H' },
-  { date: '22.02.2026', pilgrims: '76,506', tonsures: '28,049', hundi: '4.20 CR', waiting: '25 Compartments', time: '15H' },
-  { date: '21.02.2026', pilgrims: '82,043', tonsures: '32,299', hundi: '3.74 CR', waiting: 'Outside line at Krishna Teja Guest house', time: '16H' },
-  { date: '20.02.2026', pilgrims: '68,156', tonsures: '28,295', hundi: '3.46 CR', waiting: 'Outside line at Sila thoranam', time: '18-20H' },
-  { date: '19.02.2026', pilgrims: '57,682', tonsures: '27,020', hundi: '3.65 CR', waiting: 'Outside line at Krishna Teja Guest house', time: '10-12H' },
-  { date: '18.02.2026', pilgrims: '63,804', tonsures: '24,142', hundi: '3.90 CR', waiting: '14 Compartments', time: '10-12H' },
-  { date: '17.02.2026', pilgrims: '70,509', tonsures: '18,058', hundi: '4.20 CR', waiting: '04 Compartments', time: '06H' },
-  { date: '16.02.2026', pilgrims: '73,776', tonsures: '23,291', hundi: '4.42 CR', waiting: '13 Compartments', time: '08H' },
-  { date: '15.02.2026', pilgrims: '80,502', tonsures: '24,608', hundi: '3.74 CR', waiting: '18 Compartments', time: '8-10H' },
-  { date: '14.02.2026', pilgrims: '82,337', tonsures: '30,825', hundi: '3.58 CR', waiting: 'Outside line at ATGH', time: '12H' },
+  { date: '2026-02-25', pilgrims: '73,035', tonsures: '27,090', hundi: '4.48CR', waiting: '25.No. Pilgrims utilized Med. Services: 2,547', time: '12-15H' },
+  { date: '2026-02-24', pilgrims: '74,902', tonsures: '22,869', hundi: '4.05CR', waiting: '25 Compartments', time: '12H' },
+  { date: '2026-02-23', pilgrims: '77,803', tonsures: '27,766', hundi: '4.66CR', waiting: '31 Compartments', time: '18H' },
+  { date: '2026-02-22', pilgrims: '76,506', tonsures: '28,049', hundi: '4.20CR', waiting: '25 Compartments', time: '15H' },
+  { date: '2026-02-21', pilgrims: '82,043', tonsures: '32,299', hundi: '3.74CR', waiting: 'Outside line at Krishna Teja Guest house', time: '16H' },
+  { date: '2026-02-20', pilgrims: '68,156', tonsures: '28,295', hundi: '3.46 CR', waiting: 'Outside line at Sila thoranam', time: '18-20H' },
+  { date: '2026-02-19', pilgrims: '57,682', tonsures: '27,020', hundi: '3.65 CR', waiting: 'Outside line at Krishna Teja Guest house', time: '10-12H' },
+  { date: '2026-02-18', pilgrims: '63,804', tonsures: '24,142', hundi: '3.90 CR', waiting: '14 Compartments', time: '10-12H' },
+  { date: '2026-02-17', pilgrims: '70,509', tonsures: '18,058', hundi: '4.20 CR', waiting: '04 Compartments', time: '06 H' },
+  { date: '2026-02-16', pilgrims: '73,776', tonsures: '23,291', hundi: '4.42 CR', waiting: '13 Compartments', time: '08 H' },
 ];
 
 const SSD_STATUS = {
-  runningSlot: '12',
-  date: '25-Feb-2026',
+  runningSlot: '14',
+  date: '2026-02-26',
+  slotDate: '27-Feb-2026',
+  balanceDate: '27-Feb-2026',
   balanceTickets: '0',
 };
 
@@ -71,6 +83,50 @@ const SSD_TOKEN_INFO: InfoItem[] = [
   },
 ];
 
+function getIstDateKey(): string {
+  return new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' });
+}
+
+function normalizeDateKey(input: string): string {
+  if (/^\d{4}-\d{2}-\d{2}$/.test(input)) return input;
+
+  if (/^\d{2}\.\d{2}\.\d{4}$/.test(input)) {
+    const [dd, mm, yyyy] = input.split('.');
+    return `${yyyy}-${mm}-${dd}`;
+  }
+
+  if (/^\d{2}-\d{2}-\d{4}$/.test(input)) {
+    const [dd, mm, yyyy] = input.split('-');
+    return `${yyyy}-${mm}-${dd}`;
+  }
+
+  const parsed = new Date(input);
+  if (!Number.isNaN(parsed.getTime())) {
+    return parsed.toISOString().slice(0, 10);
+  }
+
+  return input;
+}
+
+const DAY_SCHEDULE_DATA: DayScheduleData = {
+  date: '2026-02-26',
+  day: 'Thursday',
+  schedules: [
+    { event: 'Suprabhatam', time: '02:30 - 03:00 hrs' },
+    { event: 'Thomala Seva', time: '03:30 - 04:00 hrs' },
+    { event: 'Koluvu and Panchanga Sravanam', time: '04:00 - 04:15 hrs' },
+    { event: 'First Archana', time: '04:15 - 05:00 hrs' },
+    { event: 'Abhishekam and second Archana', time: '06:00 - 08:00 hrs' },
+    { event: 'Darshanam', time: '09:30 - 19:00 hrs' },
+    { event: 'Arjitha Sevas', time: '12:00 - 17:00 hrs' },
+    { event: 'Sahasra Deepalankarana Seva', time: '17:30 - 18:30 hrs' },
+    { event: 'Suddhi and Night Kainkaryams', time: '19:00 - 20:00 hrs' },
+    { event: 'Darshanam', time: '20:00 - 00:30 hrs' },
+    { event: 'Suddhi and preparation for Ekanta Seva', time: '00:30 - 00:45 hrs' },
+    { event: 'Ekanta Seva', time: '00:45 hrs' },
+  ],
+};
+
 export default function NewsScreen() {
   const colorScheme = useColorScheme() ?? 'light';
   const borderColor = Colors[colorScheme].icon;
@@ -79,11 +135,21 @@ export default function NewsScreen() {
   const [activeTab, setActiveTab] = useState<NewsSubTab>('pilgrims');
 
   // ── Live Firebase data (merges over static fallbacks) ────────────────────
-  const { ssdToken, pilgrimsToday, loading: liveLoading } = useLiveUpdates();
+  const { ssdToken, pilgrimsToday, pilgrimsRecent, daySchedule, loading: liveLoading } = useLiveUpdates();
 
-  const [staticLatest, ...olderNews] = DARSHAN_NEWS;
+  const recentNews = pilgrimsRecent.length > 0 ? pilgrimsRecent : DARSHAN_NEWS;
+  const sortedRecentNews = [...recentNews].sort((a, b) =>
+    normalizeDateKey(b.date).localeCompare(normalizeDateKey(a.date))
+  );
+  const staticLatest = sortedRecentNews[0] ?? DARSHAN_NEWS[0];
+  const olderNews = sortedRecentNews.slice(1);
   const latestNews = pilgrimsToday ?? staticLatest;
+  const istTodayKey = getIstDateKey();
+  const latestDateKey = normalizeDateKey(latestNews.date);
+  const latestBadgeText = latestDateKey === istTodayKey ? 'TODAY' : 'RECENT';
   const liveSsd = ssdToken ?? SSD_STATUS;
+  const effectiveDaySchedule = (daySchedule ?? DAY_SCHEDULE_DATA) as DayScheduleData;
+  const ssdDisplayDate = liveSsd.balanceDate ?? liveSsd.slotDate ?? liveSsd.date;
   const isSoldOut = liveSsd.balanceTickets === '0';
   const isLive = !liveLoading && (ssdToken !== null || pilgrimsToday !== null);
 
@@ -107,6 +173,7 @@ export default function NewsScreen() {
 
         <View style={[styles.subTabsWrap, { borderColor }]}>
           <SubTabButton label="Pilgrim Updates" active={activeTab === 'pilgrims'} onPress={() => setActiveTab('pilgrims')} tintColor={tintColor} />
+          <SubTabButton label="Day Schedules" active={activeTab === 'schedule'} onPress={() => setActiveTab('schedule')} tintColor={tintColor} />
           <SubTabButton label="SSD Token" active={activeTab === 'ssd'} onPress={() => setActiveTab('ssd')} tintColor={tintColor} />
         </View> 
       </View>
@@ -128,7 +195,7 @@ export default function NewsScreen() {
                     <ThemedText type="defaultSemiBold" style={{ fontSize: 14 }}>{latestNews.date}</ThemedText>
                   </View>
                   <View style={[styles.todayBadge, { backgroundColor: tintColor, borderColor: tintColor }]}>
-                    <ThemedText style={styles.todayBadgeText}>TODAY</ThemedText>
+                    <ThemedText style={styles.todayBadgeText}>{latestBadgeText}</ThemedText>
                   </View>
                 </View>
 
@@ -189,7 +256,7 @@ export default function NewsScreen() {
             </Animated.View>
           )}
         />
-      ) : (
+      ) : activeTab === 'ssd' ? (
         <FlatList
           key="ssd-list"
           data={SSD_TOKEN_INFO}
@@ -205,7 +272,7 @@ export default function NewsScreen() {
                   </View>
                   <View style={{ gap: 1 }}>
                     <ThemedText type="defaultSemiBold" style={{ fontSize: 15 }}>SSD Token (Free Tickets)</ThemedText>
-                    <ThemedText style={styles.ssdTitleSubtext}>As of {liveSsd.date}</ThemedText>
+                    <ThemedText style={styles.ssdTitleSubtext}>As of {ssdDisplayDate}</ThemedText>
                   </View>
                   <View style={[styles.ssdStatusBadge, { backgroundColor: isSoldOut ? '#FF6B6B22' : '#4CAF5022', borderColor: isSoldOut ? '#FF6B6B55' : '#4CAF5055' }]}>
                     <View style={[styles.ssdStatusDot, { backgroundColor: isSoldOut ? '#FF6B6B' : '#4CAF50' }]} />
@@ -221,7 +288,7 @@ export default function NewsScreen() {
                     <ThemedText type="title" style={[styles.ssdMetricValue, { color: tintColor }]}>
                       {liveSsd.runningSlot}
                     </ThemedText>
-                    <ThemedText style={styles.ssdMetricSubtext}>on {liveSsd.date}</ThemedText>
+                    <ThemedText style={styles.ssdMetricSubtext}>on {liveSsd.slotDate ?? ssdDisplayDate}</ThemedText>
                   </View>
 
                   <View style={[styles.ssdMetricCard, { borderColor, backgroundColor: isSoldOut ? '#FF6B6B14' : tintColor + '18' }]}>
@@ -229,7 +296,7 @@ export default function NewsScreen() {
                     <ThemedText type="title" style={[styles.ssdMetricValue, { color: isSoldOut ? '#FF6B6B' : tintColor }]}>
                       {liveSsd.balanceTickets}
                     </ThemedText>
-                    <ThemedText style={styles.ssdMetricSubtext}>for {liveSsd.date}</ThemedText>
+                    <ThemedText style={styles.ssdMetricSubtext}>for {liveSsd.balanceDate ?? ssdDisplayDate}</ThemedText>
                   </View>
                 </View>
 
@@ -263,6 +330,41 @@ export default function NewsScreen() {
               </ThemedView>
             </Animated.View>
           )}
+        />
+      ) : (
+        <FlatList
+          key="schedule-list"
+          data={effectiveDaySchedule.schedules}
+          keyExtractor={(item, index) => `${item.time}-${item.event}-${index}`}
+          contentContainerStyle={styles.scheduleListContent}
+          showsVerticalScrollIndicator={false}
+          ListHeaderComponent={
+            <ThemedView style={[styles.scheduleDateHeader, { borderColor, backgroundColor: tintColor + '14' }]}> 
+              <View style={{ gap: 2 }}>
+                <ThemedText type="defaultSemiBold" style={[styles.scheduleDateTitle, { color: tintColor }]}>Today's Schedule</ThemedText>
+                <ThemedText style={styles.scheduleDateSubtext}>{effectiveDaySchedule.day} • {effectiveDaySchedule.date}</ThemedText>
+              </View>
+            </ThemedView>
+          }
+          renderItem={({ item }) => {
+            const timePart = item.time;
+            const sevaName = item.event;
+            const hour = parseInt((item.time.match(/\d{1,2}/)?.[0] ?? '0'), 10);
+            const periodColor =
+              hour >= 2 && hour < 6 ? '#7B68EE' :
+              hour >= 6 && hour < 12 ? '#FF8C00' :
+              hour >= 12 && hour < 17 ? '#2196F3' :
+              hour >= 17 && hour < 20 ? '#FF6B35' : '#3F51B5';
+
+            return (
+              <ThemedView style={[styles.scheduleCard, { borderColor, borderLeftColor: periodColor }]}> 
+                <View style={[styles.scheduleTimePill, { backgroundColor: periodColor + '1A' }]}> 
+                  <ThemedText style={[styles.scheduleTimeText, { color: periodColor }]}>{timePart}</ThemedText>
+                </View>
+                <ThemedText type="defaultSemiBold" style={styles.scheduleSevaName}>{sevaName}</ThemedText>
+              </ThemedView>
+            );
+          }}
         />
       )}
     </ThemedView>
@@ -354,6 +456,16 @@ const styles = StyleSheet.create({
   waitingTitle: { fontSize: 12, fontWeight: '600' },
   waitingValue: { fontSize: 12, lineHeight: 17 },
   infoDetail: { fontSize: 14, lineHeight: 20 },
+  // Day Schedule
+  scheduleListContent: { paddingHorizontal: 12, paddingTop: 14, paddingBottom: 24, gap: 10 },
+  scheduleDateHeader: { borderWidth: 1, borderRadius: 14, padding: 14, marginBottom: 4 },
+  scheduleDateTitle: { fontSize: 15 },
+  scheduleDateSubtext: { fontSize: 12, lineHeight: 17, opacity: 0.7 },
+  scheduleCard: { borderWidth: 1, borderLeftWidth: 4, borderRadius: 12, padding: 12, gap: 6 },
+  scheduleTimePill: { alignSelf: 'flex-start', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 20 },
+  scheduleTimeText: { fontSize: 11, fontWeight: '600', lineHeight: 16 },
+  scheduleSevaName: { fontSize: 14, lineHeight: 20 },
+  scheduleDetail: { fontSize: 12, lineHeight: 17, opacity: 0.75 },
   // SSD Token
   ssdListContent: { paddingHorizontal: 12, paddingTop: 14, paddingBottom: 24, gap: 10 },
   ssdInfoCard: { borderWidth: 1, borderRadius: 12, padding: 14, flexDirection: 'row', gap: 12, alignItems: 'flex-start' },

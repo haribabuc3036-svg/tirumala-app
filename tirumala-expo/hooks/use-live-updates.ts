@@ -30,6 +30,8 @@ export type LiveSsdStatus = {
   runningSlot: string;
   balanceTickets: string;
   date: string;
+  slotDate?: string;
+  balanceDate?: string;
 };
 
 export type LivePilgrimsToday = {
@@ -41,9 +43,24 @@ export type LivePilgrimsToday = {
   time: string;
 };
 
+export type LivePilgrimsRecentItem = LivePilgrimsToday;
+
+export type LiveDayScheduleItem = {
+  event: string;
+  time: string;
+};
+
+export type LiveDaySchedule = {
+  date: string;
+  day: string;
+  schedules: LiveDayScheduleItem[];
+};
+
 export type LiveUpdates = {
   ssdToken: LiveSsdStatus | null;
   pilgrimsToday: LivePilgrimsToday | null;
+  pilgrimsRecent: LivePilgrimsRecentItem[];
+  daySchedule: LiveDaySchedule | null;
   sarvaQueueTime: string | null;
   loading: boolean;
   error: string | null;
@@ -52,6 +69,8 @@ export type LiveUpdates = {
 export function useLiveUpdates(): LiveUpdates {
   const [ssdToken, setSsdToken] = useState<LiveSsdStatus | null>(null);
   const [pilgrimsToday, setPilgrimsToday] = useState<LivePilgrimsToday | null>(null);
+  const [pilgrimsRecent, setPilgrimsRecent] = useState<LivePilgrimsRecentItem[]>([]);
+  const [daySchedule, setDaySchedule] = useState<LiveDaySchedule | null>(null);
   const [sarvaQueueTime, setSarvaQueueTime] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -70,6 +89,8 @@ export function useLiveUpdates(): LiveUpdates {
               runningSlot: String(data.ssd_token.running_slot ?? '—'),
               balanceTickets: String(data.ssd_token.balance_tickets ?? '0'),
               date: String(data.ssd_token.date ?? ''),
+              ...(data.ssd_token.slot_date ? { slotDate: String(data.ssd_token.slot_date) } : {}),
+              ...(data.ssd_token.balance_date ? { balanceDate: String(data.ssd_token.balance_date) } : {}),
             });
           }
           if (data.pilgrims_today) {
@@ -80,6 +101,28 @@ export function useLiveUpdates(): LiveUpdates {
               hundi: String(data.pilgrims_today.hundi ?? '—'),
               waiting: String(data.pilgrims_today.waiting ?? '—'),
               time: String(data.pilgrims_today.time ?? '—'),
+            });
+          }
+          if (Array.isArray(data.pilgrims_recent)) {
+            setPilgrimsRecent(
+              data.pilgrims_recent.map((item: any) => ({
+                date: String(item.date ?? ''),
+                pilgrims: String(item.pilgrims ?? '—'),
+                tonsures: String(item.tonsures ?? '—'),
+                hundi: String(item.hundi ?? '—'),
+                waiting: String(item.waiting ?? '—'),
+                time: String(item.darshan_time ?? item.time ?? '—'),
+              }))
+            );
+          }
+          if (data.day_schedule && Array.isArray(data.day_schedule.schedules)) {
+            setDaySchedule({
+              date: String(data.day_schedule.date ?? ''),
+              day: String(data.day_schedule.day ?? ''),
+              schedules: data.day_schedule.schedules.map((item: any) => ({
+                event: String(item.event ?? ''),
+                time: String(item.time ?? ''),
+              })),
             });
           }
           if (data.sarva_darshan_queue != null) {
@@ -97,5 +140,5 @@ export function useLiveUpdates(): LiveUpdates {
     return () => unsubscribe();
   }, []);
 
-  return { ssdToken, pilgrimsToday, sarvaQueueTime, loading, error };
+  return { ssdToken, pilgrimsToday, pilgrimsRecent, daySchedule, sarvaQueueTime, loading, error };
 }
