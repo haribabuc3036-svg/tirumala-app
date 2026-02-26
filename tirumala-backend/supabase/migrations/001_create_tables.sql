@@ -31,10 +31,14 @@ CREATE TABLE IF NOT EXISTS public.services_catalog (
   category_id      TEXT        NOT NULL,
   category_heading TEXT        NOT NULL,
   category_icon    TEXT        NOT NULL,
+  category_image   TEXT,
+  category_image_public_id TEXT,
   category_order   INTEGER     NOT NULL DEFAULT 0,
   title            TEXT        NOT NULL,
   description      TEXT        NOT NULL,
   icon             TEXT        NOT NULL,
+  icon_image       TEXT,
+  icon_image_public_id TEXT,
   url              TEXT        NOT NULL,
   tag              TEXT,
   tag_color        TEXT,
@@ -45,6 +49,30 @@ CREATE TABLE IF NOT EXISTS public.services_catalog (
 
 CREATE INDEX IF NOT EXISTS idx_services_catalog_category_order
   ON public.services_catalog (category_order ASC, sort_order ASC);
+
+ALTER TABLE IF EXISTS public.services_catalog
+  ADD COLUMN IF NOT EXISTS category_image TEXT;
+
+ALTER TABLE IF EXISTS public.services_catalog
+  ADD COLUMN IF NOT EXISTS category_image_public_id TEXT;
+
+ALTER TABLE IF EXISTS public.services_catalog
+  ADD COLUMN IF NOT EXISTS icon_image TEXT;
+
+ALTER TABLE IF EXISTS public.services_catalog
+  ADD COLUMN IF NOT EXISTS icon_image_public_id TEXT;
+
+CREATE TABLE IF NOT EXISTS public.service_images (
+  id         BIGSERIAL PRIMARY KEY,
+  service_id TEXT        NOT NULL REFERENCES public.services_catalog(id) ON DELETE CASCADE,
+  image_url  TEXT        NOT NULL,
+  public_id  TEXT,
+  sort_order INTEGER     NOT NULL DEFAULT 0,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_service_images_service_sort_order
+  ON public.service_images (service_id ASC, sort_order ASC);
 
 -- ─── wallpapers ───────────────────────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS public.wallpapers (
@@ -107,6 +135,7 @@ CREATE INDEX IF NOT EXISTS idx_place_photos_place_sort_order
 ALTER TABLE public.darshan_updates ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.ssd_status      ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.services_catalog ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.service_images ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.wallpapers ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.place_regions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.places ENABLE ROW LEVEL SECURITY;
@@ -123,6 +152,12 @@ CREATE POLICY "service role full access services" ON public.services_catalog
   FOR ALL USING (auth.role() = 'service_role');
 
 CREATE POLICY "anon read services" ON public.services_catalog
+  FOR SELECT USING (auth.role() = 'anon' OR auth.role() = 'authenticated');
+
+CREATE POLICY "service role full access service images" ON public.service_images
+  FOR ALL USING (auth.role() = 'service_role');
+
+CREATE POLICY "anon read service images" ON public.service_images
   FOR SELECT USING (auth.role() = 'anon' OR auth.role() = 'authenticated');
 
 CREATE POLICY "service role full access wallpapers" ON public.wallpapers

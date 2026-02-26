@@ -1,7 +1,8 @@
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
+import { Image } from 'expo-image';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import * as Linking from 'expo-linking';
-import { Alert, Image, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Alert, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
@@ -55,7 +56,29 @@ export default function ServiceDetailScreen() {
       <ScrollView
         contentContainerStyle={[styles.content, { paddingTop: insets.top + 14, paddingBottom: 30 }]}
         showsVerticalScrollIndicator={false}>
-        <Image source={require('@/assets/images/splash-icon.png')} style={styles.image} resizeMode="cover" />
+        {service.images && service.images.length > 0 ? (
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.galleryRow}>
+            {service.images.map((imageUrl, index) => (
+              <Image
+                key={`${service.id}-image-${index}`}
+                source={{ uri: imageUrl }}
+                style={styles.galleryImage}
+                contentFit="cover"
+                transition={180}
+              />
+            ))}
+          </ScrollView>
+        ) : (
+          <Image
+            source={require('@/assets/images/splash-icon.png')}
+            style={styles.image}
+            contentFit="cover"
+            transition={180}
+          />
+        )}
 
         <View style={styles.titleRow}>
           <View style={[styles.iconBubble, { backgroundColor: `${tintColor}1A` }]}>
@@ -91,6 +114,15 @@ const styles = StyleSheet.create({
   },
   image: {
     width: '100%',
+    height: 200,
+    borderRadius: 16,
+  },
+  galleryRow: {
+    paddingRight: 6,
+    gap: 10,
+  },
+  galleryImage: {
+    width: 280,
     height: 200,
     borderRadius: 16,
   },

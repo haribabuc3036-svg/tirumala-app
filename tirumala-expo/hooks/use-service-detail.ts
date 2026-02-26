@@ -22,7 +22,7 @@ export function useServiceDetail(id?: string) {
       try {
         const { data, error: queryError } = await supabase
           .from('services_catalog')
-          .select('id,title,description,icon,url,tag,tag_color')
+          .select('id,title,description,icon,image,url,tag,tag_color')
           .eq('id', id)
           .maybeSingle();
 
@@ -34,12 +34,32 @@ export function useServiceDetail(id?: string) {
           throw new Error('Service not found');
         }
 
+        const { data: imageRows, error: imagesError } = await supabase
+          .from('service_images')
+          .select('image_url,sort_order')
+          .eq('service_id', id)
+          .order('sort_order', { ascending: true });
+
+        const imagesTableMissing =
+          imagesError && (
+            imagesError.message.includes('service_images') ||
+            imagesError.code === 'PGRST205'
+          );
+
+        if (imagesError && !imagesTableMissing) {
+          throw new Error(imagesError.message);
+        }
+
+        const images = imagesTableMissing ? [] : (imageRows ?? []).map((row) => row.image_url);
+
         if (!cancelled) {
           setService({
             id: data.id,
             title: data.title,
             description: data.description,
             icon: data.icon as Service['icon'],
+            ...(data.image ? { iconImage: data.image } : {}),
+            ...(images.length > 0 ? { images } : {}),
             url: data.url,
             ...(data.tag ? { tag: data.tag } : {}),
             ...(data.tag_color ? { tagColor: data.tag_color } : {}),

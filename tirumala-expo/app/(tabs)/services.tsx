@@ -1,10 +1,12 @@
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
+import { Image } from 'expo-image';
 import { router } from 'expo-router';
 import { FlatList, Pressable, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { resolveTtdIcon } from '@/constants/ttd-service-icons';
 import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useServicesCatalog } from '@/hooks/use-services-catalog';
@@ -47,7 +49,15 @@ export default function ServicesScreen() {
             ]}>
             <View style={styles.sectionHeader}>
               <View style={[styles.sectionHeaderIcon, { backgroundColor: `${sectionAccent}20` }]}>
-                <MaterialCommunityIcons name={category.icon} size={14} color={sectionAccent} />
+                {category.image ? (
+                  <Image source={{ uri: category.image }} style={styles.sectionHeaderImage} contentFit="contain" />
+                ) : (
+                  <MaterialCommunityIcons
+                    name={resolveTtdIcon(category.heading, category.icon)}
+                    size={14}
+                    color={sectionAccent}
+                  />
+                )}
               </View>
               <ThemedText type="defaultSemiBold" style={[styles.sectionTitle, { color: sectionAccent }]}> 
                 {category.heading}
@@ -77,7 +87,15 @@ export default function ServicesScreen() {
                     router.push({ pathname: '/service/[id]', params: { id: service.id } })
                   }>
                   <View style={[styles.iconCircle, { backgroundColor: `${sectionAccent}20` }]}>
-                    <MaterialCommunityIcons name={service.icon} size={16} color={sectionAccent} />
+                    {service.iconImage ? (
+                      <Image source={{ uri: service.iconImage }} style={styles.serviceImage} contentFit="contain" />
+                    ) : (
+                      <MaterialCommunityIcons
+                        name={resolveTtdIcon(service.title, service.icon)}
+                        size={16}
+                        color={sectionAccent}
+                      />
+                    )}
                   </View>
                   <ThemedText style={styles.title} numberOfLines={2}>
                     {service.title}
@@ -142,6 +160,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+  sectionHeaderImage: {
+    width: 18,
+    height: 18,
+  },
   sectionTitle: {
     fontSize: 15.5,
     flex: 1,
@@ -171,6 +193,10 @@ const styles = StyleSheet.create({
     borderRadius: 19,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  serviceImage: {
+    width: 22,
+    height: 22,
   },
   title: {
     textAlign: 'center',

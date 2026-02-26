@@ -82,6 +82,34 @@ export async function uploadPlacePhotoToCloudinary(
   return uploadImageToCloudinary(fileBuffer, fileName, env.cloudinary.placesFolder);
 }
 
+export async function uploadServiceImageToCloudinary(
+  fileBuffer: Buffer,
+  fileName: string
+): Promise<CloudinaryUploadResult> {
+  return uploadImageToCloudinary(fileBuffer, fileName, `${env.cloudinary.servicesFolder}/items`);
+}
+
+export async function uploadServiceIconToCloudinary(
+  fileBuffer: Buffer,
+  fileName: string
+): Promise<CloudinaryUploadResult> {
+  return uploadImageToCloudinary(fileBuffer, fileName, `${env.cloudinary.servicesFolder}/icons`);
+}
+
+export async function uploadServiceDetailImageToCloudinary(
+  fileBuffer: Buffer,
+  fileName: string
+): Promise<CloudinaryUploadResult> {
+  return uploadImageToCloudinary(fileBuffer, fileName, `${env.cloudinary.servicesFolder}/details`);
+}
+
+export async function uploadServiceCategoryImageToCloudinary(
+  fileBuffer: Buffer,
+  fileName: string
+): Promise<CloudinaryUploadResult> {
+  return uploadImageToCloudinary(fileBuffer, fileName, `${env.cloudinary.servicesFolder}/categories`);
+}
+
 export async function uploadPlacePhotoUrlToCloudinary(
   sourceUrl: string,
   fileName: string

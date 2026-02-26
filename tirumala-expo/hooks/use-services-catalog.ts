@@ -7,10 +7,12 @@ type ServiceCatalogRow = {
   category_id: string;
   category_heading: string;
   category_icon: string;
+  category_image: string | null;
   category_order: number;
   title: string;
   description: string;
   icon: string;
+  image: string | null;
   url: string;
   tag: string | null;
   tag_color: string | null;
@@ -26,6 +28,7 @@ function mapRowsToCategories(rows: ServiceCatalogRow[]): ServiceCategory[] {
         id: row.category_id,
         heading: row.category_heading,
         icon: row.category_icon as ServiceCategory['icon'],
+        ...(row.category_image ? { image: row.category_image } : {}),
         services: [],
         _order: row.category_order,
       });
@@ -37,6 +40,7 @@ function mapRowsToCategories(rows: ServiceCatalogRow[]): ServiceCategory[] {
       title: row.title,
       description: row.description,
       icon: row.icon as ServiceCategory['services'][number]['icon'],
+      ...(row.image ? { iconImage: row.image } : {}),
       url: row.url,
       ...(row.tag ? { tag: row.tag } : {}),
       ...(row.tag_color ? { tagColor: row.tag_color } : {}),

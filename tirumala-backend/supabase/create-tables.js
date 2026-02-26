@@ -34,10 +34,14 @@ const sql = `
     category_id      TEXT        NOT NULL,
     category_heading TEXT        NOT NULL,
     category_icon    TEXT        NOT NULL,
+    category_image   TEXT,
+    category_image_public_id TEXT,
     category_order   INTEGER     NOT NULL DEFAULT 0,
     title            TEXT        NOT NULL,
     description      TEXT        NOT NULL,
     icon             TEXT        NOT NULL,
+    icon_image       TEXT,
+    icon_image_public_id TEXT,
     url              TEXT        NOT NULL,
     tag              TEXT,
     tag_color        TEXT,
@@ -48,6 +52,30 @@ const sql = `
 
   CREATE INDEX IF NOT EXISTS idx_services_catalog_category_order
     ON public.services_catalog (category_order ASC, sort_order ASC);
+
+  ALTER TABLE IF EXISTS public.services_catalog
+    ADD COLUMN IF NOT EXISTS category_image TEXT;
+
+  ALTER TABLE IF EXISTS public.services_catalog
+    ADD COLUMN IF NOT EXISTS category_image_public_id TEXT;
+
+  ALTER TABLE IF EXISTS public.services_catalog
+    ADD COLUMN IF NOT EXISTS icon_image TEXT;
+
+  ALTER TABLE IF EXISTS public.services_catalog
+    ADD COLUMN IF NOT EXISTS icon_image_public_id TEXT;
+
+  CREATE TABLE IF NOT EXISTS public.service_images (
+    id         BIGSERIAL PRIMARY KEY,
+    service_id TEXT        NOT NULL REFERENCES public.services_catalog(id) ON DELETE CASCADE,
+    image_url  TEXT        NOT NULL,
+    public_id  TEXT,
+    sort_order INTEGER     NOT NULL DEFAULT 0,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  );
+
+  CREATE INDEX IF NOT EXISTS idx_service_images_service_sort_order
+    ON public.service_images (service_id ASC, sort_order ASC);
 
   CREATE TABLE IF NOT EXISTS public.wallpapers (
     id         TEXT PRIMARY KEY,
@@ -115,6 +143,7 @@ client.connect()
     console.log('   - public.darshan_updates');
     console.log('   - public.ssd_status');
     console.log('   - public.services_catalog');
+    console.log('   - public.service_images');
     console.log('   - public.wallpapers');
     console.log('   - public.place_regions');
     console.log('   - public.places');

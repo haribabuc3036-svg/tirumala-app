@@ -71,10 +71,14 @@ export type Database = {
           category_id: string;
           category_heading: string;
           category_icon: string;
+          category_image: string | null;
+          category_image_public_id: string | null;
           category_order: number;
           title: string;
           description: string;
           icon: string;
+          image: string | null;
+          image_public_id: string | null;
           url: string;
           tag: string | null;
           tag_color: string | null;
@@ -87,10 +91,14 @@ export type Database = {
           category_id: string;
           category_heading: string;
           category_icon: string;
+          category_image?: string | null;
+          category_image_public_id?: string | null;
           category_order?: number;
           title: string;
           description: string;
           icon: string;
+          image?: string | null;
+          image_public_id?: string | null;
           url: string;
           tag?: string | null;
           tag_color?: string | null;
@@ -103,16 +111,47 @@ export type Database = {
           category_id?: string;
           category_heading?: string;
           category_icon?: string;
+          category_image?: string | null;
+          category_image_public_id?: string | null;
           category_order?: number;
           title?: string;
           description?: string;
           icon?: string;
+          image?: string | null;
+          image_public_id?: string | null;
           url?: string;
           tag?: string | null;
           tag_color?: string | null;
           sort_order?: number;
           created_at?: string | null;
           updated_at?: string | null;
+        };
+        Relationships: [];
+      };
+      service_images: {
+        Row: {
+          id: number;
+          service_id: string;
+          image_url: string;
+          public_id: string | null;
+          sort_order: number;
+          created_at: string;
+        };
+        Insert: {
+          id?: never;
+          service_id: string;
+          image_url: string;
+          public_id?: string | null;
+          sort_order?: number;
+          created_at?: string | null;
+        };
+        Update: {
+          id?: never;
+          service_id?: string;
+          image_url?: string;
+          public_id?: string | null;
+          sort_order?: number;
+          created_at?: string | null;
         };
         Relationships: [];
       };

@@ -21,7 +21,7 @@ type DarshanNewsItem = {
   time: string;
 };
 
-type NewsSubTab = 'ssd' | 'schedule' | 'pilgrims';
+type NewsSubTab = 'ssd' | 'pilgrims';
 
 type InfoItem = {
   id: string;
@@ -71,88 +71,6 @@ const SSD_TOKEN_INFO: InfoItem[] = [
   },
 ];
 
-const DAY_SCHEDULE_INFO: InfoItem[] = [
-  {
-    id: '1',
-    title: '02:30 - 03:00 hrs • Suprabhatam',
-    detail: 'Start of the temple daily schedule.',
-    icon: 'weather-sunset-up',
-  },
-  {
-    id: '2',
-    title: '03:30 - 04:00 hrs • Thomala Seva',
-    detail: 'Morning seva in the early hours.',
-    icon: 'calendar-clock-outline',
-  },
-  {
-    id: '3',
-    title: '04:00 - 04:15 hrs • Koluvu and Panchanga Sravanam',
-    detail: 'Inside Bangaru Vakili (Ekantam).',
-    icon: 'book-open-variant-outline',
-  },
-  {
-    id: '4',
-    title: '04:15 - 05:00 hrs • First Archana',
-    detail: 'Sahasranama Archana (Ekantam).',
-    icon: 'hands-pray',
-  },
-  {
-    id: '5',
-    title: '06:00 - 08:00 hrs • Abhishekam & Second Archana',
-    detail: 'SahasraKalasa Abhishekam, Second Archana (Ekantam) and Bell.',
-    icon: 'bell-outline',
-  },
-  {
-    id: '6',
-    title: '09:30 - 19:00 hrs • Darshanam',
-    detail: 'Main darshan window through daytime.',
-    icon: 'account-group-outline',
-  },
-  {
-    id: '7',
-    title: '12:00 - 17:00 hrs • Arjitha Sevas',
-    detail: 'Kalyanostavam, Brahmostavam, Vasanthostavam, Unjal Seva.',
-    icon: 'flower-outline',
-  },
-  {
-    id: '8',
-    title: '17:30 - 18:30 hrs • Sahasra Deepalankarana Seva',
-    detail: 'Evening seva period.',
-    icon: 'candle',
-  },
-  {
-    id: '9',
-    title: '19:00 - 20:00 hrs • Suddhi & Night Kainkaryams',
-    detail: 'Ekantam and Night Bell.',
-    icon: 'weather-night',
-  },
-  {
-    id: '10',
-    title: '20:00 - 00:30 hrs • Darshanam',
-    detail: 'Night darshan window.',
-    icon: 'clock-time-eight-outline',
-  },
-  {
-    id: '11',
-    title: '00:30 - 00:45 hrs • Suddhi & Preparation',
-    detail: 'Preparations for Ekanta Seva.',
-    icon: 'wrench-clock',
-  },
-  {
-    id: '12',
-    title: '00:45 hrs • Ekanta Seva',
-    detail: 'Final seva of the day.',
-    icon: 'weather-night',
-  },
-];
-
-const TODAY_LABEL = new Date().toLocaleDateString('en-IN', {
-  weekday: 'long',
-  day: 'numeric',
-  month: 'long',
-  year: 'numeric',
-});
-
 export default function NewsScreen() {
   const colorScheme = useColorScheme() ?? 'light';
   const borderColor = Colors[colorScheme].icon;
@@ -189,7 +107,6 @@ export default function NewsScreen() {
 
         <View style={[styles.subTabsWrap, { borderColor }]}>
           <SubTabButton label="Pilgrim Updates" active={activeTab === 'pilgrims'} onPress={() => setActiveTab('pilgrims')} tintColor={tintColor} />
-          <SubTabButton label="Day Schedules" active={activeTab === 'schedule'} onPress={() => setActiveTab('schedule')} tintColor={tintColor} />
           <SubTabButton label="SSD Token" active={activeTab === 'ssd'} onPress={() => setActiveTab('ssd')} tintColor={tintColor} />
         </View> 
       </View>
@@ -272,7 +189,7 @@ export default function NewsScreen() {
             </Animated.View>
           )}
         />
-      ) : (activeTab as NewsSubTab) === 'ssd' ? (
+      ) : (
         <FlatList
           key="ssd-list"
           data={SSD_TOKEN_INFO}
@@ -346,60 +263,6 @@ export default function NewsScreen() {
               </ThemedView>
             </Animated.View>
           )}
-        />
-      ) : (
-        <FlatList
-          key={`info-list-${activeTab}`}
-          data={DAY_SCHEDULE_INFO}
-          keyExtractor={(item) => item.id}
-          contentContainerStyle={styles.infoListContent}
-          showsVerticalScrollIndicator={false}
-          ListHeaderComponent={
-            <Animated.View entering={FadeInDown.duration(350)} style={{ marginBottom: 4 }}>
-              <ThemedView style={[styles.scheduleDateHeader, { borderColor, backgroundColor: tintColor + '14' }]}>
-                <View style={[styles.scheduleDateIconWrap, { backgroundColor: tintColor + '22' }]}>
-                  <MaterialCommunityIcons name="calendar-today" size={22} color={tintColor} />
-                </View>
-                <View style={{ gap: 2 }}>
-                  <ThemedText type="defaultSemiBold" style={[styles.scheduleDateTitle, { color: tintColor }]}>Today's Schedule</ThemedText>
-                  <ThemedText style={styles.scheduleDateSubtext}>{TODAY_LABEL}</ThemedText>
-                </View>
-              </ThemedView>
-            </Animated.View>
-          }
-          renderItem={({ item, index }) => {
-            const parts = item.title.split(' • ');
-            const timePart = parts[0].replace(' hrs', '').trim();
-            const sevaName = parts[1] ?? '';
-            const stepNum = String(index + 1).padStart(2, '0');
-            const hour = parseInt(item.title.split(':')[0], 10);
-            const periodColor =
-              hour >= 2 && hour < 6 ? '#7B68EE' :
-              hour >= 6 && hour < 12 ? '#FF8C00' :
-              hour >= 12 && hour < 17 ? '#2196F3' :
-              hour >= 17 && hour < 20 ? '#FF6B35' : '#3F51B5';
-            const isLast = index === DAY_SCHEDULE_INFO.length - 1;
-            return (
-              <Animated.View entering={FadeInDown.delay(index * 55).duration(360)}>
-                <View style={styles.scheduleCardOuter}>
-                  <View style={styles.scheduleTimelineCol}>
-                    <View style={[styles.scheduleStepBadge, { backgroundColor: periodColor + '22', borderColor: periodColor + '55', borderWidth: 1 }]}>
-                      <ThemedText style={[styles.scheduleStepText, { color: periodColor }]}>{stepNum}</ThemedText>
-                    </View>
-                    {!isLast && <View style={[styles.scheduleConnector, { backgroundColor: periodColor + '40' }]} />}
-                  </View>
-                  <ThemedView style={[styles.scheduleCard, { borderColor, borderLeftColor: periodColor }]}>
-                    <View style={[styles.scheduleTimePill, { backgroundColor: periodColor + '1A' }]}>
-                      <MaterialCommunityIcons name={item.icon} size={12} color={periodColor} />
-                      <ThemedText style={[styles.scheduleTimeText, { color: periodColor }]}>{timePart}</ThemedText>
-                    </View>
-                    <ThemedText type="defaultSemiBold" style={styles.scheduleSevaName}>{sevaName}</ThemedText>
-                    <ThemedText style={styles.scheduleDetail}>{item.detail}</ThemedText>
-                  </ThemedView>
-                </View>
-              </Animated.View>
-            );
-          }}
         />
       )}
     </ThemedView>
@@ -490,25 +353,7 @@ const styles = StyleSheet.create({
   waitingTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 5 },
   waitingTitle: { fontSize: 12, fontWeight: '600' },
   waitingValue: { fontSize: 12, lineHeight: 17 },
-  // Day Schedules
-  infoListContent: { paddingHorizontal: 12, paddingTop: 14, paddingBottom: 24, gap: 0 },
-  infoCard: { borderWidth: 1, borderRadius: 14, padding: 12, gap: 8 },
-  infoTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   infoDetail: { fontSize: 14, lineHeight: 20 },
-  scheduleDateHeader: { borderWidth: 1, borderRadius: 14, padding: 14, flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 16 },
-  scheduleDateIconWrap: { width: 44, height: 44, borderRadius: 22, justifyContent: 'center', alignItems: 'center' },
-  scheduleDateTitle: { fontSize: 15 },
-  scheduleDateSubtext: { fontSize: 12, lineHeight: 17, opacity: 0.7 },
-  scheduleCardOuter: { flexDirection: 'row', alignItems: 'flex-start', gap: 10, marginBottom: 10 },
-  scheduleTimelineCol: { alignItems: 'center', width: 34 },
-  scheduleStepBadge: { width: 34, height: 34, borderRadius: 17, justifyContent: 'center', alignItems: 'center' },
-  scheduleStepText: { fontSize: 11, fontWeight: '700', lineHeight: 16 },
-  scheduleConnector: { width: 2, flex: 1, minHeight: 10, marginTop: 4 },
-  scheduleCard: { flex: 1, borderWidth: 1, borderLeftWidth: 4, borderRadius: 12, padding: 12, gap: 6 },
-  scheduleTimePill: { flexDirection: 'row', alignItems: 'center', gap: 5, alignSelf: 'flex-start', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 20 },
-  scheduleTimeText: { fontSize: 11, fontWeight: '600', lineHeight: 16 },
-  scheduleSevaName: { fontSize: 14, lineHeight: 20 },
-  scheduleDetail: { fontSize: 12, lineHeight: 17, opacity: 0.75 },
   // SSD Token
   ssdListContent: { paddingHorizontal: 12, paddingTop: 14, paddingBottom: 24, gap: 10 },
   ssdInfoCard: { borderWidth: 1, borderRadius: 12, padding: 14, flexDirection: 'row', gap: 12, alignItems: 'flex-start' },

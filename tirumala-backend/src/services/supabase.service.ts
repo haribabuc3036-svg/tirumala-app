@@ -18,6 +18,8 @@ type SsdInsert = Database['public']['Tables']['ssd_status']['Insert'];
 type ServiceCatalogRow = Database['public']['Tables']['services_catalog']['Row'];
 type ServiceCatalogInsert = Database['public']['Tables']['services_catalog']['Insert'];
 type ServiceCatalogUpdate = Database['public']['Tables']['services_catalog']['Update'];
+type ServiceImageRow = Database['public']['Tables']['service_images']['Row'];
+type ServiceImageInsert = Database['public']['Tables']['service_images']['Insert'];
 type WallpaperRow = Database['public']['Tables']['wallpapers']['Row'];
 type WallpaperInsert = Database['public']['Tables']['wallpapers']['Insert'];
 type PlaceRegionRow = Database['public']['Tables']['place_regions']['Row'];
@@ -114,15 +116,39 @@ export type ServiceCategoryResponse = {
   id: string;
   heading: string;
   icon: string;
+  image?: string;
   services: {
     id: string;
     title: string;
     description: string;
     icon: string;
+    iconImage?: string;
     url: string;
     tag?: string;
     tagColor?: string;
   }[];
+};
+
+export type ServiceDetailResponse = {
+  id: string;
+  categoryId: string;
+  categoryHeading: string;
+  title: string;
+  description: string;
+  icon: string;
+  iconImage?: string;
+  images: string[];
+  url: string;
+  tag?: string;
+  tagColor?: string;
+};
+
+export type ServiceImageAdminResponse = {
+  id: number;
+  serviceId: string;
+  imageUrl: string;
+  publicId: string | null;
+  sortOrder: number;
 };
 
 function mapRowsToCategories(rows: ServiceCatalogRow[]): ServiceCategoryResponse[] {
@@ -134,6 +160,7 @@ function mapRowsToCategories(rows: ServiceCatalogRow[]): ServiceCategoryResponse
         id: row.category_id,
         heading: row.category_heading,
         icon: row.category_icon,
+        ...(row.category_image ? { image: row.category_image } : {}),
         services: [],
         _order: row.category_order,
       });
@@ -145,6 +172,7 @@ function mapRowsToCategories(rows: ServiceCatalogRow[]): ServiceCategoryResponse
       title: row.title,
       description: row.description,
       icon: row.icon,
+      ...(row.image ? { iconImage: row.image } : {}),
       url: row.url,
       ...(row.tag ? { tag: row.tag } : {}),
       ...(row.tag_color ? { tagColor: row.tag_color } : {}),
@@ -176,6 +204,27 @@ export async function getServiceById(serviceId: string): Promise<ServiceCatalogR
 
   if (error) throw new Error(error.message);
   return data;
+}
+
+export async function getServiceDetailById(serviceId: string): Promise<ServiceDetailResponse | null> {
+  const service = await getServiceById(serviceId);
+  if (!service) return null;
+
+  const images = await getServiceImagesByServiceId(serviceId);
+
+  return {
+    id: service.id,
+    categoryId: service.category_id,
+    categoryHeading: service.category_heading,
+    title: service.title,
+    description: service.description,
+    icon: service.icon,
+    ...(service.image ? { iconImage: service.image } : {}),
+    images: images.map((image) => image.image_url),
+    url: service.url,
+    ...(service.tag ? { tag: service.tag } : {}),
+    ...(service.tag_color ? { tagColor: service.tag_color } : {}),
+  };
 }
 
 export async function createServiceCatalogItem(
@@ -219,6 +268,108 @@ export async function deleteServiceCatalogItem(serviceId: string): Promise<boole
 
   if (error) throw new Error(error.message);
   return Boolean(data?.id);
+}
+
+export async function getServiceImagesByServiceId(serviceId: string): Promise<ServiceImageRow[]> {
+  const { data, error } = await supabaseAdmin
+    .from('service_images')
+    .select('*')
+    .eq('service_id', serviceId)
+    .order('sort_order', { ascending: true });
+
+  if (error) {
+    if (
+      error.message.includes('service_images') ||
+      (typeof error.code === 'string' && (error.code === 'PGRST205' || error.code === '42P01'))
+    ) {
+      return [];
+    }
+    throw new Error(error.message);
+  }
+  return data ?? [];
+}
+
+export async function createServiceImage(payload: ServiceImageInsert): Promise<ServiceImageAdminResponse> {
+  const { data, error } = await supabaseAdmin
+    .from('service_images')
+    .insert(payload)
+    .select('*')
+    .single();
+
+  if (error) throw new Error(error.message);
+  return {
+    id: data.id,
+    serviceId: data.service_id,
+    imageUrl: data.image_url,
+    publicId: data.public_id,
+    sortOrder: data.sort_order,
+  };
+}
+
+export async function getServiceImageById(imageId: number): Promise<ServiceImageRow | null> {
+  const { data, error } = await supabaseAdmin
+    .from('service_images')
+    .select('*')
+    .eq('id', imageId)
+    .maybeSingle();
+
+  if (error) throw new Error(error.message);
+  return data;
+}
+
+export async function getNextServiceImageSortOrder(serviceId: string): Promise<number> {
+  const { data, error } = await supabaseAdmin
+    .from('service_images')
+    .select('sort_order')
+    .eq('service_id', serviceId)
+    .order('sort_order', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (error) throw new Error(error.message);
+  return (data?.sort_order ?? -1) + 1;
+}
+
+export async function deleteServiceImageById(imageId: number): Promise<boolean> {
+  const { data, error } = await supabaseAdmin
+    .from('service_images')
+    .delete()
+    .eq('id', imageId)
+    .select('id')
+    .maybeSingle();
+
+  if (error) throw new Error(error.message);
+  return Boolean(data?.id);
+}
+
+export async function getServicesByCategoryId(categoryId: string): Promise<ServiceCatalogRow[]> {
+  const { data, error } = await supabaseAdmin
+    .from('services_catalog')
+    .select('*')
+    .eq('category_id', categoryId)
+    .order('sort_order', { ascending: true });
+
+  if (error) throw new Error(error.message);
+  return data ?? [];
+}
+
+export async function updateCategoryImageForServices(
+  categoryId: string,
+  imageUrl: string,
+  publicId: string
+): Promise<number> {
+  const { data, error } = await supabaseAdmin
+    .from('services_catalog')
+    .update({
+      category_image: imageUrl,
+      category_image_public_id: publicId,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('category_id', categoryId)
+    .select('id');
+
+  if (error) throw new Error(error.message);
+  return data?.length ?? 0;
 }
 
 // ─── Wallpapers ───────────────────────────────────────────────────────────────
@@ -616,10 +767,14 @@ export async function syncServicesCatalog(
         category_id: category.id,
         category_heading: category.heading,
         category_icon: category.icon,
+        category_image: category.image ?? null,
+        category_image_public_id: null,
         category_order: categoryIndex,
         title: service.title,
         description: service.description,
         icon: service.icon,
+        image: service.iconImage ?? null,
+        image_public_id: null,
         url: service.url,
         tag: service.tag ?? null,
         tag_color: service.tagColor ?? null,

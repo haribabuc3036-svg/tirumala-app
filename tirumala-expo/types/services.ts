@@ -6,6 +6,8 @@ export type Service = {
   title: string;
   description: string;
   icon: ComponentProps<typeof MaterialCommunityIcons>['name'];
+  iconImage?: string;
+  images?: string[];
   url: string;
   tag?: string;
   tagColor?: string;
@@ -15,6 +17,7 @@ export type ServiceCategory = {
   id: string;
   heading: string;
   icon: ComponentProps<typeof MaterialCommunityIcons>['name'];
+  image?: string;
   services: Service[];
 };
 
@@ -23,10 +26,12 @@ export type ServiceCatalogRow = {
   category_id: string;
   category_heading: string;
   category_icon: ComponentProps<typeof MaterialCommunityIcons>['name'];
+  category_image: string | null;
   category_order: number;
   title: string;
   description: string;
   icon: ComponentProps<typeof MaterialCommunityIcons>['name'];
+  image: string | null;
   url: string;
   tag: string | null;
   tag_color: string | null;

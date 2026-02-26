@@ -3,6 +3,7 @@ export type ServiceSeed = {
   title: string;
   description: string;
   icon: string;
+  iconImage?: string;
   url: string;
   tag?: string;
   tagColor?: string;
@@ -12,6 +13,7 @@ export type ServiceCategorySeed = {
   id: string;
   heading: string;
   icon: string;
+  image?: string;
   services: ServiceSeed[];
 };
 
