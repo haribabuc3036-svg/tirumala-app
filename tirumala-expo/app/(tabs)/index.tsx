@@ -6,22 +6,22 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { Colors } from '@/constants/theme';
+import { Colors, MainTabAccent } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 
 type HomeTab = 'overview' | 'explore' | 'support';
 
 export default function HomeScreen() {
   const colorScheme = useColorScheme() ?? 'light';
-  const tintColor = Colors[colorScheme].tint;
+  const tintColor = MainTabAccent.index;
   const borderColor = Colors[colorScheme].icon;
   const insets = useSafeAreaInsets();
   const [activeTab, setActiveTab] = useState<HomeTab>('overview');
 
   const accentByTab: Record<HomeTab, string> = {
     overview: tintColor,
-    explore: '#FF8C00',
-    support: '#7B68EE',
+    explore: tintColor,
+    support: tintColor,
   };
   const activeAccent = accentByTab[activeTab];
 

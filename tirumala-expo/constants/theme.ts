@@ -27,6 +27,14 @@ export const Colors = {
   },
 };
 
+export const MainTabAccent = {
+  index: '#0A7EA4',
+  news: '#7B68EE',
+  services: '#2196F3',
+  wallpapers: '#FF8C00',
+  places: '#4CAF50',
+} as const;
+
 export const Fonts = Platform.select({
   ios: {
     /** iOS `UIFontDescriptorSystemDesignDefault` */

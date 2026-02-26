@@ -7,7 +7,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { Colors } from '@/constants/theme';
+import { Colors, MainTabAccent } from '@/constants/theme';
 import { useLiveUpdates } from '@/hooks/use-live-updates';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 
@@ -130,7 +130,7 @@ const DAY_SCHEDULE_DATA: DayScheduleData = {
 export default function NewsScreen() {
   const colorScheme = useColorScheme() ?? 'light';
   const borderColor = Colors[colorScheme].icon;
-  const tintColor = Colors[colorScheme].tint;
+  const tintColor = MainTabAccent.news;
   const insets = useSafeAreaInsets();
   const [activeTab, setActiveTab] = useState<NewsSubTab>('pilgrims');
 
@@ -349,17 +349,11 @@ export default function NewsScreen() {
           renderItem={({ item }) => {
             const timePart = item.time;
             const sevaName = item.event;
-            const hour = parseInt((item.time.match(/\d{1,2}/)?.[0] ?? '0'), 10);
-            const periodColor =
-              hour >= 2 && hour < 6 ? '#7B68EE' :
-              hour >= 6 && hour < 12 ? '#FF8C00' :
-              hour >= 12 && hour < 17 ? '#2196F3' :
-              hour >= 17 && hour < 20 ? '#FF6B35' : '#3F51B5';
 
             return (
-              <ThemedView style={[styles.scheduleCard, { borderColor, borderLeftColor: periodColor }]}> 
-                <View style={[styles.scheduleTimePill, { backgroundColor: periodColor + '1A' }]}> 
-                  <ThemedText style={[styles.scheduleTimeText, { color: periodColor }]}>{timePart}</ThemedText>
+              <ThemedView style={[styles.scheduleCard, { borderColor, borderLeftColor: tintColor }]}> 
+                <View style={[styles.scheduleTimePill, { backgroundColor: tintColor + '1A' }]}> 
+                  <ThemedText style={[styles.scheduleTimeText, { color: tintColor }]}>{timePart}</ThemedText>
                 </View>
                 <ThemedText type="defaultSemiBold" style={styles.scheduleSevaName}>{sevaName}</ThemedText>
               </ThemedView>

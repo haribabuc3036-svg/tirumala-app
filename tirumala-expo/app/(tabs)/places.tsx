@@ -6,7 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { Colors } from '@/constants/theme';
+import { Colors, MainTabAccent } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { usePlacesRegions } from '@/hooks/use-places-regions';
 
@@ -22,9 +22,8 @@ const REGION_ICONS: Record<string, keyof typeof MaterialCommunityIcons.glyphMap>
 export default function PlacesScreen() {
   const colorScheme = useColorScheme() ?? 'light';
   const insets = useSafeAreaInsets();
-  const tintColor = Colors[colorScheme].tint;
-  const borderColor = Colors[colorScheme].icon;
-  const textColor = Colors[colorScheme].text;
+  const tintColor = MainTabAccent.places;
+  const borderColor = tintColor;
   const backgroundColor = Colors[colorScheme].background;
   const { regions, loading, error } = usePlacesRegions();
 
@@ -54,7 +53,7 @@ export default function PlacesScreen() {
               </View>
             </View>
 
-            <ThemedText style={[styles.sectionLabel, { color: borderColor }]}>Regions</ThemedText>
+            <ThemedText style={[styles.sectionLabel, { color: tintColor }]}>Regions</ThemedText>
             {error ? <ThemedText style={styles.fallbackNote}>Unable to load regions: {error}</ThemedText> : null}
             {loading ? <ThemedText style={styles.fallbackNote}>Loading places...</ThemedText> : null}
             {!loading && regions.length === 0 ? (
@@ -65,30 +64,10 @@ export default function PlacesScreen() {
         renderItem={({ item }) => {
           const count = item.placeCount;
           const previewPhoto = item.previewPhoto;
-          const accentVariant = count % 3;
-
-          const cardBackground =
-            accentVariant === 0
-              ? `${tintColor}0A`
-              : accentVariant === 1
-              ? `${borderColor}11`
-              : `${textColor}08`;
-
-          const iconBg =
-            accentVariant === 0
-              ? `${tintColor}26`
-              : accentVariant === 1
-              ? `${borderColor}26`
-              : `${tintColor}1D`;
-
-          const chipBg =
-            accentVariant === 0
-              ? `${tintColor}20`
-              : accentVariant === 1
-              ? `${borderColor}22`
-              : `${tintColor}16`;
-
-          const chipTextColor = accentVariant === 1 ? borderColor : tintColor;
+          const cardBackground = `${tintColor}0A`;
+          const iconBg = `${tintColor}26`;
+          const chipBg = `${tintColor}20`;
+          const chipTextColor = tintColor;
 
           return (
             <Pressable
@@ -139,7 +118,7 @@ export default function PlacesScreen() {
                   <ThemedText style={[styles.countText, { color: chipTextColor }]}>{count} places</ThemedText>
                 </View>
                 <View style={[styles.arrowWrap, { borderColor, backgroundColor: `${backgroundColor}40` }]}>
-                  <MaterialCommunityIcons name="arrow-top-right" size={14} color={borderColor} />
+                  <MaterialCommunityIcons name="arrow-top-right" size={14} color={tintColor} />
                 </View>
               </View>
             </Pressable>

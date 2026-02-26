@@ -22,7 +22,7 @@ import Animated, {
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { supabase } from '@/config/supabase';
-import { Colors } from '@/constants/theme';
+import { Colors, MainTabAccent } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -119,7 +119,7 @@ export default function WallpapersScreen() {
   const palette = useMemo(
     () => ({
       borderColor: Colors[colorScheme].icon,
-      tintColor: Colors[colorScheme].tint,
+      tintColor: MainTabAccent.wallpapers,
       cardColor: Colors[colorScheme].background,
     }),
     [colorScheme]

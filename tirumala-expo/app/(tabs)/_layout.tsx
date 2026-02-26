@@ -4,16 +4,12 @@ import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 
 import { HapticTab } from '@/components/haptic-tab';
 import { IconSymbol } from '@/components/ui/icon-symbol';
-import { Colors } from '@/constants/theme';
-import { useColorScheme } from '@/hooks/use-color-scheme';
+import { MainTabAccent } from '@/constants/theme';
 
 export default function TabLayout() {
-  const colorScheme = useColorScheme();
-
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
         headerShown: false,
         tabBarButton: HapticTab,
       }}>
@@ -21,6 +17,7 @@ export default function TabLayout() {
         name="index"
         options={{
           title: 'Home',
+          tabBarActiveTintColor: MainTabAccent.index,
           tabBarIcon: ({ color }) => (
             <MaterialCommunityIcons size={28} name="temple-hindu" color={color} />
           ),
@@ -30,6 +27,7 @@ export default function TabLayout() {
         name="news"
         options={{
           title: 'Darshan News',
+          tabBarActiveTintColor: MainTabAccent.news,
           tabBarIcon: ({ color }) => <IconSymbol size={28} name="newspaper.fill" color={color} />,
         }}
       />
@@ -37,6 +35,7 @@ export default function TabLayout() {
         name="services"
         options={{
           title: 'Services',
+          tabBarActiveTintColor: MainTabAccent.services,
           tabBarIcon: ({ color }) => (
             <MaterialCommunityIcons size={28} name="hand-heart-outline" color={color} />
           ),
@@ -46,6 +45,7 @@ export default function TabLayout() {
         name="wallpapers"
         options={{
           title: 'Wallpapers',
+          tabBarActiveTintColor: MainTabAccent.wallpapers,
           tabBarIcon: ({ color }) => <IconSymbol size={28} name="photo.fill" color={color} />,
         }}
       />
@@ -53,6 +53,7 @@ export default function TabLayout() {
         name="places"
         options={{
           title: 'Places',
+          tabBarActiveTintColor: MainTabAccent.places,
           tabBarIcon: ({ color }) => <IconSymbol size={28} name="map.fill" color={color} />,
         }}
       />

@@ -7,7 +7,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { Colors } from '@/constants/theme';
+import { Colors, MainTabAccent } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useRegionPlaces } from '@/hooks/use-region-places';
 
@@ -15,8 +15,8 @@ export default function RegionPlacesScreen() {
   const { regionId } = useLocalSearchParams<{ regionId: string }>();
   const insets = useSafeAreaInsets();
   const colorScheme = useColorScheme() ?? 'light';
-  const tintColor = Colors[colorScheme].tint;
-  const borderColor = Colors[colorScheme].icon;
+  const tintColor = MainTabAccent.places;
+  const borderColor = tintColor;
   const textColor = Colors[colorScheme].text;
 
   const { region, places, loading, error } = useRegionPlaces(regionId);

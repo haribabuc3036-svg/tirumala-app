@@ -8,7 +8,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { Colors } from '@/constants/theme';
+import { Colors, MainTabAccent } from '@/constants/theme';
 import { usePlaceDetail } from '@/hooks/use-place-detail';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 
@@ -16,8 +16,8 @@ export default function PlaceDetailScreen() {
   const { placeId } = useLocalSearchParams<{ placeId: string }>();
   const insets = useSafeAreaInsets();
   const colorScheme = useColorScheme() ?? 'light';
-  const tintColor = Colors[colorScheme].tint;
-  const borderColor = Colors[colorScheme].icon;
+  const tintColor = MainTabAccent.places;
+  const borderColor = tintColor;
   const textColor = Colors[colorScheme].text;
   const locationChipBackground = colorScheme === 'dark' ? 'rgba(255,255,255,0.92)' : 'rgba(255,255,255,0.96)';
   const locationChipText = '#1E2A32';

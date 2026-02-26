@@ -7,14 +7,12 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { resolveTtdIcon } from '@/constants/ttd-service-icons';
-import { Colors } from '@/constants/theme';
-import { useColorScheme } from '@/hooks/use-color-scheme';
+import { MainTabAccent } from '@/constants/theme';
 import { useServicesCatalog } from '@/hooks/use-services-catalog';
 
 export default function ServicesScreen() {
-  const colorScheme = useColorScheme() ?? 'light';
   const insets = useSafeAreaInsets();
-  const tintColor = Colors[colorScheme].tint;
+  const tintColor = MainTabAccent.services;
   const itemWidth = '31.5%';
   const { categories, error } = useServicesCatalog();
 
