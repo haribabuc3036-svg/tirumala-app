@@ -56,11 +56,19 @@ export type LiveDaySchedule = {
   schedules: LiveDayScheduleItem[];
 };
 
+export type LiveLatestNewsItem = {
+  date: string;
+  image_url: string;
+  link: string;
+  title: string;
+};
+
 export type LiveUpdates = {
   ssdToken: LiveSsdStatus | null;
   pilgrimsToday: LivePilgrimsToday | null;
   pilgrimsRecent: LivePilgrimsRecentItem[];
   daySchedule: LiveDaySchedule | null;
+  latestNews: LiveLatestNewsItem[];
   sarvaQueueTime: string | null;
   loading: boolean;
   error: string | null;
@@ -71,6 +79,7 @@ export function useLiveUpdates(): LiveUpdates {
   const [pilgrimsToday, setPilgrimsToday] = useState<LivePilgrimsToday | null>(null);
   const [pilgrimsRecent, setPilgrimsRecent] = useState<LivePilgrimsRecentItem[]>([]);
   const [daySchedule, setDaySchedule] = useState<LiveDaySchedule | null>(null);
+  const [latestNews, setLatestNews] = useState<LiveLatestNewsItem[]>([]);
   const [sarvaQueueTime, setSarvaQueueTime] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -125,6 +134,21 @@ export function useLiveUpdates(): LiveUpdates {
               })),
             });
           }
+          if (Array.isArray(data.latest_news)) {
+            setLatestNews(
+              data.latest_news.map((item: any) => {
+                const rawImageUrl = String(item.image_url ?? '').trim();
+                const rawLink = String(item.link ?? '').trim();
+
+                return {
+                  date: String(item.date ?? '').trim(),
+                  image_url: rawImageUrl ? encodeURI(rawImageUrl) : '',
+                  link: rawLink,
+                  title: String(item.title ?? '').trim(),
+                };
+              })
+            );
+          }
           if (data.sarva_darshan_queue != null) {
             setSarvaQueueTime(String(data.sarva_darshan_queue));
           }
@@ -140,5 +164,5 @@ export function useLiveUpdates(): LiveUpdates {
     return () => unsubscribe();
   }, []);
 
-  return { ssdToken, pilgrimsToday, pilgrimsRecent, daySchedule, sarvaQueueTime, loading, error };
+  return { ssdToken, pilgrimsToday, pilgrimsRecent, daySchedule, latestNews, sarvaQueueTime, loading, error };
 }
