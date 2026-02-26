@@ -152,6 +152,90 @@ export type Database = {
         };
         Relationships: [];
       };
+      place_regions: {
+        Row: {
+          id: string;
+          title: string;
+          subtitle: string | null;
+          sort_order: number;
+          created_at: string;
+        };
+        Insert: {
+          id: string;
+          title: string;
+          subtitle?: string | null;
+          sort_order?: number;
+          created_at?: string | null;
+        };
+        Update: {
+          id?: string;
+          title?: string;
+          subtitle?: string | null;
+          sort_order?: number;
+          created_at?: string | null;
+        };
+        Relationships: [];
+      };
+      places: {
+        Row: {
+          id: string;
+          region_id: string;
+          name: string;
+          distance_from_tirumala_km: number;
+          description: string;
+          maps_url: string;
+          sort_order: number;
+          created_at: string;
+        };
+        Insert: {
+          id: string;
+          region_id: string;
+          name: string;
+          distance_from_tirumala_km: number;
+          description: string;
+          maps_url: string;
+          sort_order?: number;
+          created_at?: string | null;
+        };
+        Update: {
+          id?: string;
+          region_id?: string;
+          name?: string;
+          distance_from_tirumala_km?: number;
+          description?: string;
+          maps_url?: string;
+          sort_order?: number;
+          created_at?: string | null;
+        };
+        Relationships: [];
+      };
+      place_photos: {
+        Row: {
+          id: number;
+          place_id: string;
+          image_url: string;
+          public_id: string | null;
+          sort_order: number;
+          created_at: string;
+        };
+        Insert: {
+          id?: never;
+          place_id: string;
+          image_url: string;
+          public_id?: string | null;
+          sort_order?: number;
+          created_at?: string | null;
+        };
+        Update: {
+          id?: never;
+          place_id?: string;
+          image_url?: string;
+          public_id?: string | null;
+          sort_order?: number;
+          created_at?: string | null;
+        };
+        Relationships: [];
+      };
     };
     Views: {
       [_ in never]: never;

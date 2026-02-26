@@ -4,6 +4,12 @@ import {
   SERVICE_CATEGORIES_SEED,
   type ServiceCategorySeed,
 } from '../config/services.seed';
+import {
+  PLACE_REGIONS_SEED,
+  PLACES_SEED,
+  type PlaceRegionSeed,
+  type PlaceSeed,
+} from '../config/places.seed';
 
 type DarshanRow = Database['public']['Tables']['darshan_updates']['Row'];
 type DarshanInsert = Database['public']['Tables']['darshan_updates']['Insert'];
@@ -14,6 +20,14 @@ type ServiceCatalogInsert = Database['public']['Tables']['services_catalog']['In
 type ServiceCatalogUpdate = Database['public']['Tables']['services_catalog']['Update'];
 type WallpaperRow = Database['public']['Tables']['wallpapers']['Row'];
 type WallpaperInsert = Database['public']['Tables']['wallpapers']['Insert'];
+type PlaceRegionRow = Database['public']['Tables']['place_regions']['Row'];
+type PlaceRegionInsert = Database['public']['Tables']['place_regions']['Insert'];
+type PlaceRegionUpdate = Database['public']['Tables']['place_regions']['Update'];
+type PlaceRow = Database['public']['Tables']['places']['Row'];
+type PlaceInsert = Database['public']['Tables']['places']['Insert'];
+type PlaceUpdate = Database['public']['Tables']['places']['Update'];
+type PlacePhotoRow = Database['public']['Tables']['place_photos']['Row'];
+type PlacePhotoInsert = Database['public']['Tables']['place_photos']['Insert'];
 
 // ─── Darshan Updates ───────────────────────────────────────────────────────────
 
@@ -252,6 +266,342 @@ export async function deleteWallpaper(id: string): Promise<boolean> {
 
   if (error) throw new Error(error.message);
   return Boolean(data?.id);
+}
+
+// ─── Places ───────────────────────────────────────────────────────────────────
+
+export type PlaceRegionResponse = {
+  id: string;
+  title: string;
+  subtitle?: string;
+};
+
+export type PlaceSummaryResponse = {
+  id: string;
+  name: string;
+  distanceFromTirumalaKm: number;
+  description: string;
+  mapsUrl: string;
+  photos: string[];
+};
+
+export type PlaceDetailResponse = PlaceSummaryResponse & {
+  regionId: string;
+};
+
+export type PlacePhotoAdminResponse = {
+  id: number;
+  placeId: string;
+  imageUrl: string;
+  publicId: string | null;
+  sortOrder: number;
+};
+
+function mapRegionRow(row: PlaceRegionRow): PlaceRegionResponse {
+  return {
+    id: row.id,
+    title: row.title,
+    ...(row.subtitle ? { subtitle: row.subtitle } : {}),
+  };
+}
+
+function mapPlaceRow(row: PlaceRow, photos: PlacePhotoRow[]): PlaceSummaryResponse {
+  return {
+    id: row.id,
+    name: row.name,
+    distanceFromTirumalaKm: Number(row.distance_from_tirumala_km),
+    description: row.description,
+    mapsUrl: row.maps_url,
+    photos: photos
+      .sort((a, b) => a.sort_order - b.sort_order)
+      .map((photo) => photo.image_url),
+  };
+}
+
+export async function getPlaceRegions(): Promise<PlaceRegionResponse[]> {
+  const { data, error } = await supabaseAdmin
+    .from('place_regions')
+    .select('*')
+    .order('sort_order', { ascending: true });
+
+  if (error) throw new Error(error.message);
+  return (data ?? []).map(mapRegionRow);
+}
+
+export async function getPlaceRegionById(regionId: string): Promise<PlaceRegionRow | null> {
+  const { data, error } = await supabaseAdmin
+    .from('place_regions')
+    .select('*')
+    .eq('id', regionId)
+    .maybeSingle();
+
+  if (error) throw new Error(error.message);
+  return data;
+}
+
+export async function createPlaceRegion(payload: PlaceRegionInsert): Promise<PlaceRegionRow> {
+  const { data, error } = await supabaseAdmin
+    .from('place_regions')
+    .insert(payload)
+    .select('*')
+    .single();
+
+  if (error) throw new Error(error.message);
+  return data;
+}
+
+export async function updatePlaceRegion(
+  regionId: string,
+  payload: PlaceRegionUpdate
+): Promise<PlaceRegionRow | null> {
+  const { data, error } = await supabaseAdmin
+    .from('place_regions')
+    .update(payload)
+    .eq('id', regionId)
+    .select('*')
+    .maybeSingle();
+
+  if (error) throw new Error(error.message);
+  return data;
+}
+
+export async function deletePlaceRegion(regionId: string): Promise<boolean> {
+  const { data, error } = await supabaseAdmin
+    .from('place_regions')
+    .delete()
+    .eq('id', regionId)
+    .select('id')
+    .maybeSingle();
+
+  if (error) throw new Error(error.message);
+  return Boolean(data?.id);
+}
+
+export async function getPlacesByRegionId(regionId: string): Promise<PlaceSummaryResponse[]> {
+  const { data: places, error: placesError } = await supabaseAdmin
+    .from('places')
+    .select('*')
+    .eq('region_id', regionId)
+    .order('sort_order', { ascending: true });
+
+  if (placesError) throw new Error(placesError.message);
+
+  if (!places || places.length === 0) {
+    return [];
+  }
+
+  const placeIds = places.map((place) => place.id);
+  const { data: photos, error: photosError } = await supabaseAdmin
+    .from('place_photos')
+    .select('*')
+    .in('place_id', placeIds)
+    .order('sort_order', { ascending: true });
+
+  if (photosError) throw new Error(photosError.message);
+
+  const photosByPlace = new Map<string, PlacePhotoRow[]>();
+  (photos ?? []).forEach((photo) => {
+    const bucket = photosByPlace.get(photo.place_id) ?? [];
+    bucket.push(photo);
+    photosByPlace.set(photo.place_id, bucket);
+  });
+
+  return places.map((place) => mapPlaceRow(place, photosByPlace.get(place.id) ?? []));
+}
+
+export async function getPlaceById(placeId: string): Promise<PlaceDetailResponse | null> {
+  const { data: place, error: placeError } = await supabaseAdmin
+    .from('places')
+    .select('*')
+    .eq('id', placeId)
+    .maybeSingle();
+
+  if (placeError) throw new Error(placeError.message);
+  if (!place) return null;
+
+  const { data: photos, error: photosError } = await supabaseAdmin
+    .from('place_photos')
+    .select('*')
+    .eq('place_id', place.id)
+    .order('sort_order', { ascending: true });
+
+  if (photosError) throw new Error(photosError.message);
+
+  return {
+    ...mapPlaceRow(place, photos ?? []),
+    regionId: place.region_id,
+  };
+}
+
+export async function createPlace(payload: PlaceInsert): Promise<PlaceRow> {
+  const { data, error } = await supabaseAdmin
+    .from('places')
+    .insert(payload)
+    .select('*')
+    .single();
+
+  if (error) throw new Error(error.message);
+  return data;
+}
+
+export async function updatePlace(placeId: string, payload: PlaceUpdate): Promise<PlaceRow | null> {
+  const { data, error } = await supabaseAdmin
+    .from('places')
+    .update(payload)
+    .eq('id', placeId)
+    .select('*')
+    .maybeSingle();
+
+  if (error) throw new Error(error.message);
+  return data;
+}
+
+export async function deletePlace(placeId: string): Promise<boolean> {
+  const { data, error } = await supabaseAdmin
+    .from('places')
+    .delete()
+    .eq('id', placeId)
+    .select('id')
+    .maybeSingle();
+
+  if (error) throw new Error(error.message);
+  return Boolean(data?.id);
+}
+
+export async function placeExists(placeId: string): Promise<boolean> {
+  const { data, error } = await supabaseAdmin
+    .from('places')
+    .select('id')
+    .eq('id', placeId)
+    .maybeSingle();
+
+  if (error) throw new Error(error.message);
+  return Boolean(data?.id);
+}
+
+export async function getPlacePhotosByPlaceId(placeId: string): Promise<PlacePhotoRow[]> {
+  const { data, error } = await supabaseAdmin
+    .from('place_photos')
+    .select('*')
+    .eq('place_id', placeId)
+    .order('sort_order', { ascending: true });
+
+  if (error) throw new Error(error.message);
+  return data ?? [];
+}
+
+export async function createPlacePhoto(payload: PlacePhotoInsert): Promise<PlacePhotoAdminResponse> {
+  const { data, error } = await supabaseAdmin
+    .from('place_photos')
+    .insert(payload)
+    .select('*')
+    .single();
+
+  if (error) throw new Error(error.message);
+  return {
+    id: data.id,
+    placeId: data.place_id,
+    imageUrl: data.image_url,
+    publicId: data.public_id,
+    sortOrder: data.sort_order,
+  };
+}
+
+export async function getPlacePhotoById(photoId: number): Promise<PlacePhotoRow | null> {
+  const { data, error } = await supabaseAdmin
+    .from('place_photos')
+    .select('*')
+    .eq('id', photoId)
+    .maybeSingle();
+
+  if (error) throw new Error(error.message);
+  return data;
+}
+
+export async function getNextPlacePhotoSortOrder(placeId: string): Promise<number> {
+  const { data, error } = await supabaseAdmin
+    .from('place_photos')
+    .select('sort_order')
+    .eq('place_id', placeId)
+    .order('sort_order', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (error) throw new Error(error.message);
+  return (data?.sort_order ?? -1) + 1;
+}
+
+export async function deletePlacePhoto(photoId: number): Promise<boolean> {
+  const { data, error } = await supabaseAdmin
+    .from('place_photos')
+    .delete()
+    .eq('id', photoId)
+    .select('id')
+    .maybeSingle();
+
+  if (error) throw new Error(error.message);
+  return Boolean(data?.id);
+}
+
+export async function syncPlacesCatalog(
+  regionsSeed: PlaceRegionSeed[] = PLACE_REGIONS_SEED,
+  placesSeed: PlaceSeed[] = PLACES_SEED
+): Promise<{ regionsUpserted: number; placesUpserted: number; photosInserted: number }> {
+  const regionPayload: PlaceRegionInsert[] = regionsSeed.map((region) => ({
+    id: region.id,
+    title: region.title,
+    subtitle: region.subtitle ?? null,
+    sort_order: region.sortOrder,
+  }));
+
+  const placePayload: PlaceInsert[] = placesSeed.map((place) => ({
+    id: place.id,
+    region_id: place.regionId,
+    name: place.name,
+    distance_from_tirumala_km: place.distanceFromTirumalaKm,
+    description: place.description,
+    maps_url: place.mapsUrl,
+    sort_order: place.sortOrder,
+  }));
+
+  const photosPayload: PlacePhotoInsert[] = placesSeed.flatMap((place) =>
+    place.photos.map((imageUrl, index) => ({
+      place_id: place.id,
+      image_url: imageUrl,
+      public_id: null,
+      sort_order: index,
+    }))
+  );
+
+  const { error: regionsError } = await supabaseAdmin
+    .from('place_regions')
+    .upsert(regionPayload, { onConflict: 'id' });
+  if (regionsError) throw new Error(regionsError.message);
+
+  const { error: placesError } = await supabaseAdmin
+    .from('places')
+    .upsert(placePayload, { onConflict: 'id' });
+  if (placesError) throw new Error(placesError.message);
+
+  const placeIds = placesSeed.map((place) => place.id);
+  const { error: deletePhotosError } = await supabaseAdmin
+    .from('place_photos')
+    .delete()
+    .in('place_id', placeIds);
+  if (deletePhotosError) throw new Error(deletePhotosError.message);
+
+  if (photosPayload.length > 0) {
+    const { error: photosError } = await supabaseAdmin
+      .from('place_photos')
+      .insert(photosPayload);
+    if (photosError) throw new Error(photosError.message);
+  }
+
+  return {
+    regionsUpserted: regionPayload.length,
+    placesUpserted: placePayload.length,
+    photosInserted: photosPayload.length,
+  };
 }
 
 export async function syncServicesCatalog(

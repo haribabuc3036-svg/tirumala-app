@@ -32,5 +32,6 @@ export const env = {
     apiKey: process.env.CLOUDINARY_API_KEY,
     apiSecret: process.env.CLOUDINARY_API_SECRET,
     folder: process.env.CLOUDINARY_FOLDER ?? 'tirumala/wallpapers',
+    placesFolder: process.env.CLOUDINARY_PLACES_FOLDER ?? 'tirumala/places',
   },
 };

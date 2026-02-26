@@ -28,16 +28,17 @@ export type CloudinaryUploadResult = {
   bytes?: number;
 };
 
-export async function uploadWallpaperToCloudinary(
+export async function uploadImageToCloudinary(
   fileBuffer: Buffer,
-  fileName: string
+  fileName: string,
+  folder: string
 ): Promise<CloudinaryUploadResult> {
   const client = getClient();
 
   return new Promise((resolve, reject) => {
     const upload = client.uploader.upload_stream(
       {
-        folder: env.cloudinary.folder,
+        folder,
         resource_type: 'image',
         use_filename: true,
         unique_filename: true,
@@ -65,6 +66,43 @@ export async function uploadWallpaperToCloudinary(
 
     Readable.from(fileBuffer).pipe(upload);
   });
+}
+
+export async function uploadWallpaperToCloudinary(
+  fileBuffer: Buffer,
+  fileName: string
+): Promise<CloudinaryUploadResult> {
+  return uploadImageToCloudinary(fileBuffer, fileName, env.cloudinary.folder);
+}
+
+export async function uploadPlacePhotoToCloudinary(
+  fileBuffer: Buffer,
+  fileName: string
+): Promise<CloudinaryUploadResult> {
+  return uploadImageToCloudinary(fileBuffer, fileName, env.cloudinary.placesFolder);
+}
+
+export async function uploadPlacePhotoUrlToCloudinary(
+  sourceUrl: string,
+  fileName: string
+): Promise<CloudinaryUploadResult> {
+  const client = getClient();
+  const result = await client.uploader.upload(sourceUrl, {
+    folder: env.cloudinary.placesFolder,
+    resource_type: 'image',
+    use_filename: true,
+    unique_filename: true,
+    filename_override: fileName,
+  });
+
+  return {
+    secure_url: result.secure_url,
+    public_id: result.public_id,
+    width: result.width,
+    height: result.height,
+    format: result.format,
+    bytes: result.bytes,
+  };
 }
 
 export async function deleteFromCloudinary(publicId: string): Promise<void> {

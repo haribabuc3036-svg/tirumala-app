@@ -62,11 +62,55 @@ CREATE TABLE IF NOT EXISTS public.wallpapers (
 CREATE INDEX IF NOT EXISTS idx_wallpapers_created_at
   ON public.wallpapers (created_at DESC);
 
+-- ─── places (regions + places + photos) ─────────────────────────────────────
+CREATE TABLE IF NOT EXISTS public.place_regions (
+  id         TEXT PRIMARY KEY,
+  title      TEXT        NOT NULL,
+  subtitle   TEXT,
+  sort_order INTEGER     NOT NULL DEFAULT 0,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS public.places (
+  id                        TEXT PRIMARY KEY,
+  region_id                 TEXT        NOT NULL REFERENCES public.place_regions(id) ON DELETE CASCADE,
+  name                      TEXT        NOT NULL,
+  distance_from_tirumala_km NUMERIC(6,2) NOT NULL DEFAULT 0,
+  description               TEXT        NOT NULL,
+  maps_url                  TEXT        NOT NULL,
+  sort_order                INTEGER     NOT NULL DEFAULT 0,
+  created_at                TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS public.place_photos (
+  id         BIGSERIAL PRIMARY KEY,
+  place_id   TEXT        NOT NULL REFERENCES public.places(id) ON DELETE CASCADE,
+  image_url  TEXT        NOT NULL,
+  public_id  TEXT,
+  sort_order INTEGER     NOT NULL DEFAULT 0,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+ALTER TABLE IF EXISTS public.place_photos
+  ADD COLUMN IF NOT EXISTS public_id TEXT;
+
+CREATE INDEX IF NOT EXISTS idx_place_regions_sort_order
+  ON public.place_regions (sort_order ASC);
+
+CREATE INDEX IF NOT EXISTS idx_places_region_sort_order
+  ON public.places (region_id ASC, sort_order ASC);
+
+CREATE INDEX IF NOT EXISTS idx_place_photos_place_sort_order
+  ON public.place_photos (place_id ASC, sort_order ASC);
+
 -- ─── Enable RLS (Row Level Security) — service role key bypasses this ─────────
 ALTER TABLE public.darshan_updates ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.ssd_status      ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.services_catalog ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.wallpapers ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.place_regions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.places ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.place_photos ENABLE ROW LEVEL SECURITY;
 
 -- Allow the service role (backend) to do anything
 CREATE POLICY "service role full access" ON public.darshan_updates
@@ -85,4 +129,22 @@ CREATE POLICY "service role full access wallpapers" ON public.wallpapers
   FOR ALL USING (auth.role() = 'service_role');
 
 CREATE POLICY "anon read wallpapers" ON public.wallpapers
+  FOR SELECT USING (auth.role() = 'anon' OR auth.role() = 'authenticated');
+
+CREATE POLICY "service role full access place regions" ON public.place_regions
+  FOR ALL USING (auth.role() = 'service_role');
+
+CREATE POLICY "service role full access places" ON public.places
+  FOR ALL USING (auth.role() = 'service_role');
+
+CREATE POLICY "service role full access place photos" ON public.place_photos
+  FOR ALL USING (auth.role() = 'service_role');
+
+CREATE POLICY "anon read place regions" ON public.place_regions
+  FOR SELECT USING (auth.role() = 'anon' OR auth.role() = 'authenticated');
+
+CREATE POLICY "anon read places" ON public.places
+  FOR SELECT USING (auth.role() = 'anon' OR auth.role() = 'authenticated');
+
+CREATE POLICY "anon read place photos" ON public.place_photos
   FOR SELECT USING (auth.role() = 'anon' OR auth.role() = 'authenticated');
