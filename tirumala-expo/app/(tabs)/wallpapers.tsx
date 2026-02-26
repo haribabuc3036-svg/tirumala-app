@@ -2,7 +2,7 @@ import { Image } from 'expo-image';
 import * as FileSystem from 'expo-file-system/legacy';
 import * as IntentLauncher from 'expo-intent-launcher';
 import * as MediaLibrary from 'expo-media-library';
-import React, { memo, useCallback, useMemo, useState } from 'react';
+import React, { memo, useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Alert,
   FlatList,
@@ -21,6 +21,7 @@ import Animated, {
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { supabase } from '@/config/supabase';
 import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -30,39 +31,6 @@ type WallpaperItem = {
   title: string;
   url: string;
 };
-
-const WALLPAPERS: WallpaperItem[] = [
-  {
-    id: '1',
-    title: 'Temple Dawn',
-    url: 'https://images.unsplash.com/photo-1605640840605-14ac1855827b?auto=format&fit=crop&w=1600&q=80',
-  },
-  {
-    id: '2',
-    title: 'Sacred Hills',
-    url: 'https://images.unsplash.com/photo-1599474924187-334a4ae5bd3c?auto=format&fit=crop&w=1600&q=80',
-  },
-  {
-    id: '3',
-    title: 'Evening Lights',
-    url: 'https://images.unsplash.com/photo-1512453979798-5ea266f8880c?auto=format&fit=crop&w=1600&q=80',
-  },
-  {
-    id: '4',
-    title: 'Mountain Shrine',
-    url: 'https://images.unsplash.com/photo-1502082553048-f009c37129b9?auto=format&fit=crop&w=1600&q=80',
-  },
-  {
-    id: '5',
-    title: 'Golden Sky',
-    url: 'https://images.unsplash.com/photo-1473116763249-2faaef81ccda?auto=format&fit=crop&w=1600&q=80',
-  },
-  {
-    id: '6',
-    title: 'Cloud Temple',
-    url: 'https://images.unsplash.com/photo-1469474968028-56623f02e42e?auto=format&fit=crop&w=1600&q=80',
-  },
-];
 
 type WallpaperCardProps = {
   item: WallpaperItem;
@@ -144,6 +112,9 @@ export default function WallpapersScreen() {
   const colorScheme = useColorScheme() ?? 'light';
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
   const [settingWallpaperId, setSettingWallpaperId] = useState<string | null>(null);
+  const [wallpapers, setWallpapers] = useState<WallpaperItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const palette = useMemo(
     () => ({
@@ -187,6 +158,35 @@ export default function WallpapersScreen() {
       setSettingWallpaperId(null);
     }
   }, [ensureLocalImage]);
+
+  const loadWallpapers = useCallback(async () => {
+    setLoading(true);
+    const { data, error: queryError } = await supabase
+      .from('wallpapers')
+      .select('id,title,image_url')
+      .order('created_at', { ascending: false });
+
+    if (queryError) {
+      setError(queryError.message);
+      setWallpapers([]);
+      setLoading(false);
+      return;
+    }
+
+    const mapped: WallpaperItem[] = (data ?? []).map((row) => ({
+      id: row.id,
+      title: row.title,
+      url: row.image_url,
+    }));
+
+    setWallpapers(mapped);
+    setError(null);
+    setLoading(false);
+  }, []);
+
+  useEffect(() => {
+    void loadWallpapers();
+  }, [loadWallpapers]);
 
   const downloadWallpaper = useCallback(async (item: WallpaperItem) => {
     if (Platform.OS !== 'android') {
@@ -245,17 +245,32 @@ export default function WallpapersScreen() {
     <ThemedView style={styles.container}>
       <View style={[styles.header, { paddingTop: insets.top + 12 }]}>
         <ThemedText type="title">Wallpapers</ThemedText>
-        <ThemedText>Tap Download to save any sample image to your Android gallery.</ThemedText>
+        <ThemedText>Tap Download to save wallpaper to your Android gallery.</ThemedText>
+        {error ? <ThemedText style={styles.errorText}>Unable to load wallpapers: {error}</ThemedText> : null}
       </View>
 
+      {loading ? (
+        <View style={styles.stateWrap}>
+          <ThemedText>Loading wallpapers...</ThemedText>
+        </View>
+      ) : null}
+
+      {!loading && wallpapers.length === 0 ? (
+        <View style={styles.stateWrap}>
+          <ThemedText>No wallpapers available yet.</ThemedText>
+        </View>
+      ) : null}
+
       <FlatList
-        data={WALLPAPERS}
+        data={wallpapers}
         keyExtractor={(item) => item.id}
         renderItem={renderItem}
         numColumns={2}
         columnWrapperStyle={styles.column}
         contentContainerStyle={styles.listContent}
         showsVerticalScrollIndicator={false}
+        refreshing={loading}
+        onRefresh={() => void loadWallpapers()}
       />
     </ThemedView>
   );
@@ -310,5 +325,15 @@ const styles = StyleSheet.create({
   },
   downloadText: {
     fontWeight: '700',
+  },
+  stateWrap: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+  },
+  errorText: {
+    fontSize: 12,
+    opacity: 0.75,
   },
 });
