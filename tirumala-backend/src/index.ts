@@ -10,6 +10,7 @@ import { startTtdPoller, getPollerStatus } from './jobs/ttd-poll.job';
 import { startSchedulePoller, getSchedulePollerStatus } from './jobs/schedule-poll.job';
 import { startPilgrimsPoller, getPilgrimsPollerStatus } from './jobs/pilgrims-poll.job';
 import { startLatestUpdatesPoller, getLatestUpdatesPollerStatus } from './jobs/latest-updates-poll.job';
+import { startNewsPoller, getNewsPollerStatus } from './jobs/news-poll.job';
 
 const app = express();
 
@@ -33,6 +34,7 @@ app.get('/health', (_req, res) => {
     schedulePoller: getSchedulePollerStatus(),
     pilgrimsPoller: getPilgrimsPollerStatus(),
     latestUpdatesPoller: getLatestUpdatesPollerStatus(),
+    newsPoller: getNewsPollerStatus(),
   });
 });
 
@@ -64,6 +66,9 @@ app.listen(env.port, () => {
 
   // Start the 6-hourly Latest-Updates poller (00:00 / 06:00 / 12:00 / 18:00 IST)
   startLatestUpdatesPoller();
+
+  // Start the 4-hourly Latest-News poller
+  startNewsPoller();
 });
 
 export default app;

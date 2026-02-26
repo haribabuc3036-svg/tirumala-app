@@ -121,3 +121,18 @@ export async function getLiveLatestUpdates(): Promise<LatestUpdateEntry[]> {
 export async function updateLiveLatestUpdates(entries: LatestUpdateEntry[]): Promise<void> {
   await rtdbSet('live_updates/latest_updates', entries);
 }
+
+// ─── Latest News ───────────────────────────────────────────────────────────────
+
+import { NewsEntry } from '../scraper/news.scraper';
+
+/** Read the current latest-news list from Firebase */
+export async function getLiveLatestNews(): Promise<NewsEntry[]> {
+  const data = await rtdbGet<NewsEntry[]>('live_updates/latest_news');
+  return data ?? [];
+}
+
+/** Overwrite the latest-news list in Firebase (up to 20 entries) */
+export async function updateLiveLatestNews(entries: NewsEntry[]): Promise<void> {
+  await rtdbSet('live_updates/latest_news', entries.slice(0, 20));
+}
