@@ -5,9 +5,9 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { SERVICE_CATEGORIES } from '@/constants/services-data';
 import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
+import { useServicesCatalog } from '@/hooks/use-services-catalog';
 
 export default function ServicesScreen() {
   const colorScheme = useColorScheme() ?? 'light';
@@ -15,11 +15,12 @@ export default function ServicesScreen() {
   const tintColor = Colors[colorScheme].tint;
   const iconColor = Colors[colorScheme].icon;
   const itemWidth = '31.5%';
+  const { categories, error } = useServicesCatalog();
 
   return (
     <ThemedView style={styles.container}>
       <FlatList
-        data={SERVICE_CATEGORIES}
+        data={categories}
         keyExtractor={(item) => item.id}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={[styles.listContent, { paddingTop: insets.top + 14 }]}
@@ -29,6 +30,7 @@ export default function ServicesScreen() {
             <ThemedText style={styles.subtitle}>
               Tap any service to view details and book.
             </ThemedText>
+            {error ? <ThemedText style={styles.fallbackNote}>Unable to load services: {error}</ThemedText> : null}
           </View>
         }
         renderItem={({ item: category }) => (
@@ -116,6 +118,11 @@ const styles = StyleSheet.create({
   subtitle: {
     fontSize: 13,
     opacity: 0.72,
+  },
+  fallbackNote: {
+    fontSize: 11,
+    opacity: 0.65,
+    marginTop: 2,
   },
   sectionWrap: {
     marginBottom: 18,

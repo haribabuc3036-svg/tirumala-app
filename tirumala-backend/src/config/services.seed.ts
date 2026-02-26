@@ -1,26 +1,23 @@
-import { type ComponentProps } from 'react';
-import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
-
-export type Service = {
+export type ServiceSeed = {
   id: string;
   title: string;
   description: string;
-  icon: ComponentProps<typeof MaterialCommunityIcons>['name'];
+  icon: string;
   url: string;
   tag?: string;
   tagColor?: string;
 };
 
-export type ServiceCategory = {
+export type ServiceCategorySeed = {
   id: string;
   heading: string;
-  icon: ComponentProps<typeof MaterialCommunityIcons>['name'];
-  services: Service[];
+  icon: string;
+  services: ServiceSeed[];
 };
 
 const BASE = 'https://ttdevasthanams.ap.gov.in/home';
 
-export const SERVICE_CATEGORIES: ServiceCategory[] = [
+export const SERVICE_CATEGORIES_SEED: ServiceCategorySeed[] = [
   {
     id: 'darshan',
     heading: 'Darshan',
@@ -281,8 +278,7 @@ export const SERVICE_CATEGORIES: ServiceCategory[] = [
       {
         id: 'demand-collection',
         title: 'Demand Collection Balance',
-        description:
-          'Check and pay outstanding TTD demand collection balances online.',
+        description: 'Check and pay outstanding TTD demand collection balances online.',
         icon: 'receipt',
         url: `${BASE}/demand-collection`,
       },
@@ -304,12 +300,3 @@ export const SERVICE_CATEGORIES: ServiceCategory[] = [
     ],
   },
 ];
-
-/** Look up a single service by its id across all categories */
-export function findServiceById(id: string): Service | undefined {
-  for (const cat of SERVICE_CATEGORIES) {
-    const svc = cat.services.find((s) => s.id === id);
-    if (svc) return svc;
-  }
-  return undefined;
-}

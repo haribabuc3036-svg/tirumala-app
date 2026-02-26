@@ -65,6 +65,57 @@ export type Database = {
         };
         Relationships: [];
       };
+      services_catalog: {
+        Row: {
+          id: string;
+          category_id: string;
+          category_heading: string;
+          category_icon: string;
+          category_order: number;
+          title: string;
+          description: string;
+          icon: string;
+          url: string;
+          tag: string | null;
+          tag_color: string | null;
+          sort_order: number;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id: string;
+          category_id: string;
+          category_heading: string;
+          category_icon: string;
+          category_order?: number;
+          title: string;
+          description: string;
+          icon: string;
+          url: string;
+          tag?: string | null;
+          tag_color?: string | null;
+          sort_order?: number;
+          created_at?: string | null;
+          updated_at?: string | null;
+        };
+        Update: {
+          id?: string;
+          category_id?: string;
+          category_heading?: string;
+          category_icon?: string;
+          category_order?: number;
+          title?: string;
+          description?: string;
+          icon?: string;
+          url?: string;
+          tag?: string | null;
+          tag_color?: string | null;
+          sort_order?: number;
+          created_at?: string | null;
+          updated_at?: string | null;
+        };
+        Relationships: [];
+      };
     };
     Views: {
       [_ in never]: never;

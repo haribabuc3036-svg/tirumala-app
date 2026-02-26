@@ -498,6 +498,219 @@
           ]
         }
       ]
+    },
+    {
+      "name": "Services Catalog",
+      "item": [
+        {
+          "name": "Get Services Catalog",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/services",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "services"]
+            },
+            "description": "Returns grouped service categories and services from Supabase `services_catalog`."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/services",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "services"]
+                }
+              },
+              "body": "{\n  \"success\": true,\n  \"count\": 8,\n  \"data\": [\n    {\n      \"id\": \"darshan\",\n      \"heading\": \"Darshan\",\n      \"icon\": \"eye-outline\",\n      \"services\": [\n        {\n          \"id\": \"sed\",\n          \"title\": \"Special Entry Darshan\"\n        }\n      ]\n    }\n  ]\n}"
+            }
+          ]
+        },
+        {
+          "name": "Get Service By ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/services/sed",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "services", "sed"]
+            },
+            "description": "Returns one service row by id from Supabase."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/services/sed",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "services", "sed"]
+                }
+              },
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"id\": \"sed\",\n    \"category_id\": \"darshan\",\n    \"category_heading\": \"Darshan\",\n    \"title\": \"Special Entry Darshan\",\n    \"description\": \"Book ₹300 Special Entry Darshan tickets...\",\n    \"icon\": \"ticket-confirmation-outline\",\n    \"url\": \"https://ttdevasthanams.ap.gov.in/home/sed\"\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Create Service",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": \"test-service-001\",\n  \"category_id\": \"darshan\",\n  \"category_heading\": \"Darshan\",\n  \"category_icon\": \"eye-outline\",\n  \"category_order\": 0,\n  \"title\": \"Test Service\",\n  \"description\": \"Test description for create API.\",\n  \"icon\": \"star-outline\",\n  \"url\": \"https://example.com/service\",\n  \"tag\": \"New\",\n  \"tag_color\": \"#4CAF50\",\n  \"sort_order\": 99\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/services",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "services"]
+            },
+            "description": "Creates one new service item in `services_catalog`."
+          },
+          "response": [
+            {
+              "name": "201 Created",
+              "status": "Created",
+              "code": 201,
+              "originalRequest": {
+                "method": "POST",
+                "header": [{ "key": "Content-Type", "value": "application/json" }],
+                "url": {
+                  "raw": "{{baseUrl}}/api/services",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "services"]
+                }
+              },
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"id\": \"test-service-001\",\n    \"title\": \"Test Service\"\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Update Service",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Test Service Updated\",\n  \"description\": \"Updated description from Postman.\",\n  \"tag\": \"Updated\",\n  \"tag_color\": \"#2196F3\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/services/test-service-001",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "services", "test-service-001"]
+            },
+            "description": "Updates one service row by id."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "originalRequest": {
+                "method": "PUT",
+                "header": [{ "key": "Content-Type", "value": "application/json" }],
+                "url": {
+                  "raw": "{{baseUrl}}/api/services/test-service-001",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "services", "test-service-001"]
+                }
+              },
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"id\": \"test-service-001\",\n    \"title\": \"Test Service Updated\"\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Delete Service",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/services/test-service-001",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "services", "test-service-001"]
+            },
+            "description": "Deletes one service row by id."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "originalRequest": {
+                "method": "DELETE",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/services/test-service-001",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "services", "test-service-001"]
+                }
+              },
+              "body": "{\n  \"success\": true,\n  \"deleted\": true,\n  \"id\": \"test-service-001\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Sync Seed Services",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/services/sync",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "services", "sync"]
+            },
+            "description": "Upserts all seed services into Supabase. Useful to restore baseline data."
+          },
+          "response": [
+            {
+              "name": "201 Created",
+              "status": "Created",
+              "code": 201,
+              "originalRequest": {
+                "method": "POST",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/services/sync",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "services", "sync"]
+                }
+              },
+              "body": "{\n  \"success\": true,\n  \"upserted\": 26\n}"
+            }
+          ]
+        }
+      ]
     }
   ]
 }

@@ -6,9 +6,9 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { findServiceById } from '@/constants/services-data';
 import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
+import { useServiceDetail } from '@/hooks/use-service-detail';
 
 export default function ServiceDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -18,8 +18,7 @@ export default function ServiceDetailScreen() {
   const iconColor = Colors[colorScheme].icon;
   const buttonBackground = colorScheme === 'dark' ? Colors.light.tint : tintColor;
   const buttonTextColor = colorScheme === 'dark' ? Colors.dark.background : Colors.light.background;
-
-  const service = id ? findServiceById(id) : undefined;
+  const { service, loading, error } = useServiceDetail(id);
 
   const onBookNow = async () => {
     if (!service) return;
@@ -33,11 +32,19 @@ export default function ServiceDetailScreen() {
     await Linking.openURL(service.url);
   };
 
+  if (loading) {
+    return (
+      <ThemedView style={[styles.emptyContainer, { paddingTop: insets.top + 16 }]}> 
+        <ThemedText type="title">Loading...</ThemedText>
+      </ThemedView>
+    );
+  }
+
   if (!service) {
     return (
       <ThemedView style={[styles.emptyContainer, { paddingTop: insets.top + 16 }]}> 
         <ThemedText type="title">Service not found</ThemedText>
-        <ThemedText style={styles.emptyText}>Please go back and select a valid service.</ThemedText>
+        <ThemedText style={styles.emptyText}>{error ?? 'Please go back and select a valid service.'}</ThemedText>
       </ThemedView>
     );
   }
