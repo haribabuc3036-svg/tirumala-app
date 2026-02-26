@@ -186,20 +186,6 @@ export default function NewsScreen() {
         </View>
         <ThemedText>Daily TTD crowd, tonsure, hundi and darshan-time updates.</ThemedText>
 
-        <View style={[styles.banner, { borderColor }]}>
-          <Image
-            source={{ uri: 'https://images.unsplash.com/photo-1605640840605-14ac1855827b?auto=format&fit=crop&w=1400&q=80' }}
-            style={styles.bannerImage}
-            contentFit="cover"
-            transition={300}
-          />
-          <View style={styles.bannerOverlay}>
-            <MaterialCommunityIcons name="newspaper-variant-outline" size={18} color={tintColor} />
-            <ThemedText type="defaultSemiBold" style={styles.bannerText}>
-              Latest Daily Darshan Snapshot
-            </ThemedText>
-          </View>
-        </View>
 
         <View style={[styles.subTabsWrap, { borderColor }]}>
           <SubTabButton label="Pilgrim Updates" active={activeTab === 'pilgrims'} onPress={() => setActiveTab('pilgrims')} tintColor={tintColor} />

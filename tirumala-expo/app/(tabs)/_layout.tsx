@@ -34,6 +34,15 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
+        name="services"
+        options={{
+          title: 'Services',
+          tabBarIcon: ({ color }) => (
+            <MaterialCommunityIcons size={28} name="hand-heart-outline" color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
         name="wallpapers"
         options={{
           title: 'Wallpapers',
