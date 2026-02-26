@@ -46,9 +46,20 @@ export default function HomeScreen() {
   const renderTabContent = () => {
     if (activeTab === 'overview') {
       return (
-        <ThemedView style={[styles.contentCard, { borderColor: activeAccent, backgroundColor: activeAccent + '10' }]}> 
-          <ThemedText type="defaultSemiBold" style={{ color: activeAccent }}>Welcome</ThemedText>
-          <ThemedText style={styles.cardText}>Get daily darshan information, live SSD updates, and pilgrim trends from one place.</ThemedText>
+        <View style={styles.overviewWrap}>
+          <Animated.View entering={FadeInDown.duration(320)} style={styles.bannerWrap}>
+            <Image
+              source={require('../../assets/images/banner-image.png')}
+              style={styles.bannerImage}
+              contentFit="cover"
+              contentPosition="center"
+              transition={200}
+            />
+          </Animated.View>
+
+          <ThemedView style={[styles.contentCard, { borderColor: activeAccent, backgroundColor: activeAccent + '10' }]}> 
+            <ThemedText type="defaultSemiBold" style={{ color: activeAccent }}>Welcome</ThemedText>
+            <ThemedText style={styles.cardText}>Get daily darshan information, live SSD updates, and pilgrim trends from one place.</ThemedText>
 
           <View style={[styles.latestNewsWrap, { borderColor: activeAccent + '55' }]}> 
             <View style={styles.newsHeaderRow}>
@@ -120,7 +131,8 @@ export default function HomeScreen() {
               </View>
             ) : null}
           </View>
-        </ThemedView>
+          </ThemedView>
+        </View>
       );
     }
 
@@ -149,37 +161,31 @@ export default function HomeScreen() {
         </View>
       </View>
 
-      <ScrollView style={styles.listContent} contentContainerStyle={styles.listContentContainer} showsVerticalScrollIndicator={false}>
-        <Animated.View entering={FadeInDown.duration(320)} style={styles.bannerWrap}>
-          <Image
-            source={require('../../assets/images/banner-image.png')}
-            style={styles.bannerImage}
-            contentFit="cover"
-            contentPosition="center"
-            transition={200}
-          />
-        </Animated.View>
+      <View style={[styles.fixedTabsWrap, { borderColor }]}> 
+        <HomeTabButton
+          label="Overview"
+          active={activeTab === 'overview'}
+          onPress={() => setActiveTab('overview')}
+          tintColor={accentByTab.overview}
+        />
+        <HomeTabButton
+          label="Explore"
+          active={activeTab === 'explore'}
+          onPress={() => setActiveTab('explore')}
+          tintColor={accentByTab.explore}
+        />
+        <HomeTabButton
+          label="Support"
+          active={activeTab === 'support'}
+          onPress={() => setActiveTab('support')}
+          tintColor={accentByTab.support}
+        />
+      </View>
 
-        <View style={[styles.tabBar, { borderColor }]}> 
-          <HomeTabButton
-            label="Overview"
-            active={activeTab === 'overview'}
-            onPress={() => setActiveTab('overview')}
-            tintColor={accentByTab.overview}
-          />
-          <HomeTabButton
-            label="Explore"
-            active={activeTab === 'explore'}
-            onPress={() => setActiveTab('explore')}
-            tintColor={accentByTab.explore}
-          />
-          <HomeTabButton
-            label="Support"
-            active={activeTab === 'support'}
-            onPress={() => setActiveTab('support')}
-            tintColor={accentByTab.support}
-          />
-        </View>
+      <ScrollView
+        style={styles.listContent}
+        contentContainerStyle={styles.listContentContainer}
+        showsVerticalScrollIndicator={false}>
 
         <Animated.View key={activeTab} entering={FadeInDown.duration(220)}>
           {renderTabContent()}
@@ -230,11 +236,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 8,
   },
+  fixedTabsWrap: { marginHorizontal: 12, borderWidth: 1, borderRadius: 12, padding: 4, flexDirection: 'row', marginBottom: 10 },
   listContent: { flex: 1 },
-  listContentContainer: { paddingHorizontal: 12, paddingTop: 14, paddingBottom: 24 },
+  listContentContainer: { paddingHorizontal: 12, paddingTop: 4, paddingBottom: 24 },
+  overviewWrap: { gap: 12 },
   bannerWrap: { borderRadius: 14, overflow: 'hidden', marginBottom: 12, alignItems: 'center', justifyContent: 'center' },
   bannerImage: { width: '100%', height: 200 },
-  tabBar: { borderWidth: 1, borderRadius: 12, padding: 4, flexDirection: 'row', marginBottom: 10 },
   tabButton: { flex: 1, borderWidth: 1, borderRadius: 9, paddingVertical: 8, alignItems: 'center' },
   tabButtonText: { fontSize: 12 },
   contentCard: { borderWidth: 1, borderRadius: 14, padding: 14, gap: 6 },
