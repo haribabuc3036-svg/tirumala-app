@@ -63,12 +63,17 @@ export type LiveLatestNewsItem = {
   title: string;
 };
 
+export type LiveLatestUpdateItem = {
+  text: string;
+};
+
 export type LiveUpdates = {
   ssdToken: LiveSsdStatus | null;
   pilgrimsToday: LivePilgrimsToday | null;
   pilgrimsRecent: LivePilgrimsRecentItem[];
   daySchedule: LiveDaySchedule | null;
   latestNews: LiveLatestNewsItem[];
+  latestUpdates: LiveLatestUpdateItem[];
   sarvaQueueTime: string | null;
   loading: boolean;
   error: string | null;
@@ -80,6 +85,7 @@ export function useLiveUpdates(): LiveUpdates {
   const [pilgrimsRecent, setPilgrimsRecent] = useState<LivePilgrimsRecentItem[]>([]);
   const [daySchedule, setDaySchedule] = useState<LiveDaySchedule | null>(null);
   const [latestNews, setLatestNews] = useState<LiveLatestNewsItem[]>([]);
+  const [latestUpdates, setLatestUpdates] = useState<LiveLatestUpdateItem[]>([]);
   const [sarvaQueueTime, setSarvaQueueTime] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -149,6 +155,13 @@ export function useLiveUpdates(): LiveUpdates {
               })
             );
           }
+          if (Array.isArray(data.latest_updates)) {
+            setLatestUpdates(
+              data.latest_updates
+                .map((item: any) => ({ text: String(item.text ?? '').trim() }))
+                .filter((item: LiveLatestUpdateItem) => item.text.length > 0)
+            );
+          }
           if (data.sarva_darshan_queue != null) {
             setSarvaQueueTime(String(data.sarva_darshan_queue));
           }
@@ -164,5 +177,5 @@ export function useLiveUpdates(): LiveUpdates {
     return () => unsubscribe();
   }, []);
 
-  return { ssdToken, pilgrimsToday, pilgrimsRecent, daySchedule, latestNews, sarvaQueueTime, loading, error };
+  return { ssdToken, pilgrimsToday, pilgrimsRecent, daySchedule, latestNews, latestUpdates, sarvaQueueTime, loading, error };
 }
