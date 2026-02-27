@@ -17,6 +17,8 @@ type ServiceCatalogRow = {
   tag: string | null;
   tag_color: string | null;
   sort_order: number;
+  show_on_overview: boolean;
+  overview_order: number;
 };
 
 function mapRowsToCategories(rows: ServiceCatalogRow[]): ServiceCategory[] {
@@ -44,6 +46,8 @@ function mapRowsToCategories(rows: ServiceCatalogRow[]): ServiceCategory[] {
       url: row.url,
       ...(row.tag ? { tag: row.tag } : {}),
       ...(row.tag_color ? { tagColor: row.tag_color } : {}),
+      showOnOverview: row.show_on_overview ?? false,
+      overviewOrder: row.overview_order ?? 0,
     });
   }
 
@@ -96,5 +100,12 @@ export function useServicesCatalog() {
     };
   }, []);
 
-  return { categories, loading, error };
+  const overviewServices = categories
+    .flatMap((cat) =>
+      cat.services.map((s) => ({ ...s, categoryHeading: cat.heading }))
+    )
+    .filter((s) => s.showOnOverview === true)
+    .sort((a, b) => (a.overviewOrder ?? 0) - (b.overviewOrder ?? 0));
+
+  return { categories, overviewServices, loading, error };
 }

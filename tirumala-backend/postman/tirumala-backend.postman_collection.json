@@ -818,6 +818,183 @@
           ]
         },
         {
+          "name": "Get Overview Services",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/services/overview",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "services", "overview"]
+            },
+            "description": "Returns all services pinned to the Home > Overview section (`show_on_overview = true`), sorted by `overview_order` ascending."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/services/overview",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "services", "overview"]
+                }
+              },
+              "body": "{\n  \"success\": true,\n  \"count\": 6,\n  \"data\": [\n    {\n      \"id\": \"sed\",\n      \"title\": \"Special Entry Darshan\",\n      \"description\": \"Book ₹300 Special Entry Darshan tickets...\",\n      \"icon\": \"ticket-confirmation-outline\",\n      \"url\": \"https://ttdevasthanams.ap.gov.in/home/sed\",\n      \"tag\": \"₹ 300\",\n      \"tagColor\": \"#2196F3\",\n      \"categoryId\": \"darshan\",\n      \"categoryHeading\": \"Darshan\",\n      \"overviewOrder\": 1\n    },\n    {\n      \"id\": \"ssd-token\",\n      \"title\": \"Sarva Darshan Token\",\n      \"description\": \"Free SSD tokens issued at physical counters...\",\n      \"icon\": \"counter\",\n      \"url\": \"https://www.tirumala.org/\",\n      \"tag\": \"Free\",\n      \"tagColor\": \"#4CAF50\",\n      \"categoryId\": \"darshan\",\n      \"categoryHeading\": \"Darshan\",\n      \"overviewOrder\": 2\n    }\n  ]\n}"
+            }
+          ]
+        },
+        {
+          "name": "Toggle Overview Visibility / Set Order",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"show_on_overview\": true,\n  \"overview_order\": 3\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/services/{{serviceId}}/overview",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "services", "{{serviceId}}", "overview"]
+            },
+            "description": "Pins or unpins a single service from the Home > Overview section and/or changes its display order.\n\nBody fields (at least one required):\n- `show_on_overview` (boolean): `true` to pin, `false` to unpin\n- `overview_order` (number): position in the pinned grid (lower = first)"
+          },
+          "response": [
+            {
+              "name": "200 OK — Pinned",
+              "status": "OK",
+              "code": 200,
+              "originalRequest": {
+                "method": "PATCH",
+                "header": [{ "key": "Content-Type", "value": "application/json" }],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"show_on_overview\": true,\n  \"overview_order\": 3\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/services/{{serviceId}}/overview",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "services", "{{serviceId}}", "overview"]
+                }
+              },
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"id\": \"sed\",\n    \"title\": \"Special Entry Darshan\",\n    \"show_on_overview\": true,\n    \"overview_order\": 3\n  }\n}"
+            },
+            {
+              "name": "200 OK — Unpinned",
+              "status": "OK",
+              "code": 200,
+              "originalRequest": {
+                "method": "PATCH",
+                "header": [{ "key": "Content-Type", "value": "application/json" }],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"show_on_overview\": false\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/services/{{serviceId}}/overview",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "services", "{{serviceId}}", "overview"]
+                }
+              },
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"id\": \"sed\",\n    \"title\": \"Special Entry Darshan\",\n    \"show_on_overview\": false,\n    \"overview_order\": 3\n  }\n}"
+            },
+            {
+              "name": "400 Bad Request",
+              "status": "Bad Request",
+              "code": 400,
+              "originalRequest": {
+                "method": "PATCH",
+                "header": [{ "key": "Content-Type", "value": "application/json" }],
+                "body": { "mode": "raw", "raw": "{}" },
+                "url": {
+                  "raw": "{{baseUrl}}/api/services/{{serviceId}}/overview",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "services", "{{serviceId}}", "overview"]
+                }
+              },
+              "body": "{\n  \"success\": false,\n  \"error\": \"Provide at least one of: show_on_overview (boolean), overview_order (number)\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Bulk Reorder Overview Services",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"items\": [\n    { \"id\": \"sed\",           \"overview_order\": 1 },\n    { \"id\": \"ssd-token\",     \"overview_order\": 2 },\n    { \"id\": \"arjitha-sevas\", \"overview_order\": 3 },\n    { \"id\": \"accommodation\", \"overview_order\": 4 },\n    { \"id\": \"differently-abled\", \"overview_order\": 5 },\n    { \"id\": \"online-sevas\", \"overview_order\": 6 }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/services/overview/reorder",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "services", "overview", "reorder"]
+            },
+            "description": "Sets `overview_order` for multiple services in a single call. Useful for drag-and-drop reordering in an admin UI.\n\nBody:\n- `items`: array of `{ id: string, overview_order: number }`"
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "originalRequest": {
+                "method": "PUT",
+                "header": [{ "key": "Content-Type", "value": "application/json" }],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"items\": [\n    { \"id\": \"sed\", \"overview_order\": 1 },\n    { \"id\": \"ssd-token\", \"overview_order\": 2 }\n  ]\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/services/overview/reorder",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "services", "overview", "reorder"]
+                }
+              },
+              "body": "{\n  \"success\": true,\n  \"updated\": 2,\n  \"data\": [\n    { \"id\": \"sed\", \"overview_order\": 1 },\n    { \"id\": \"ssd-token\", \"overview_order\": 2 }\n  ]\n}"
+            },
+            {
+              "name": "400 Bad Request",
+              "status": "Bad Request",
+              "code": 400,
+              "originalRequest": {
+                "method": "PUT",
+                "header": [{ "key": "Content-Type", "value": "application/json" }],
+                "body": { "mode": "raw", "raw": "{}" },
+                "url": {
+                  "raw": "{{baseUrl}}/api/services/overview/reorder",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "services", "overview", "reorder"]
+                }
+              },
+              "body": "{\n  \"success\": false,\n  \"error\": \"Body must contain a non-empty \\\"items\\\" array of { id, overview_order }\"\n}"
+            }
+          ]
+        },
+        {
           "name": "Sync Seed Services",
           "request": {
             "method": "POST",

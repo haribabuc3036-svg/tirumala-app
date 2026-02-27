@@ -9,9 +9,12 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { resolveTtdIcon } from '@/constants/ttd-service-icons';
 import { Colors, MainTabAccent } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useLiveUpdates } from '@/hooks/use-live-updates';
+import { useServicesCatalog } from '@/hooks/use-services-catalog';
+import { type Service } from '@/types/services';
 
 type HomeTab = 'overview' | 'explore' | 'support';
 
@@ -20,6 +23,10 @@ type LatestNewsItem = {
   image_url: string;
   link: string;
   title: string;
+};
+
+type OverviewServiceItem = Service & {
+  categoryHeading: string;
 };
 
 export default function HomeScreen() {
@@ -31,6 +38,8 @@ export default function HomeScreen() {
   const [activeTab, setActiveTab] = useState<HomeTab>('overview');
   const [activeNewsSlide, setActiveNewsSlide] = useState(0);
   const { latestNews, loading: liveLoading } = useLiveUpdates();
+  const { overviewServices, loading: servicesLoading, error: servicesError } = useServicesCatalog();
+  const overviewServiceItems: OverviewServiceItem[] = overviewServices;
 
   const accentByTab: Record<HomeTab, string> = {
     overview: tintColor,
@@ -72,6 +81,80 @@ export default function HomeScreen() {
               transition={200}
             />
           </Animated.View>
+
+          <ThemedView style={[styles.contentCard, styles.overviewServicesCard, { borderColor: activeAccent, backgroundColor: activeAccent + '10' }]}> 
+            <View style={styles.overviewServicesHeader}>
+              <View style={styles.newsHeaderTitleWrap}>
+                <View style={[styles.newsHeaderIconWrap, { backgroundColor: activeAccent + '20' }]}>
+                  <MaterialCommunityIcons name="apps" size={14} color={activeAccent} />
+                </View>
+                <View>
+                  <ThemedText type="defaultSemiBold" style={[styles.latestNewsTitle, { color: activeAccent }]}>Quick Services</ThemedText>
+                  <ThemedText style={styles.latestNewsSubtitle}>From live services catalog</ThemedText>
+                </View>
+              </View>
+
+              <Pressable
+                onPress={() => router.push('/(tabs)/services')}
+                style={({ pressed }) => [
+                  styles.viewMoreBtn,
+                  { borderColor: activeAccent, backgroundColor: activeAccent + '14', opacity: pressed ? 0.78 : 1 },
+                ]}>
+                <ThemedText style={[styles.viewMoreText, { color: activeAccent }]}>View All</ThemedText>
+              </Pressable>
+            </View>
+
+            {servicesLoading ? <ThemedText style={styles.newsDate}>Loading services...</ThemedText> : null}
+            {!servicesLoading && servicesError ? <ThemedText style={styles.newsDate}>Unable to load services.</ThemedText> : null}
+            {!servicesLoading && !servicesError && overviewServiceItems.length === 0 ? (
+              <ThemedText style={styles.newsDate}>No services available.</ThemedText>
+            ) : null}
+
+            {!servicesLoading && !servicesError && overviewServiceItems.length > 0 ? (
+              <View style={styles.overviewServicesGrid}>
+                {overviewServiceItems.map((service, index) => {
+                  const isLastInRow = (index + 1) % 2 === 0;
+
+                  return (
+                    <Pressable
+                      key={service.id}
+                      style={({ pressed }) => [
+                        styles.overviewServiceItem,
+                        {
+                          marginRight: isLastInRow ? 0 : '4%',
+                          borderColor: activeAccent + '2A',
+                          backgroundColor: activeAccent + '14',
+                          opacity: pressed ? 0.78 : 1,
+                        },
+                      ]}
+                      onPress={() => router.push({ pathname: '/service/[id]', params: { id: service.id } })}>
+                      <View style={[styles.overviewServiceIconWrap, { backgroundColor: activeAccent + '20' }]}>
+                        {service.iconImage ? (
+                          <Image source={{ uri: service.iconImage }} style={styles.overviewServiceImage} contentFit="contain" />
+                        ) : (
+                          <MaterialCommunityIcons
+                            name={resolveTtdIcon(service.title, service.icon)}
+                            size={16}
+                            color={activeAccent}
+                          />
+                        )}
+                      </View>
+
+                      <ThemedText style={styles.overviewServiceTitle} numberOfLines={2}>{service.title}</ThemedText>
+                      <ThemedText style={styles.overviewServiceCategory} numberOfLines={1}>{service.categoryHeading}</ThemedText>
+                      {service.tag ? (
+                        <View style={[styles.overviewServiceTagPill, { backgroundColor: (service.tagColor ?? activeAccent) + '22' }]}>
+                          <ThemedText style={[styles.overviewServiceTagText, { color: service.tagColor ?? activeAccent }]}>
+                            {service.tag}
+                          </ThemedText>
+                        </View>
+                      ) : null}
+                    </Pressable>
+                  );
+                })}
+              </View>
+            ) : null}
+          </ThemedView>
         </View>
       );
     }
@@ -147,11 +230,6 @@ export default function HomeScreen() {
                       />
 
                       <View style={styles.newsTextWrap}>
-                        <View style={styles.newsMetaRow}>
-                          <View style={[styles.newsDateDot, { backgroundColor: activeAccent }]} />
-                          <ThemedText style={styles.newsDate}>{item.date || 'Latest'}</ThemedText>
-                        </View>
-
                         <ThemedText style={styles.newsTitle} numberOfLines={3}>{item.title}</ThemedText>
 
                         <Pressable
@@ -331,6 +409,31 @@ const styles = StyleSheet.create({
   tabButton: { flex: 1, borderWidth: 1, borderRadius: 9, paddingVertical: 8, alignItems: 'center' },
   tabButtonText: { fontSize: 12 },
   contentCard: { borderWidth: 1, borderRadius: 14, padding: 14, gap: 6 },
+  overviewServicesCard: { borderRadius: 16, padding: 12, gap: 10 },
+  overviewServicesHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10 },
+  overviewServicesGrid: { flexDirection: 'row', flexWrap: 'wrap' },
+  overviewServiceItem: {
+    width: '48%',
+    borderWidth: 1,
+    borderRadius: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 8,
+    marginBottom: 8,
+    alignItems: 'center',
+    gap: 5,
+  },
+  overviewServiceIconWrap: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  overviewServiceImage: { width: 20, height: 20 },
+  overviewServiceTitle: { fontSize: 11, lineHeight: 14, textAlign: 'center', minHeight: 28 },
+  overviewServiceCategory: { fontSize: 9.5, opacity: 0.65 },
+  overviewServiceTagPill: { borderRadius: 999, paddingHorizontal: 8, paddingVertical: 2 },
+  overviewServiceTagText: { fontSize: 9, fontWeight: '700' },
   premiumNewsCard: { borderRadius: 16, padding: 12, gap: 10 },
   cardText: { fontSize: 13, lineHeight: 18, opacity: 0.8 },
   latestNewsWrap: { borderWidth: 1, borderRadius: 12, padding: 10, marginTop: 6, gap: 8 },
@@ -348,8 +451,6 @@ const styles = StyleSheet.create({
   newsPaginationDot: { width: 8, height: 8, borderRadius: 4, borderWidth: 1 },
   newsImage: { width: '100%', height: 172, borderRadius: 10 },
   newsTextWrap: { gap: 8 },
-  newsMetaRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  newsDateDot: { width: 6, height: 6, borderRadius: 3 },
   newsDate: { fontSize: 11, opacity: 0.65 },
   newsTitle: { fontSize: 12.5, lineHeight: 18 },
   viewDetailsBtn: { alignSelf: 'flex-end', borderWidth: 1, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 6 },

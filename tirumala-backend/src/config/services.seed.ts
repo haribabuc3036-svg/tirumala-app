@@ -7,6 +7,10 @@ export type ServiceSeed = {
   url: string;
   tag?: string;
   tagColor?: string;
+  /** Whether to pin this service on the Home > Overview quick section */
+  showOnOverview?: boolean;
+  /** Display order within the Overview pinned section (lower = first) */
+  overviewOrder?: number;
 };
 
 export type ServiceCategorySeed = {
@@ -34,6 +38,8 @@ export const SERVICE_CATEGORIES_SEED: ServiceCategorySeed[] = [
         url: `${BASE}/sed`,
         tag: '₹ 300',
         tagColor: '#2196F3',
+        showOnOverview: true,
+        overviewOrder: 1,
       },
       {
         id: 'sed-ammavari',
@@ -54,6 +60,8 @@ export const SERVICE_CATEGORIES_SEED: ServiceCategorySeed[] = [
         url: `${BASE}/physically-challenged`,
         tag: 'Priority',
         tagColor: '#FF9800',
+        showOnOverview: true,
+        overviewOrder: 5,
       },
       {
         id: 'ssd-token',
@@ -64,6 +72,8 @@ export const SERVICE_CATEGORIES_SEED: ServiceCategorySeed[] = [
         url: 'https://www.tirumala.org/',
         tag: 'Free',
         tagColor: '#4CAF50',
+        showOnOverview: true,
+        overviewOrder: 2,
       },
     ],
   },
@@ -81,6 +91,8 @@ export const SERVICE_CATEGORIES_SEED: ServiceCategorySeed[] = [
         url: `${BASE}/arjitha-seva`,
         tag: 'Seva',
         tagColor: '#9C27B0',
+        showOnOverview: true,
+        overviewOrder: 3,
       },
       {
         id: 'angapradakshinam',
@@ -132,6 +144,8 @@ export const SERVICE_CATEGORIES_SEED: ServiceCategorySeed[] = [
         url: `${BASE}/online-sevas`,
         tag: 'Online',
         tagColor: '#2196F3',
+        showOnOverview: true,
+        overviewOrder: 6,
       },
       {
         id: 'virtual-srivari',
@@ -165,6 +179,8 @@ export const SERVICE_CATEGORIES_SEED: ServiceCategorySeed[] = [
           'Online booking for TTD guest houses, cottages and rooms in Tirumala and Tirupati. Accommodation quota for each month is released online in advance.',
         icon: 'home-city-outline',
         url: `${BASE}/accommodation`,
+        showOnOverview: true,
+        overviewOrder: 4,
       },
     ],
   },

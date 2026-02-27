@@ -11,6 +11,8 @@ export type Service = {
   url: string;
   tag?: string;
   tagColor?: string;
+  showOnOverview?: boolean;
+  overviewOrder?: number;
 };
 
 export type ServiceCategory = {
@@ -36,6 +38,8 @@ export type ServiceCatalogRow = {
   tag: string | null;
   tag_color: string | null;
   sort_order: number;
+  show_on_overview: boolean;
+  overview_order: number;
   created_at: string;
   updated_at: string;
 };

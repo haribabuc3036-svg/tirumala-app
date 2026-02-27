@@ -83,6 +83,8 @@ export type Database = {
           tag: string | null;
           tag_color: string | null;
           sort_order: number;
+          show_on_overview: boolean;
+          overview_order: number;
           created_at: string;
           updated_at: string;
         };
@@ -103,6 +105,8 @@ export type Database = {
           tag?: string | null;
           tag_color?: string | null;
           sort_order?: number;
+          show_on_overview?: boolean;
+          overview_order?: number;
           created_at?: string | null;
           updated_at?: string | null;
         };
@@ -123,6 +127,8 @@ export type Database = {
           tag?: string | null;
           tag_color?: string | null;
           sort_order?: number;
+          show_on_overview?: boolean;
+          overview_order?: number;
           created_at?: string | null;
           updated_at?: string | null;
         };

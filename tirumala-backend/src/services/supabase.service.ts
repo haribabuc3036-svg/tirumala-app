@@ -195,6 +195,44 @@ export async function getServicesCatalog(): Promise<ServiceCategoryResponse[]> {
   return mapRowsToCategories(data ?? []);
 }
 
+export type OverviewServiceItem = {
+  id: string;
+  title: string;
+  description: string;
+  icon: string;
+  iconImage?: string;
+  url: string;
+  tag?: string;
+  tagColor?: string;
+  categoryId: string;
+  categoryHeading: string;
+  overviewOrder: number;
+};
+
+export async function getOverviewServices(): Promise<OverviewServiceItem[]> {
+  const { data, error } = await supabaseAdmin
+    .from('services_catalog')
+    .select('*')
+    .eq('show_on_overview', true)
+    .order('overview_order', { ascending: true });
+
+  if (error) throw new Error(error.message);
+
+  return (data ?? []).map((row) => ({
+    id: row.id,
+    title: row.title,
+    description: row.description,
+    icon: row.icon,
+    ...(row.image ? { iconImage: row.image } : {}),
+    url: row.url,
+    ...(row.tag ? { tag: row.tag } : {}),
+    ...(row.tag_color ? { tagColor: row.tag_color } : {}),
+    categoryId: row.category_id,
+    categoryHeading: row.category_heading,
+    overviewOrder: row.overview_order,
+  }));
+}
+
 export async function getServiceById(serviceId: string): Promise<ServiceCatalogRow | null> {
   const { data, error } = await supabaseAdmin
     .from('services_catalog')
@@ -779,6 +817,8 @@ export async function syncServicesCatalog(
         tag: service.tag ?? null,
         tag_color: service.tagColor ?? null,
         sort_order: serviceIndex,
+        show_on_overview: service.showOnOverview ?? false,
+        overview_order: service.overviewOrder ?? 0,
       });
     });
   });

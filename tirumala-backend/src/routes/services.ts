@@ -17,6 +17,7 @@ import {
   getServiceImageById,
   getServiceById,
   getServicesByCategoryId,
+  getOverviewServices,
   getServicesCatalog,
   syncServicesCatalog,
   updateCategoryImageForServices,
@@ -89,6 +90,18 @@ router.post(
       image: uploaded.secure_url,
       publicId: uploaded.public_id,
     });
+  })
+);
+
+/**
+ * GET /api/services/overview
+ * Returns all services pinned to the Home > Overview section, sorted by overview_order.
+ */
+router.get(
+  '/overview',
+  asyncHandler(async (_req: Request, res: Response) => {
+    const data = await getOverviewServices();
+    res.json({ success: true, count: data.length, data });
   })
 );
 
@@ -296,6 +309,75 @@ router.post(
 
     const data = await createServiceCatalogItem(payload);
     res.status(201).json({ success: true, data });
+  })
+);
+
+/**
+ * PUT /api/services/overview/reorder
+ * Bulk-updates overview_order for multiple services in one call.
+ * Body: { items: Array<{ id: string; overview_order: number }> }
+ */
+router.put(
+  '/overview/reorder',
+  asyncHandler(async (req: Request, res: Response) => {
+    const items: { id: string; overview_order: number }[] | undefined = req.body?.items;
+
+    if (!Array.isArray(items) || items.length === 0) {
+      res.status(400).json({ success: false, error: 'Body must contain a non-empty "items" array of { id, overview_order }' });
+      return;
+    }
+
+    const invalid = items.find((item) => typeof item.id !== 'string' || typeof item.overview_order !== 'number');
+    if (invalid) {
+      res.status(400).json({ success: false, error: 'Each item must have a string "id" and a numeric "overview_order"' });
+      return;
+    }
+
+    const results = await Promise.all(
+      items.map((item) =>
+        updateServiceCatalogItem(item.id, { overview_order: item.overview_order })
+      )
+    );
+
+    res.json({ success: true, updated: results.filter(Boolean).length, data: results.filter(Boolean) });
+  })
+);
+
+/**
+ * PATCH /api/services/:id/overview
+ * Toggle show_on_overview and/or set overview_order for one service.
+ * Body: { show_on_overview?: boolean; overview_order?: number }
+ */
+router.patch(
+  '/:id/overview',
+  asyncHandler(async (req: Request, res: Response) => {
+    const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+    const { show_on_overview, overview_order } = req.body ?? {};
+
+    if (show_on_overview === undefined && overview_order === undefined) {
+      res.status(400).json({ success: false, error: 'Provide at least one of: show_on_overview (boolean), overview_order (number)' });
+      return;
+    }
+    if (show_on_overview !== undefined && typeof show_on_overview !== 'boolean') {
+      res.status(400).json({ success: false, error: '"show_on_overview" must be a boolean' });
+      return;
+    }
+    if (overview_order !== undefined && typeof overview_order !== 'number') {
+      res.status(400).json({ success: false, error: '"overview_order" must be a number' });
+      return;
+    }
+
+    const patch: { show_on_overview?: boolean; overview_order?: number } = {};
+    if (show_on_overview !== undefined) patch.show_on_overview = show_on_overview;
+    if (overview_order !== undefined) patch.overview_order = overview_order;
+
+    const data = await updateServiceCatalogItem(id, patch);
+    if (!data) {
+      res.status(404).json({ success: false, error: 'Service not found' });
+      return;
+    }
+
+    res.json({ success: true, data });
   })
 );
 
