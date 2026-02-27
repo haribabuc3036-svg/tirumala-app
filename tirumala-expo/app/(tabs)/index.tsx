@@ -12,11 +12,11 @@ import { ThemedView } from '@/components/themed-view';
 import { resolveTtdIcon } from '@/constants/ttd-service-icons';
 import { Colors, MainTabAccent } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
-import { useLiveUpdates } from '@/hooks/use-live-updates';
+import { useLiveUpdates, type LiveLatestUpdateItem } from '@/hooks/use-live-updates';
 import { useServicesCatalog } from '@/hooks/use-services-catalog';
 import { type Service } from '@/types/services';
 
-type HomeTab = 'overview' | 'explore' | 'support';
+type HomeTab = 'overview' | 'explore' | 'help';
 
 type LatestNewsItem = {
   date: string;
@@ -29,6 +29,106 @@ type OverviewServiceItem = Service & {
   categoryHeading: string;
 };
 
+function UpdateSlideCard({
+  item,
+  index,
+  total,
+  activeAccent,
+  slideWidth,
+}: {
+  item: LiveLatestUpdateItem;
+  index: number;
+  total: number;
+  activeAccent: string;
+  slideWidth: number;
+}) {
+  const [expanded, setExpanded] = useState(false);
+  const [isTruncated, setIsTruncated] = useState(false);
+
+  // Extract URL: prefer item.link, fallback to first URL found in text
+  const urlRegex = /(https?:\/\/[^\s]+)/gi;
+  const extractedUrl = item.link || (item.text.match(urlRegex)?.[0] ?? null);
+  // Strip raw URLs from displayed text, then split around "click here"
+  const cleanText = item.text.replace(urlRegex, '').replace(/\s{2,}/g, ' ').trim();
+  const clickHereRegex = /(click\s+here)/i;
+  const textParts = cleanText.split(clickHereRegex);
+  const hasClickHere = textParts.length > 1;
+
+  return (
+    <View
+      style={[
+        updateSlideCardStyle,
+        {
+          width: slideWidth,
+          borderColor: activeAccent + '33',
+          backgroundColor: activeAccent + '0A',
+        },
+      ]}>
+      <View style={updateSlideHeaderStyle}>
+        <View style={[updateSlideBadgeStyle, { backgroundColor: activeAccent + '20' }]}>
+          <MaterialCommunityIcons name="bell-outline" size={12} color={activeAccent} />
+          <ThemedText style={[updateSlideBadgeTextStyle, { color: activeAccent }]}>
+            UPDATE {index + 1} / {total}
+          </ThemedText>
+        </View>
+      </View>
+      <ThemedText
+        style={updateSlideTextStyle}
+        numberOfLines={expanded ? undefined : 10}
+        onTextLayout={(e) => {
+          if (!expanded && e.nativeEvent.lines.length >= 10) setIsTruncated(true);
+        }}>
+        {hasClickHere
+          ? textParts.map((part, i) =>
+              clickHereRegex.test(part) ? (
+                <ThemedText
+                  key={i}
+                  onPress={extractedUrl ? () => Linking.openURL(extractedUrl) : undefined}
+                  style={[
+                    updateSlideTextStyle,
+                    {
+                      color: activeAccent,
+                      fontWeight: '700',
+                      textDecorationLine: 'underline',
+                    },
+                  ]}>
+                  {part}
+                </ThemedText>
+              ) : (
+                <ThemedText key={i} style={updateSlideTextStyle}>{part}</ThemedText>
+              )
+            )
+          : cleanText}
+      </ThemedText>
+      {!hasClickHere && extractedUrl && (
+        <Pressable
+          onPress={() => Linking.openURL(extractedUrl)}
+          style={[updateClickHereBtnStyle, { backgroundColor: activeAccent + '18', borderColor: activeAccent + '44' }]}>
+          <MaterialCommunityIcons name="open-in-new" size={11} color={activeAccent} />
+          <ThemedText style={[updateClickHereTextStyle, { color: activeAccent }]}>Click Here</ThemedText>
+        </Pressable>
+      )}
+      {(isTruncated || expanded) && (
+        <Pressable onPress={() => setExpanded((v) => !v)}>
+          <ThemedText style={[updateReadMoreStyle, { color: activeAccent }]}>
+            {expanded ? 'Read Less ↑' : 'Read More ↓'}
+          </ThemedText>
+        </Pressable>
+      )}
+    </View>
+  );
+}
+
+// Flat style refs for UpdateSlideCard (defined outside main component to avoid re-creation)
+const updateSlideCardStyle: import('react-native').ViewStyle = { borderWidth: 1, borderRadius: 12, padding: 12, gap: 8 };
+const updateSlideHeaderStyle: import('react-native').ViewStyle = { flexDirection: 'row', alignItems: 'center' };
+const updateSlideBadgeStyle: import('react-native').ViewStyle = { flexDirection: 'row', alignItems: 'center', gap: 5, borderRadius: 999, paddingHorizontal: 8, paddingVertical: 4 };
+const updateSlideBadgeTextStyle: import('react-native').TextStyle = { fontSize: 9.5, fontWeight: '700', letterSpacing: 0.4 };
+const updateSlideTextStyle: import('react-native').TextStyle = { fontSize: 12, lineHeight: 18.5, opacity: 0.88 };
+const updateClickHereBtnStyle: import('react-native').ViewStyle = { flexDirection: 'row', alignItems: 'center', gap: 5, alignSelf: 'flex-start', borderWidth: 1, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 5 };
+const updateClickHereTextStyle: import('react-native').TextStyle = { fontSize: 11.5, fontWeight: '700' };
+const updateReadMoreStyle: import('react-native').TextStyle = { fontSize: 11.5, fontWeight: '700', marginTop: 2 };
+
 export default function HomeScreen() {
   const colorScheme = useColorScheme() ?? 'light';
   const tintColor = MainTabAccent.index;
@@ -37,19 +137,21 @@ export default function HomeScreen() {
   const insets = useSafeAreaInsets();
   const [activeTab, setActiveTab] = useState<HomeTab>('overview');
   const [activeNewsSlide, setActiveNewsSlide] = useState(0);
-  const { latestNews, loading: liveLoading } = useLiveUpdates();
+  const [activeUpdateSlide, setActiveUpdateSlide] = useState(0);
+  const { latestNews, latestUpdates, loading: liveLoading } = useLiveUpdates();
   const { overviewServices, loading: servicesLoading, error: servicesError } = useServicesCatalog();
   const overviewServiceItems: OverviewServiceItem[] = overviewServices;
 
   const accentByTab: Record<HomeTab, string> = {
     overview: tintColor,
     explore: tintColor,
-    support: tintColor,
+    help: tintColor,
   };
   const activeAccent = accentByTab[activeTab];
   const newsItems: LatestNewsItem[] = latestNews;
   const previewNewsItems = newsItems.slice(0, 4);
   const newsSlideWidth = Math.max(260, screenWidth - 52);
+  const updateSlideWidth = newsSlideWidth;
 
   useEffect(() => {
     if (activeNewsSlide >= previewNewsItems.length) {
@@ -66,6 +168,13 @@ export default function HomeScreen() {
     const rawIndex = Math.round(offsetX / (newsSlideWidth + 8));
     const clampedIndex = Math.max(0, Math.min(rawIndex, previewNewsItems.length - 1));
     setActiveNewsSlide(clampedIndex);
+  };
+
+  const handleUpdateScrollEnd = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+    const offsetX = event.nativeEvent.contentOffset.x;
+    const rawIndex = Math.round(offsetX / (updateSlideWidth + 8));
+    const clampedIndex = Math.max(0, Math.min(rawIndex, latestUpdates.length - 1));
+    setActiveUpdateSlide(clampedIndex);
   };
 
   const renderTabContent = () => {
@@ -152,6 +261,65 @@ export default function HomeScreen() {
                     </Pressable>
                   );
                 })}
+              </View>
+            ) : null}
+          </ThemedView>
+
+          <ThemedView style={[styles.contentCard, styles.overviewServicesCard, { borderColor: activeAccent, backgroundColor: activeAccent + '10' }]}>
+            <View style={styles.overviewServicesHeader}>
+              <View style={styles.newsHeaderTitleWrap}>
+                <View style={[styles.newsHeaderIconWrap, { backgroundColor: activeAccent + '20' }]}>
+                  <MaterialCommunityIcons name="bell-ring-outline" size={14} color={activeAccent} />
+                </View>
+                <View>
+                  <ThemedText type="defaultSemiBold" style={[styles.latestNewsTitle, { color: activeAccent }]}>Latest Darshan/Seva Updates</ThemedText>
+                  <ThemedText style={styles.latestNewsSubtitle}>
+                    {liveLoading ? 'Loading...' : latestUpdates.length > 0 ? `${latestUpdates.length} official update(s)` : 'No updates available'}
+                  </ThemedText>
+                </View>
+              </View>
+            </View>
+
+            {!liveLoading && latestUpdates.length > 0 ? (
+              <View style={styles.newsListWrap}>
+                <ScrollView
+                  horizontal
+                  pagingEnabled
+                  showsHorizontalScrollIndicator={false}
+                  decelerationRate="fast"
+                  snapToInterval={updateSlideWidth + 8}
+                  onMomentumScrollEnd={handleUpdateScrollEnd}
+                  contentContainerStyle={styles.newsCarouselContent}>
+                  {latestUpdates.map((item, index) => (
+                    <UpdateSlideCard
+                      key={`update-${index}`}
+                      item={item}
+                      index={index}
+                      total={latestUpdates.length}
+                      activeAccent={activeAccent}
+                      slideWidth={updateSlideWidth}
+                    />
+                  ))}
+                </ScrollView>
+
+                {latestUpdates.length > 1 ? (
+                  <View style={styles.newsPaginationWrap}>
+                    {latestUpdates.map((_, index) => {
+                      const isActive = index === activeUpdateSlide;
+                      return (
+                        <View
+                          key={`update-dot-${index}`}
+                          style={[
+                            styles.newsPaginationDot,
+                            isActive
+                              ? { width: 18, backgroundColor: activeAccent, borderColor: activeAccent }
+                              : { backgroundColor: activeAccent + '22', borderColor: activeAccent + '55' },
+                          ]}
+                        />
+                      );
+                    })}
+                  </View>
+                ) : null}
               </View>
             ) : null}
           </ThemedView>
@@ -284,7 +452,7 @@ export default function HomeScreen() {
         </Animated.View>
 
         <ThemedView style={[styles.contentCard, { borderColor: activeAccent, backgroundColor: activeAccent + '10' }]}> 
-          <ThemedText type="defaultSemiBold" style={{ color: activeAccent }}>Support</ThemedText>
+          <ThemedText type="defaultSemiBold" style={{ color: activeAccent }}>Help</ThemedText>
           <ThemedText style={styles.cardText}>For SSD token physical counters and today schedules, open Darshan News tab for current status.</ThemedText>
         </ThemedView>
       </View>
@@ -313,10 +481,10 @@ export default function HomeScreen() {
           tintColor={accentByTab.explore}
         />
         <HomeTabButton
-          label="Support"
-          active={activeTab === 'support'}
-          onPress={() => setActiveTab('support')}
-          tintColor={accentByTab.support}
+          label="Help"
+          active={activeTab === 'help'}
+          onPress={() => setActiveTab('help')}
+          tintColor={accentByTab.help}
         />
       </View>
 
@@ -434,6 +602,11 @@ const styles = StyleSheet.create({
   overviewServiceCategory: { fontSize: 9.5, opacity: 0.65 },
   overviewServiceTagPill: { borderRadius: 999, paddingHorizontal: 8, paddingVertical: 2 },
   overviewServiceTagText: { fontSize: 9, fontWeight: '700' },
+  updateSlideCard: {},
+  updateSlideHeader: {},
+  updateSlideBadge: {},
+  updateSlideBadgeText: {},
+  updateSlideText: {},
   premiumNewsCard: { borderRadius: 16, padding: 12, gap: 10 },
   cardText: { fontSize: 13, lineHeight: 18, opacity: 0.8 },
   latestNewsWrap: { borderWidth: 1, borderRadius: 12, padding: 10, marginTop: 6, gap: 8 },

@@ -65,6 +65,7 @@ export type LiveLatestNewsItem = {
 
 export type LiveLatestUpdateItem = {
   text: string;
+  link?: string;
 };
 
 export type LiveUpdates = {
@@ -158,7 +159,10 @@ export function useLiveUpdates(): LiveUpdates {
           if (Array.isArray(data.latest_updates)) {
             setLatestUpdates(
               data.latest_updates
-                .map((item: any) => ({ text: String(item.text ?? '').trim() }))
+                .map((item: any) => ({
+                  text: String(item.text ?? '').trim(),
+                  link: item.link ? String(item.link).trim() : undefined,
+                }))
                 .filter((item: LiveLatestUpdateItem) => item.text.length > 0)
             );
           }
