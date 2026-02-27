@@ -224,6 +224,114 @@ const ssdLiveDot: import('react-native').ViewStyle = {
 };
 const ssdLiveLabel: import('react-native').TextStyle = { fontSize: 10, fontWeight: '800', color: '#4ade80', letterSpacing: 1 };
 
+function PilgrimUpdatesButton({ onPress }: { onPress: () => void }) {
+  return (
+    <Pressable
+      onPress={onPress}
+      style={({ pressed }) => [pilgrimBtnPressable, { opacity: pressed ? 0.88 : 1 }]}>
+      <LinearGradient
+        colors={['#f97316', '#c2410c', '#7c2d12']}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={ssdBtnGradient}>
+        <View style={ssdBtnLeft}>
+          <View style={ssdBtnIconWrap}>
+            <MaterialCommunityIcons name="account-group-outline" size={22} color="#fff" />
+          </View>
+          <View>
+            <ThemedText style={ssdBtnTitle}>Pilgrim Updates</ThemedText>
+            <ThemedText style={ssdBtnSubtitle}>Tap to view today's crowd &amp; darshan</ThemedText>
+          </View>
+        </View>
+        <View style={ssdBtnRight}>
+          <MaterialCommunityIcons name="chevron-right" size={18} color="rgba(255,255,255,0.8)" />
+        </View>
+      </LinearGradient>
+    </Pressable>
+  );
+}
+
+const pilgrimBtnPressable: import('react-native').ViewStyle = {
+  borderRadius: 18,
+  shadowColor: '#f97316',
+  shadowOffset: { width: 0, height: 6 },
+  shadowOpacity: 0.4,
+  shadowRadius: 12,
+  elevation: 8,
+};
+
+function DayScheduleButton({ onPress }: { onPress: () => void }) {
+  return (
+    <Pressable
+      onPress={onPress}
+      style={({ pressed }) => [scheduleBtnPressable, { opacity: pressed ? 0.88 : 1 }]}>
+      <LinearGradient
+        colors={['#a855f7', '#7c3aed', '#4c1d95']}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={ssdBtnGradient}>
+        <View style={ssdBtnLeft}>
+          <View style={ssdBtnIconWrap}>
+            <MaterialCommunityIcons name="calendar-clock-outline" size={22} color="#fff" />
+          </View>
+          <View>
+            <ThemedText style={ssdBtnTitle}>Day Schedules</ThemedText>
+            <ThemedText style={ssdBtnSubtitle}>Tap to view today's seva timings</ThemedText>
+          </View>
+        </View>
+        <View style={ssdBtnRight}>
+          <MaterialCommunityIcons name="chevron-right" size={18} color="rgba(255,255,255,0.8)" />
+        </View>
+      </LinearGradient>
+    </Pressable>
+  );
+}
+
+const scheduleBtnPressable: import('react-native').ViewStyle = {
+  borderRadius: 18,
+  shadowColor: '#7c3aed',
+  shadowOffset: { width: 0, height: 6 },
+  shadowOpacity: 0.4,
+  shadowRadius: 12,
+  elevation: 8,
+};
+
+function CounterLocationsButton({ onPress }: { onPress: () => void }) {
+  return (
+    <Pressable
+      onPress={onPress}
+      style={({ pressed }) => [counterBtnPressable, { opacity: pressed ? 0.88 : 1 }]}>
+      <LinearGradient
+        colors={['#1ac8f5', '#0A7EA4', '#065c78']}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={ssdBtnGradient}>
+        <View style={ssdBtnLeft}>
+          <View style={ssdBtnIconWrap}>
+            <MaterialCommunityIcons name="map-marker-multiple-outline" size={22} color="#fff" />
+          </View>
+          <View>
+            <ThemedText style={ssdBtnTitle}>Free Ticket Counters</ThemedText>
+            <ThemedText style={ssdBtnSubtitle}>Tap to view physical counter locations</ThemedText>
+          </View>
+        </View>
+        <View style={ssdBtnRight}>
+          <MaterialCommunityIcons name="chevron-right" size={18} color="rgba(255,255,255,0.8)" />
+        </View>
+      </LinearGradient>
+    </Pressable>
+  );
+}
+
+const counterBtnPressable: import('react-native').ViewStyle = {
+  borderRadius: 18,
+  shadowColor: '#0A7EA4',
+  shadowOffset: { width: 0, height: 6 },
+  shadowOpacity: 0.4,
+  shadowRadius: 12,
+  elevation: 8,
+};
+
 // Flat style refs for UpdateSlideCard (defined outside main component to avoid re-creation)
 const updateSlideCardStyle: import('react-native').ViewStyle = { borderWidth: 1, borderRadius: 12, padding: 12, gap: 8 };
 const updateSlideHeaderStyle: import('react-native').ViewStyle = { flexDirection: 'row', alignItems: 'center' };
@@ -430,7 +538,113 @@ export default function HomeScreen() {
           </ThemedView>
 
           <View style={styles.overviewQuickLinksWrap}>
-            <SsdLiveButton onPress={() => router.push({ pathname: '/(tabs)/news', params: { tab: 'ssd' } })} />
+
+            {/* ── Free Tickets ── */}
+            <View style={styles.sectionCard}>
+              <View style={styles.sectionBannerWrap}>
+                <Image
+                  source={require('../../assets/images/banner-image.png')}
+                  style={StyleSheet.absoluteFillObject}
+                  contentFit="cover"
+                  contentPosition="center"
+                />
+                <LinearGradient
+                  colors={['rgba(26,200,245,0.82)', 'rgba(10,126,164,0.90)', 'rgba(6,92,120,0.96)']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                  style={styles.sectionBanner}>
+                  <View style={styles.sectionBannerIconWrap}>
+                    <MaterialCommunityIcons name="ticket-percent-outline" size={20} color="#fff" />
+                  </View>
+                  <View>
+                    <ThemedText style={styles.sectionBannerTitle}>Free Tickets</ThemedText>
+                    <ThemedText style={styles.sectionBannerSubtitle}>SSD Token & counter locations</ThemedText>
+                  </View>
+                </LinearGradient>
+              </View>
+              {/* TODO: replace with your own free-tickets section image */}
+              <Image
+                source={require('../../assets/images/banner-image.png')}
+                style={styles.sectionInnerImage}
+                contentFit="cover"
+                contentPosition="center"
+              />
+              <View style={styles.sectionBtnsWrap}>
+                <SsdLiveButton onPress={() => router.push({ pathname: '/(tabs)/news', params: { tab: 'ssd' } })} />
+                <CounterLocationsButton onPress={() => router.push('/ssd-locations')} />
+              </View>
+            </View>
+
+            {/* ── Pilgrim Updates ── */}
+            <View style={styles.sectionCard}>
+              <View style={styles.sectionBannerWrap}>
+                <Image
+                  source={require('../../assets/images/explore-hero-image.png')}
+                  style={StyleSheet.absoluteFillObject}
+                  contentFit="cover"
+                  contentPosition="center"
+                />
+                <LinearGradient
+                  colors={['rgba(249,115,22,0.82)', 'rgba(234,88,12,0.90)', 'rgba(194,65,12,0.96)']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                  style={styles.sectionBanner}>
+                  <View style={styles.sectionBannerIconWrap}>
+                    <MaterialCommunityIcons name="account-group-outline" size={20} color="#fff" />
+                  </View>
+                  <View>
+                    <ThemedText style={styles.sectionBannerTitle}>Pilgrim Updates</ThemedText>
+                    <ThemedText style={styles.sectionBannerSubtitle}>Today's crowd, darshan & hundi</ThemedText>
+                  </View>
+                </LinearGradient>
+              </View>
+              {/* TODO: replace with your own pilgrim-updates section image */}
+              <Image
+                source={require('../../assets/images/explore-hero-image.png')}
+                style={styles.sectionInnerImage}
+                contentFit="cover"
+                contentPosition="center"
+              />
+              <View style={styles.sectionBtnsWrap}>
+                <PilgrimUpdatesButton onPress={() => router.push({ pathname: '/(tabs)/news', params: { tab: 'pilgrims' } })} />
+              </View>
+            </View>
+
+            {/* ── Today Schedules ── */}
+            <View style={styles.sectionCard}>
+              <View style={styles.sectionBannerWrap}>
+                <Image
+                  source={require('../../assets/images/support-hero-image.png')}
+                  style={StyleSheet.absoluteFillObject}
+                  contentFit="cover"
+                  contentPosition="center"
+                />
+                <LinearGradient
+                  colors={['rgba(168,85,247,0.82)', 'rgba(147,51,234,0.90)', 'rgba(124,58,237,0.96)']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                  style={styles.sectionBanner}>
+                  <View style={styles.sectionBannerIconWrap}>
+                    <MaterialCommunityIcons name="calendar-clock-outline" size={20} color="#fff" />
+                  </View>
+                  <View>
+                    <ThemedText style={styles.sectionBannerTitle}>Today Schedules</ThemedText>
+                    <ThemedText style={styles.sectionBannerSubtitle}>Seva & darshan timings for today</ThemedText>
+                  </View>
+                </LinearGradient>
+              </View>
+              {/* TODO: replace with your own schedules section image */}
+              <Image
+                source={require('../../assets/images/support-hero-image.png')}
+                style={styles.sectionInnerImage}
+                contentFit="cover"
+                contentPosition="center"
+              />
+              <View style={styles.sectionBtnsWrap}>
+                <DayScheduleButton onPress={() => router.push({ pathname: '/(tabs)/news', params: { tab: 'schedule' } })} />
+              </View>
+            </View>
+
           </View>
         </View>
       );
@@ -711,9 +925,17 @@ const styles = StyleSheet.create({
   overviewServiceCategory: { fontSize: 9.5, opacity: 0.65 },
   overviewServiceTagPill: { borderRadius: 999, paddingHorizontal: 8, paddingVertical: 2 },
   overviewServiceTagText: { fontSize: 9, fontWeight: '700' },
-  overviewQuickLinksWrap: { gap: 10, paddingHorizontal: 2 },
+  overviewQuickLinksWrap: { gap: 16, paddingHorizontal: 2 },
   overviewQuickLinkBtn: { flexDirection: 'row', alignItems: 'center', gap: 10, borderWidth: 1, borderRadius: 14, paddingVertical: 14, paddingHorizontal: 16 },
   overviewQuickLinkText: { flex: 1, fontSize: 14, fontWeight: '600' },
+  sectionCard: { borderRadius: 18, overflow: 'hidden', borderWidth: 1, borderColor: 'rgba(128,128,128,0.15)' },
+  sectionBannerWrap: { position: 'relative' },
+  sectionBanner: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 18, paddingHorizontal: 16 },
+  sectionBannerIconWrap: { width: 38, height: 38, borderRadius: 19, backgroundColor: 'rgba(255,255,255,0.2)', alignItems: 'center', justifyContent: 'center' },
+  sectionBannerTitle: { fontSize: 15, fontWeight: '700', color: '#fff' },
+  sectionBannerSubtitle: { fontSize: 11, color: 'rgba(255,255,255,0.78)', marginTop: 1 },
+  sectionBtnsWrap: { padding: 12, gap: 10 },
+  sectionInnerImage: { width: '100%', height: 160 },
   updateSlideCard: {},
   updateSlideHeader: {},
   updateSlideBadge: {},
