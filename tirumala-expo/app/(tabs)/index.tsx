@@ -3,7 +3,7 @@ import * as Linking from 'expo-linking';
 import { LinearGradient } from 'expo-linear-gradient';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { router } from 'expo-router';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Animated as RNAnimated, NativeScrollEvent, NativeSyntheticEvent, Pressable, ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -295,6 +295,111 @@ const scheduleBtnPressable: import('react-native').ViewStyle = {
   shadowRadius: 12,
   elevation: 8,
 };
+
+function DarshanNewsButton({ onPress }: { onPress: () => void }) {
+  return (
+    <Pressable
+      onPress={onPress}
+      style={({ pressed }) => [darshanNewsBtnPressable, { opacity: pressed ? 0.88 : 1 }]}>
+      <LinearGradient
+        colors={['#9b8ff5', '#7B68EE', '#4c3dbd']}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={ssdBtnGradient}>
+        <View style={ssdBtnLeft}>
+          <View style={ssdBtnIconWrap}>
+            <MaterialCommunityIcons name="newspaper-variant-multiple-outline" size={22} color="#fff" />
+          </View>
+          <View>
+            <ThemedText style={ssdBtnTitle}>Open Darshan News</ThemedText>
+            <ThemedText style={ssdBtnSubtitle}>SSD, pilgrims, schedules & more</ThemedText>
+          </View>
+        </View>
+        <View style={ssdBtnRight}>
+          <MaterialCommunityIcons name="chevron-right" size={18} color="rgba(255,255,255,0.8)" />
+        </View>
+      </LinearGradient>
+    </Pressable>
+  );
+}
+
+const darshanNewsBtnPressable: import('react-native').ViewStyle = {
+  borderRadius: 18,
+  shadowColor: '#7B68EE',
+  shadowOffset: { width: 0, height: 6 },
+  shadowOpacity: 0.4,
+  shadowRadius: 12,
+  elevation: 8,
+};
+
+const FAQ_ITEMS = [
+  {
+    q: 'How do I get a free darshan ticket (SSD)?',
+    a: 'Sudarshana Seva Darshanam (SSD) tokens are issued daily at designated counters in Tirumala and Tirupati. Tokens are limited—arrive early. You can also check live availability via the SSD Token screen in this app.',
+  },
+  {
+    q: 'What is the dress code at Tirumala temple?',
+    a: 'Men must wear dhoti (veshti) or pyjama with shirt/kurta. Women must wear saree, half-saree, salwar kameez or churidar with dupatta. Western wear (jeans, shorts, T-shirts) is not allowed inside the temple.',
+  },
+  {
+    q: 'How early should I arrive for darshan?',
+    a: 'For SSD (free) darshan, arrive at least 3–5 hours before the token distribution begins. For paid quota darshans, booking opens 30 days in advance on the TTD online portal—book as early as possible.',
+  },
+  {
+    q: 'How do I book a seva online?',
+    a: 'Visit the official TTD website (tirupatibalaji.ap.gov.in) or use the TTD Mobile App. Sevas can be booked under the "Online Services" section. Select the seva, choose a date, and provide pilgrim details.',
+  },
+  {
+    q: 'What items are not allowed inside the temple?',
+    a: 'Mobile phones, cameras, leather goods, footwear, eatables, and electronic devices are not permitted inside the inner precincts. Cloak rooms are available to deposit belongings.',
+  },
+  {
+    q: "Where can I find today's schedule and timings?",
+    a: "Go to the Darshan News tab in this app and switch to the \"Schedule\" section to view today's seva and darshan timings as officially published by TTD.",
+  },
+];
+
+const SUPPORT_LINKS = [
+  { label: 'TTD Official Website', sub: 'tirupatibalaji.ap.gov.in', icon: 'web', url: 'https://www.tirupatibalaji.ap.gov.in' },
+  { label: 'TTD Helpline', sub: '1800-425-1333 (Toll Free)', icon: 'phone-outline', url: 'tel:18004251333' },
+  { label: 'Online Ticket Booking', sub: 'Book darshan & sevas', icon: 'ticket-account', url: 'https://ttdsevaonline.com' },
+  { label: 'Email TTD', sub: 'Watch for official response', icon: 'email-outline', url: 'mailto:ttdonline@tirumala.org' },
+];
+
+function FaqList({ accentColor }: { accentColor: string }) {
+  const [expanded, setExpanded] = useState<number | null>(null);
+  const toggle = useCallback((i: number) => setExpanded((prev) => (prev === i ? null : i)), []);
+  return (
+    <View style={faqListWrap}>
+      {FAQ_ITEMS.map((item, i) => (
+        <View key={i} style={[faqItemWrap, { borderColor: accentColor + '30' }]}>
+          <Pressable
+            onPress={() => toggle(i)}
+            style={({ pressed }) => [faqQuestion, { opacity: pressed ? 0.75 : 1 }]}>
+            <ThemedText style={[faqQuestionText, { color: accentColor }]}>{item.q}</ThemedText>
+            <MaterialCommunityIcons
+              name={expanded === i ? 'chevron-up' : 'chevron-down'}
+              size={16}
+              color={accentColor}
+            />
+          </Pressable>
+          {expanded === i ? (
+            <View style={[faqAnswerWrap, { borderTopColor: accentColor + '20' }]}>
+              <ThemedText style={faqAnswerText}>{item.a}</ThemedText>
+            </View>
+          ) : null}
+        </View>
+      ))}
+    </View>
+  );
+}
+
+const faqListWrap: import('react-native').ViewStyle = { gap: 8, marginTop: 4 };
+const faqItemWrap: import('react-native').ViewStyle = { borderWidth: 1, borderRadius: 10, overflow: 'hidden' };
+const faqQuestion: import('react-native').ViewStyle = { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 12, gap: 8 };
+const faqQuestionText: import('react-native').TextStyle = { fontSize: 12.5, fontWeight: '600', flex: 1, lineHeight: 18 };
+const faqAnswerWrap: import('react-native').ViewStyle = { paddingHorizontal: 12, paddingBottom: 12, borderTopWidth: 1 };
+const faqAnswerText: import('react-native').TextStyle = { fontSize: 12, lineHeight: 18, opacity: 0.82, marginTop: 8 };
 
 function CounterLocationsButton({ onPress }: { onPress: () => void }) {
   return (
@@ -758,6 +863,36 @@ export default function HomeScreen() {
               </View>
             ) : null}
           </ThemedView>
+
+          {/* ── Darshan News section card ── */}
+          <View style={styles.overviewQuickLinksWrap}>
+            <View style={styles.sectionCard}>
+              <View style={styles.sectionBannerWrap}>
+                <Image
+                  source={require('../../assets/images/banner-image.png')}
+                  style={StyleSheet.absoluteFillObject}
+                  contentFit="cover"
+                  contentPosition="center"
+                />
+                <LinearGradient
+                  colors={['rgba(123,104,238,0.82)', 'rgba(100,80,220,0.90)', 'rgba(72,52,180,0.96)']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                  style={styles.sectionBanner}>
+                  <View style={styles.sectionBannerIconWrap}>
+                    <MaterialCommunityIcons name="newspaper-variant-outline" size={20} color="#fff" />
+                  </View>
+                  <View>
+                    <ThemedText style={styles.sectionBannerTitle}>Darshan News</ThemedText>
+                    <ThemedText style={styles.sectionBannerSubtitle}>SSD, pilgrims, schedules & the latest</ThemedText>
+                  </View>
+                </LinearGradient>
+              </View>
+              <View style={styles.sectionBtnsWrap}>
+                <DarshanNewsButton onPress={() => router.push('/(tabs)/news')} />
+              </View>
+            </View>
+          </View>
         </View>
       );
     }
@@ -774,9 +909,55 @@ export default function HomeScreen() {
           />
         </Animated.View>
 
-        <ThemedView style={[styles.contentCard, { borderColor: activeAccent, backgroundColor: activeAccent + '10' }]}> 
-          <ThemedText type="defaultSemiBold" style={{ color: activeAccent }}>Help</ThemedText>
-          <ThemedText style={styles.cardText}>For SSD token physical counters and today schedules, open Darshan News tab for current status.</ThemedText>
+        {/* FAQ section */}
+        <ThemedView style={[styles.contentCard, styles.premiumNewsCard, { borderColor: activeAccent, backgroundColor: activeAccent + '10' }]}>
+          <View style={styles.newsHeaderRow}>
+            <View style={styles.newsHeaderTitleWrap}>
+              <View style={[styles.newsHeaderIconWrap, { backgroundColor: activeAccent + '20' }]}>
+                <MaterialCommunityIcons name="frequently-asked-questions" size={14} color={activeAccent} />
+              </View>
+              <View>
+                <ThemedText type="defaultSemiBold" style={[styles.latestNewsTitle, { color: activeAccent }]}>FAQs</ThemedText>
+                <ThemedText style={styles.latestNewsSubtitle}>Common questions answered</ThemedText>
+              </View>
+            </View>
+          </View>
+          <FaqList accentColor={activeAccent} />
+        </ThemedView>
+
+        {/* Support / Contact card */}
+        <ThemedView style={[styles.contentCard, styles.premiumNewsCard, { borderColor: activeAccent, backgroundColor: activeAccent + '10' }]}>
+          <View style={styles.newsHeaderRow}>
+            <View style={styles.newsHeaderTitleWrap}>
+              <View style={[styles.newsHeaderIconWrap, { backgroundColor: activeAccent + '20' }]}>
+                <MaterialCommunityIcons name="headset" size={14} color={activeAccent} />
+              </View>
+              <View>
+                <ThemedText type="defaultSemiBold" style={[styles.latestNewsTitle, { color: activeAccent }]}>Contact & Support</ThemedText>
+                <ThemedText style={styles.latestNewsSubtitle}>Reach TTD directly</ThemedText>
+              </View>
+            </View>
+          </View>
+          <View style={styles.supportLinksWrap}>
+            {SUPPORT_LINKS.map((item) => (
+              <Pressable
+                key={item.label}
+                onPress={() => Linking.openURL(item.url)}
+                style={({ pressed }) => [
+                  styles.supportLinkBtn,
+                  { borderColor: activeAccent + '40', backgroundColor: activeAccent + '10', opacity: pressed ? 0.75 : 1 },
+                ]}>
+                <View style={[styles.supportLinkIcon, { backgroundColor: activeAccent + '20' }]}>
+                  <MaterialCommunityIcons name={item.icon as any} size={16} color={activeAccent} />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <ThemedText style={[styles.supportLinkLabel, { color: activeAccent }]}>{item.label}</ThemedText>
+                  <ThemedText style={styles.supportLinkSub}>{item.sub}</ThemedText>
+                </View>
+                <MaterialCommunityIcons name="open-in-new" size={13} color={activeAccent + 'AA'} />
+              </Pressable>
+            ))}
+          </View>
         </ThemedView>
       </View>
     );
@@ -962,4 +1143,9 @@ const styles = StyleSheet.create({
   newsTitle: { fontSize: 12.5, lineHeight: 18 },
   viewDetailsBtn: { alignSelf: 'flex-end', borderWidth: 1, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 6 },
   viewDetailsText: { fontSize: 11, fontWeight: '700' },
+  supportLinksWrap: { gap: 8, marginTop: 4 },
+  supportLinkBtn: { flexDirection: 'row', alignItems: 'center', gap: 10, borderWidth: 1, borderRadius: 12, paddingVertical: 12, paddingHorizontal: 12 },
+  supportLinkIcon: { width: 34, height: 34, borderRadius: 17, alignItems: 'center', justifyContent: 'center' },
+  supportLinkLabel: { fontSize: 13, fontWeight: '600' },
+  supportLinkSub: { fontSize: 11, opacity: 0.62, marginTop: 1 },
 });
