@@ -2,8 +2,8 @@ import { Image } from 'expo-image';
 import * as Linking from 'expo-linking';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { router } from 'expo-router';
-import { useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { useEffect, useState } from 'react';
+import { NativeScrollEvent, NativeSyntheticEvent, Pressable, ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -14,7 +14,6 @@ import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useLiveUpdates } from '@/hooks/use-live-updates';
 
 type HomeTab = 'overview' | 'explore' | 'support';
-type ExploreOption = 'bookings' | 'latest-updates';
 
 type LatestNewsItem = {
   date: string;
@@ -23,19 +22,15 @@ type LatestNewsItem = {
   title: string;
 };
 
-type LatestUpdateItem = {
-  text: string;
-};
-
 export default function HomeScreen() {
   const colorScheme = useColorScheme() ?? 'light';
   const tintColor = MainTabAccent.index;
   const borderColor = Colors[colorScheme].icon;
+  const { width: screenWidth } = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const [activeTab, setActiveTab] = useState<HomeTab>('overview');
-  const [exploreOption, setExploreOption] = useState<ExploreOption>('bookings');
-  const [exploreDropdownOpen, setExploreDropdownOpen] = useState(false);
-  const { latestNews, latestUpdates, loading: liveLoading } = useLiveUpdates();
+  const [activeNewsSlide, setActiveNewsSlide] = useState(0);
+  const { latestNews, loading: liveLoading } = useLiveUpdates();
 
   const accentByTab: Record<HomeTab, string> = {
     overview: tintColor,
@@ -44,11 +39,24 @@ export default function HomeScreen() {
   };
   const activeAccent = accentByTab[activeTab];
   const newsItems: LatestNewsItem[] = latestNews;
-  const latestUpdateItems: LatestUpdateItem[] = latestUpdates;
-  const previewNewsItems = newsItems.slice(0, 3);
+  const previewNewsItems = newsItems.slice(0, 4);
+  const newsSlideWidth = Math.max(260, screenWidth - 52);
+
+  useEffect(() => {
+    if (activeNewsSlide >= previewNewsItems.length) {
+      setActiveNewsSlide(0);
+    }
+  }, [activeNewsSlide, previewNewsItems.length]);
 
   const buildProxyUrl = (sourceUrl: string) => {
     return `https://images.weserv.nl/?url=${encodeURIComponent(sourceUrl)}&w=1200&output=jpg`;
+  };
+
+  const handleNewsScrollEnd = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+    const offsetX = event.nativeEvent.contentOffset.x;
+    const rawIndex = Math.round(offsetX / (newsSlideWidth + 8));
+    const clampedIndex = Math.max(0, Math.min(rawIndex, previewNewsItems.length - 1));
+    setActiveNewsSlide(clampedIndex);
   };
 
   const renderTabContent = () => {
@@ -64,12 +72,35 @@ export default function HomeScreen() {
               transition={200}
             />
           </Animated.View>
+        </View>
+      );
+    }
 
-          <ThemedView style={[styles.contentCard, { borderColor: activeAccent, backgroundColor: activeAccent + '10' }]}> 
-          {/* <View style={[styles.latestNewsWrap, { borderColor: activeAccent + '55' }]}>  */}
+    if (activeTab === 'explore') {
+      return (
+        <View style={styles.overviewWrap}>
+          <Animated.View entering={FadeInDown.duration(320)} style={styles.bannerWrap}>
+            <Image
+              source={require('../../assets/images/explore-hero-image.png')}
+              style={styles.bannerImage}
+              contentFit="cover"
+              contentPosition="center"
+              transition={200}
+            />
+          </Animated.View>
+
+          <ThemedView style={[styles.contentCard, styles.premiumNewsCard, { borderColor: activeAccent, backgroundColor: activeAccent + '10' }]}> 
             <View style={styles.newsHeaderRow}>
-              <ThemedText type="defaultSemiBold" style={[styles.latestNewsTitle, { color: activeAccent }]}>Latest News</ThemedText>
-              {!liveLoading && newsItems.length > 3 ? (
+              <View style={styles.newsHeaderTitleWrap}>
+                <View style={[styles.newsHeaderIconWrap, { backgroundColor: activeAccent + '20' }]}>
+                  <MaterialCommunityIcons name="newspaper-variant-outline" size={14} color={activeAccent} />
+                </View>
+                <View>
+                  <ThemedText type="defaultSemiBold" style={[styles.latestNewsTitle, { color: activeAccent }]}>Latest News</ThemedText>
+                  <ThemedText style={styles.latestNewsSubtitle}>Swipe to explore recent updates</ThemedText>
+                </View>
+              </View>
+              {!liveLoading && newsItems.length > 0 ? (
                 <Pressable
                   onPress={() => router.push('/latest-news')}
                   style={({ pressed }) => [
@@ -85,171 +116,79 @@ export default function HomeScreen() {
             {!liveLoading && newsItems.length === 0 ? <ThemedText style={styles.newsDate}>No latest news available.</ThemedText> : null}
             {!liveLoading && previewNewsItems.length > 0 ? (
               <View style={styles.newsListWrap}>
-                {previewNewsItems.map((item, index) => (
-                  <View
-                    key={`${item.date}-${item.link}`}
-                    style={[
-                      styles.newsItem,
-                      {
-                        borderColor: activeAccent + '33',
-                        backgroundColor: activeAccent + '0A',
-                      },
-                    ]}> 
-                    <Image
-                      source={
-                        item.image_url?.trim()
-                          ? { uri: buildProxyUrl(item.image_url.trim()) }
-                          : require('../../assets/images/banner-image.png')
-                      }
-                      style={styles.newsImage}
-                      contentFit="cover"
-                      transition={180}
-                    />
+                <ScrollView
+                  horizontal
+                  pagingEnabled
+                  showsHorizontalScrollIndicator={false}
+                  decelerationRate="fast"
+                  snapToInterval={newsSlideWidth + 8}
+                  onMomentumScrollEnd={handleNewsScrollEnd}
+                  contentContainerStyle={styles.newsCarouselContent}>
+                  {previewNewsItems.map((item) => (
+                    <View
+                      key={`${item.date}-${item.link}`}
+                      style={[
+                        styles.newsItem,
+                        {
+                          width: newsSlideWidth,
+                          borderColor: activeAccent + '33',
+                          backgroundColor: activeAccent + '0A',
+                        },
+                      ]}> 
+                      <Image
+                        source={
+                          item.image_url?.trim()
+                            ? { uri: buildProxyUrl(item.image_url.trim()) }
+                            : require('../../assets/images/banner-image.png')
+                        }
+                        style={styles.newsImage}
+                        contentFit="cover"
+                        transition={180}
+                      />
 
-                    <View style={styles.newsTextWrap}>
-                      <ThemedText style={styles.newsTitle} numberOfLines={3}>{item.title}</ThemedText>
+                      <View style={styles.newsTextWrap}>
+                        <View style={styles.newsMetaRow}>
+                          <View style={[styles.newsDateDot, { backgroundColor: activeAccent }]} />
+                          <ThemedText style={styles.newsDate}>{item.date || 'Latest'}</ThemedText>
+                        </View>
 
-                      <Pressable
-                        onPress={() => void Linking.openURL(item.link)}
-                        style={({ pressed }) => [
-                          styles.viewDetailsBtn,
-                          { borderColor: activeAccent, backgroundColor: activeAccent + '14', opacity: pressed ? 0.78 : 1 },
-                        ]}>
-                        <ThemedText style={[styles.viewDetailsText, { color: activeAccent }]}>View Details</ThemedText>
-                      </Pressable>
+                        <ThemedText style={styles.newsTitle} numberOfLines={3}>{item.title}</ThemedText>
+
+                        <Pressable
+                          onPress={() => void Linking.openURL(item.link)}
+                          style={({ pressed }) => [
+                            styles.viewDetailsBtn,
+                            { borderColor: activeAccent, backgroundColor: activeAccent + '14', opacity: pressed ? 0.78 : 1 },
+                          ]}>
+                          <ThemedText style={[styles.viewDetailsText, { color: activeAccent }]}>View Details</ThemedText>
+                        </Pressable>
+                      </View>
                     </View>
-                  </View>
-                ))}
+                  ))}
+                </ScrollView>
 
-                {newsItems.length > 3 ? (
-                  <Pressable
-                    onPress={() => router.push('/latest-news')}
-                    style={({ pressed }) => [
-                      styles.fullWidthViewMoreBtn,
-                      { borderColor: activeAccent, backgroundColor: activeAccent, opacity: pressed ? 0.82 : 1 },
-                    ]}>
-                    <MaterialCommunityIcons name="newspaper-variant-outline" size={17} color="#fff" />
-                    <ThemedText style={styles.fullWidthViewMoreText}>View More News</ThemedText>
-                    <MaterialCommunityIcons name="chevron-right" size={18} color="#fff" style={{ marginLeft: 'auto' }} />
-                  </Pressable>
+                {previewNewsItems.length > 1 ? (
+                  <View style={styles.newsPaginationWrap}>
+                    {previewNewsItems.map((item, index) => {
+                      const isActive = index === activeNewsSlide;
+
+                      return (
+                        <View
+                          key={`${item.date}-${item.link}-dot`}
+                          style={[
+                            styles.newsPaginationDot,
+                            isActive
+                              ? { width: 18, backgroundColor: activeAccent, borderColor: activeAccent }
+                              : { backgroundColor: activeAccent + '22', borderColor: activeAccent + '55' },
+                          ]}
+                        />
+                      );
+                    })}
+                  </View>
                 ) : null}
               </View>
             ) : null}
-          {/* </View> */}
           </ThemedView>
-        </View>
-      );
-    }
-
-    if (activeTab === 'explore') {
-      const exploreLabel = exploreOption === 'bookings' ? 'Bookings' : 'Latest Updates';
-
-      return (
-        <View style={styles.overviewWrap}>
-          <Animated.View entering={FadeInDown.duration(320)} style={styles.bannerWrap}>
-            <Image
-              source={require('../../assets/images/explore-hero-image.png')}
-              style={styles.bannerImage}
-              contentFit="cover"
-              contentPosition="center"
-              transition={200}
-            />
-          </Animated.View>
-
-          <View style={styles.exploreDropdownWrap}>
-            <Pressable
-              onPress={() => setExploreDropdownOpen((prev) => !prev)}
-              style={({ pressed }) => [
-                styles.exploreDropdownTrigger,
-                { borderColor: activeAccent, backgroundColor: activeAccent + '12', opacity: pressed ? 0.82 : 1 },
-              ]}>
-              <ThemedText style={[styles.exploreDropdownText, { color: activeAccent }]}>{exploreLabel}</ThemedText>
-              <MaterialCommunityIcons
-                name={exploreDropdownOpen ? 'chevron-up' : 'chevron-down'}
-                size={18}
-                color={activeAccent}
-              />
-            </Pressable>
-
-            {exploreDropdownOpen ? (
-              <View style={[styles.exploreDropdownMenu, { borderColor: activeAccent + '66', backgroundColor: activeAccent + '10' }]}> 
-                <Pressable
-                  onPress={() => {
-                    setExploreOption('bookings');
-                    setExploreDropdownOpen(false);
-                  }}
-                  style={({ pressed }) => [
-                    styles.exploreDropdownItem,
-                    { opacity: pressed ? 0.75 : 1 },
-                  ]}>
-                  <ThemedText style={[styles.exploreDropdownItemText, exploreOption === 'bookings' ? { color: activeAccent, fontWeight: '700' } : null]}>
-                    Bookings
-                  </ThemedText>
-                </Pressable>
-
-                <View style={[styles.exploreDropdownDivider, { backgroundColor: activeAccent + '45' }]} />
-
-                <Pressable
-                  onPress={() => {
-                    setExploreOption('latest-updates');
-                    setExploreDropdownOpen(false);
-                  }}
-                  style={({ pressed }) => [
-                    styles.exploreDropdownItem,
-                    { opacity: pressed ? 0.75 : 1 },
-                  ]}>
-                  <ThemedText style={[styles.exploreDropdownItemText, exploreOption === 'latest-updates' ? { color: activeAccent, fontWeight: '700' } : null]}>
-                    Latest Updates
-                  </ThemedText>
-                </Pressable>
-              </View>
-            ) : null}
-          </View>
-
-          {exploreOption === 'bookings' ? (
-            <ThemedView style={[styles.contentCard, { borderColor: activeAccent, backgroundColor: activeAccent + '10' }]}> 
-              <ThemedText type="defaultSemiBold" style={{ color: activeAccent }}>Bookings</ThemedText>
-              <ThemedText style={styles.cardText}>Use these sections to plan and complete your booking journey.</ThemedText>
-              <View style={styles.explorePointsWrap}>
-                <ThemedText style={styles.explorePoint}>• Services tab for seva and facility-related bookings</ThemedText>
-                <ThemedText style={styles.explorePoint}>• Places tab for nearby temples, accommodation and routes</ThemedText>
-              </View>
-            </ThemedView>
-          ) : (
-            <ThemedView style={[styles.contentCard, { borderColor: activeAccent, backgroundColor: activeAccent + '10' }]}> 
-              <View style={styles.latestUpdatesHeaderRow}>
-                <View style={[styles.latestUpdatesHeaderIconWrap, { backgroundColor: activeAccent + '20' }]}>
-                  <MaterialCommunityIcons name="bell-ring-outline" size={16} color={activeAccent} />
-                </View>
-                <View style={{ flex: 1, gap: 1 }}>
-                  <ThemedText type="defaultSemiBold" style={{ color: activeAccent }}>Latest Updates</ThemedText>
-                  {!liveLoading && latestUpdateItems.length > 0 ? (
-                    <ThemedText style={styles.latestUpdatesSubtext}>{latestUpdateItems.length} official update(s)</ThemedText>
-                  ) : null}
-                </View>
-              </View>
-
-              {liveLoading ? <ThemedText style={styles.cardText}>Loading latest updates...</ThemedText> : null}
-              {!liveLoading && latestUpdateItems.length === 0 ? (
-                <ThemedText style={styles.cardText}>No latest updates available.</ThemedText>
-              ) : null}
-              {!liveLoading && latestUpdateItems.length > 0 ? (
-                <View style={styles.latestUpdatesListWrap}>
-                  {latestUpdateItems.map((item, index) => (
-                    <View
-                      key={`latest-update-${index}`}
-                      style={[styles.latestUpdateCard, { borderColor: activeAccent + '35', backgroundColor: activeAccent + '0A' }]}> 
-                      <View style={styles.latestUpdateTopRow}>
-                        <View style={[styles.latestUpdateBullet, { backgroundColor: activeAccent }]} />
-                        <ThemedText style={[styles.latestUpdateTag, { color: activeAccent }]}>UPDATE {index + 1}</ThemedText>
-                      </View>
-                      <ThemedText style={styles.latestUpdateText}>{item.text}</ThemedText>
-                    </View>
-                  ))}
-                </View>
-              ) : null}
-            </ThemedView>
-          )}
         </View>
       );
     }
@@ -392,30 +331,27 @@ const styles = StyleSheet.create({
   tabButton: { flex: 1, borderWidth: 1, borderRadius: 9, paddingVertical: 8, alignItems: 'center' },
   tabButtonText: { fontSize: 12 },
   contentCard: { borderWidth: 1, borderRadius: 14, padding: 14, gap: 6 },
+  premiumNewsCard: { borderRadius: 16, padding: 12, gap: 10 },
   cardText: { fontSize: 13, lineHeight: 18, opacity: 0.8 },
   latestNewsWrap: { borderWidth: 1, borderRadius: 12, padding: 10, marginTop: 6, gap: 8 },
-  newsHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  newsHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 10 },
+  newsHeaderTitleWrap: { flexDirection: 'row', alignItems: 'center', gap: 8, flex: 1 },
+  newsHeaderIconWrap: { width: 26, height: 26, borderRadius: 13, alignItems: 'center', justifyContent: 'center' },
   latestNewsTitle: { fontSize: 14 },
+  latestNewsSubtitle: { fontSize: 11, opacity: 0.68, marginTop: 1 },
   viewMoreBtn: { borderWidth: 1, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 5 },
   viewMoreText: { fontSize: 12, fontWeight: '700' },
   newsListWrap: { gap: 8 },
-  newsItem: { width: '100%', borderWidth: 1, borderRadius: 10, padding: 8, gap: 8 },
-  newsImage: { width: '100%', height: 165, borderRadius: 8 },
+  newsCarouselContent: { gap: 8 },
+  newsItem: { width: '100%', borderWidth: 1, borderRadius: 12, padding: 8, gap: 8 },
+  newsPaginationWrap: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, marginTop: 2 },
+  newsPaginationDot: { width: 8, height: 8, borderRadius: 4, borderWidth: 1 },
+  newsImage: { width: '100%', height: 172, borderRadius: 10 },
   newsTextWrap: { gap: 8 },
+  newsMetaRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  newsDateDot: { width: 6, height: 6, borderRadius: 3 },
   newsDate: { fontSize: 11, opacity: 0.65 },
-  newsTitle: { fontSize: 12, lineHeight: 17 },
-  viewDetailsBtn: { alignSelf: 'flex-start', borderWidth: 1, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 6 },
+  newsTitle: { fontSize: 12.5, lineHeight: 18 },
+  viewDetailsBtn: { alignSelf: 'flex-end', borderWidth: 1, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 6 },
   viewDetailsText: { fontSize: 11, fontWeight: '700' },
-  fullWidthViewMoreBtn: {
-    marginTop: 2,
-    width: '100%',
-    borderWidth: 1,
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 11,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  fullWidthViewMoreText: { color: '#fff', fontSize: 12, fontWeight: '700' },
 });
