@@ -830,3 +830,175 @@ export async function syncServicesCatalog(
   if (error) throw new Error(error.message);
   return payload.length;
 }
+
+// ─── Help Content ──────────────────────────────────────────────────────────────
+
+type HelpFaqRow    = Database['public']['Tables']['help_faqs']['Row'];
+type HelpFaqInsert = Database['public']['Tables']['help_faqs']['Insert'];
+type HelpFaqUpdate = Database['public']['Tables']['help_faqs']['Update'];
+
+type HelpDressCodeRow    = Database['public']['Tables']['help_dress_code']['Row'];
+type HelpDressCodeInsert = Database['public']['Tables']['help_dress_code']['Insert'];
+type HelpDressCodeUpdate = Database['public']['Tables']['help_dress_code']['Update'];
+
+type HelpDosDontsRow    = Database['public']['Tables']['help_dos_donts']['Row'];
+type HelpDosDontsInsert = Database['public']['Tables']['help_dos_donts']['Insert'];
+type HelpDosDontsUpdate = Database['public']['Tables']['help_dos_donts']['Update'];
+
+type HelpContactRow    = Database['public']['Tables']['help_contact_support']['Row'];
+type HelpContactInsert = Database['public']['Tables']['help_contact_support']['Insert'];
+type HelpContactUpdate = Database['public']['Tables']['help_contact_support']['Update'];
+
+// ── FAQs ──────────────────────────────────────────────────────────────────────
+
+export async function getAllFaqs(): Promise<HelpFaqRow[]> {
+  const { data, error } = await supabaseAdmin
+    .from('help_faqs')
+    .select('*')
+    .order('sort_order', { ascending: true });
+  if (error) throw new Error(error.message);
+  return data ?? [];
+}
+
+export async function insertFaq(payload: HelpFaqInsert): Promise<HelpFaqRow> {
+  const { data, error } = await supabaseAdmin
+    .from('help_faqs')
+    .insert({ ...payload, updated_at: new Date().toISOString() })
+    .select()
+    .single();
+  if (error) throw new Error(error.message);
+  return data;
+}
+
+export async function updateFaq(id: number, payload: HelpFaqUpdate): Promise<HelpFaqRow> {
+  const { data, error } = await supabaseAdmin
+    .from('help_faqs')
+    .update({ ...payload, updated_at: new Date().toISOString() })
+    .eq('id', id)
+    .select()
+    .single();
+  if (error) throw new Error(error.message);
+  return data;
+}
+
+export async function deleteFaq(id: number): Promise<boolean> {
+  const { error } = await supabaseAdmin.from('help_faqs').delete().eq('id', id);
+  if (error) throw new Error(error.message);
+  return true;
+}
+
+// ── Dress Code ────────────────────────────────────────────────────────────────
+
+export async function getAllDressCodeItems(): Promise<HelpDressCodeRow[]> {
+  const { data, error } = await supabaseAdmin
+    .from('help_dress_code')
+    .select('*')
+    .order('section', { ascending: true })
+    .order('sort_order', { ascending: true });
+  if (error) throw new Error(error.message);
+  return data ?? [];
+}
+
+export async function insertDressCodeItem(payload: HelpDressCodeInsert): Promise<HelpDressCodeRow> {
+  const { data, error } = await supabaseAdmin
+    .from('help_dress_code')
+    .insert({ ...payload, updated_at: new Date().toISOString() })
+    .select()
+    .single();
+  if (error) throw new Error(error.message);
+  return data;
+}
+
+export async function updateDressCodeItem(id: number, payload: HelpDressCodeUpdate): Promise<HelpDressCodeRow> {
+  const { data, error } = await supabaseAdmin
+    .from('help_dress_code')
+    .update({ ...payload, updated_at: new Date().toISOString() })
+    .eq('id', id)
+    .select()
+    .single();
+  if (error) throw new Error(error.message);
+  return data;
+}
+
+export async function deleteDressCodeItem(id: number): Promise<boolean> {
+  const { error } = await supabaseAdmin.from('help_dress_code').delete().eq('id', id);
+  if (error) throw new Error(error.message);
+  return true;
+}
+
+// ── Do's & Don'ts ─────────────────────────────────────────────────────────────
+
+export async function getAllDosDonts(): Promise<HelpDosDontsRow[]> {
+  const { data, error } = await supabaseAdmin
+    .from('help_dos_donts')
+    .select('*')
+    .order('type', { ascending: true })
+    .order('sort_order', { ascending: true });
+  if (error) throw new Error(error.message);
+  return data ?? [];
+}
+
+export async function insertDosDont(payload: HelpDosDontsInsert): Promise<HelpDosDontsRow> {
+  const { data, error } = await supabaseAdmin
+    .from('help_dos_donts')
+    .insert({ ...payload, updated_at: new Date().toISOString() })
+    .select()
+    .single();
+  if (error) throw new Error(error.message);
+  return data;
+}
+
+export async function updateDosDont(id: number, payload: HelpDosDontsUpdate): Promise<HelpDosDontsRow> {
+  const { data, error } = await supabaseAdmin
+    .from('help_dos_donts')
+    .update({ ...payload, updated_at: new Date().toISOString() })
+    .eq('id', id)
+    .select()
+    .single();
+  if (error) throw new Error(error.message);
+  return data;
+}
+
+export async function deleteDosDont(id: number): Promise<boolean> {
+  const { error } = await supabaseAdmin.from('help_dos_donts').delete().eq('id', id);
+  if (error) throw new Error(error.message);
+  return true;
+}
+
+// ── Contact & Support ─────────────────────────────────────────────────────────
+
+export async function getAllContactSupport(): Promise<HelpContactRow[]> {
+  const { data, error } = await supabaseAdmin
+    .from('help_contact_support')
+    .select('*')
+    .order('sort_order', { ascending: true });
+  if (error) throw new Error(error.message);
+  return data ?? [];
+}
+
+export async function insertContactSupport(payload: HelpContactInsert): Promise<HelpContactRow> {
+  const { data, error } = await supabaseAdmin
+    .from('help_contact_support')
+    .insert({ ...payload, updated_at: new Date().toISOString() })
+    .select()
+    .single();
+  if (error) throw new Error(error.message);
+  return data;
+}
+
+export async function updateContactSupport(id: number, payload: HelpContactUpdate): Promise<HelpContactRow> {
+  const { data, error } = await supabaseAdmin
+    .from('help_contact_support')
+    .update({ ...payload, updated_at: new Date().toISOString() })
+    .eq('id', id)
+    .select()
+    .single();
+  if (error) throw new Error(error.message);
+  return data;
+}
+
+export async function deleteContactSupport(id: number): Promise<boolean> {
+  const { error } = await supabaseAdmin.from('help_contact_support').delete().eq('id', id);
+  if (error) throw new Error(error.message);
+  return true;
+}

@@ -281,6 +281,128 @@ export type Database = {
         };
         Relationships: [];
       };
+      help_faqs: {
+        Row: {
+          id: number;
+          question: string;
+          answer: string;
+          sort_order: number;
+          is_active: boolean;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: never;
+          question: string;
+          answer: string;
+          sort_order?: number;
+          is_active?: boolean;
+          created_at?: string | null;
+          updated_at?: string | null;
+        };
+        Update: {
+          id?: never;
+          question?: string;
+          answer?: string;
+          sort_order?: number;
+          is_active?: boolean;
+          updated_at?: string | null;
+        };
+        Relationships: [];
+      };
+      help_dress_code: {
+        Row: {
+          id: number;
+          section: 'men' | 'women' | 'general';
+          content: string;
+          sort_order: number;
+          is_active: boolean;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: never;
+          section: 'men' | 'women' | 'general';
+          content: string;
+          sort_order?: number;
+          is_active?: boolean;
+          created_at?: string | null;
+          updated_at?: string | null;
+        };
+        Update: {
+          id?: never;
+          section?: 'men' | 'women' | 'general';
+          content?: string;
+          sort_order?: number;
+          is_active?: boolean;
+          updated_at?: string | null;
+        };
+        Relationships: [];
+      };
+      help_dos_donts: {
+        Row: {
+          id: number;
+          type: 'do' | 'dont';
+          content: string;
+          sort_order: number;
+          is_active: boolean;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: never;
+          type: 'do' | 'dont';
+          content: string;
+          sort_order?: number;
+          is_active?: boolean;
+          created_at?: string | null;
+          updated_at?: string | null;
+        };
+        Update: {
+          id?: never;
+          type?: 'do' | 'dont';
+          content?: string;
+          sort_order?: number;
+          is_active?: boolean;
+          updated_at?: string | null;
+        };
+        Relationships: [];
+      };
+      help_contact_support: {
+        Row: {
+          id: number;
+          label: string;
+          sub_label: string;
+          icon: string;
+          url: string;
+          sort_order: number;
+          is_active: boolean;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: never;
+          label: string;
+          sub_label?: string;
+          icon?: string;
+          url: string;
+          sort_order?: number;
+          is_active?: boolean;
+          created_at?: string | null;
+          updated_at?: string | null;
+        };
+        Update: {
+          id?: never;
+          label?: string;
+          sub_label?: string;
+          icon?: string;
+          url?: string;
+          sort_order?: number;
+          is_active?: boolean;
+          updated_at?: string | null;
+        };
+        Relationships: [];
+      };
     };
     Views: {
       [_ in never]: never;

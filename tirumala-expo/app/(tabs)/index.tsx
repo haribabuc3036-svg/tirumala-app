@@ -15,6 +15,7 @@ import { Colors, MainTabAccent } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useLiveUpdates, type LiveLatestUpdateItem } from '@/hooks/use-live-updates';
 import { useServicesCatalog } from '@/hooks/use-services-catalog';
+import { useHelpContent } from '@/hooks/use-help-content';
 import { type Service } from '@/types/services';
 
 type HomeTab = 'overview' | 'explore' | 'help';
@@ -332,60 +333,27 @@ const darshanNewsBtnPressable: import('react-native').ViewStyle = {
   elevation: 8,
 };
 
-const FAQ_ITEMS = [
-  {
-    q: 'How do I get a free darshan ticket (SSD)?',
-    a: 'Sudarshana Seva Darshanam (SSD) tokens are issued daily at designated counters in Tirumala and Tirupati. Tokens are limited—arrive early. You can also check live availability via the SSD Token screen in this app.',
-  },
-  {
-    q: 'What is the dress code at Tirumala temple?',
-    a: 'Men must wear dhoti (veshti) or pyjama with shirt/kurta. Women must wear saree, half-saree, salwar kameez or churidar with dupatta. Western wear (jeans, shorts, T-shirts) is not allowed inside the temple.',
-  },
-  {
-    q: 'How early should I arrive for darshan?',
-    a: 'For SSD (free) darshan, arrive at least 3–5 hours before the token distribution begins. For paid quota darshans, booking opens 30 days in advance on the TTD online portal—book as early as possible.',
-  },
-  {
-    q: 'How do I book a seva online?',
-    a: 'Visit the official TTD website (tirupatibalaji.ap.gov.in) or use the TTD Mobile App. Sevas can be booked under the "Online Services" section. Select the seva, choose a date, and provide pilgrim details.',
-  },
-  {
-    q: 'What items are not allowed inside the temple?',
-    a: 'Mobile phones, cameras, leather goods, footwear, eatables, and electronic devices are not permitted inside the inner precincts. Cloak rooms are available to deposit belongings.',
-  },
-  {
-    q: "Where can I find today's schedule and timings?",
-    a: "Go to the Darshan News tab in this app and switch to the \"Schedule\" section to view today's seva and darshan timings as officially published by TTD.",
-  },
-];
-
-const SUPPORT_LINKS = [
-  { label: 'TTD Official Website', sub: 'tirupatibalaji.ap.gov.in', icon: 'web', url: 'https://www.tirupatibalaji.ap.gov.in' },
-  { label: 'TTD Helpline', sub: '1800-425-1333 (Toll Free)', icon: 'phone-outline', url: 'tel:18004251333' },
-  { label: 'Online Ticket Booking', sub: 'Book darshan & sevas', icon: 'ticket-account', url: 'https://ttdsevaonline.com' },
-  { label: 'Email TTD', sub: 'Watch for official response', icon: 'email-outline', url: 'mailto:ttdonline@tirumala.org' },
-];
-
-function FaqList({ accentColor }: { accentColor: string }) {
+function FaqList({ items, accentColor }: { items: { id: number; question: string; answer: string }[]; accentColor: string }) {
   const [expanded, setExpanded] = useState<number | null>(null);
-  const toggle = useCallback((i: number) => setExpanded((prev) => (prev === i ? null : i)), []);
+  const toggle = useCallback((id: number) => setExpanded((prev) => (prev === id ? null : id)), []);
+  if (items.length === 0) return <ThemedText style={[faqAnswerText, { marginTop: 4 }]}>No FAQs available.</ThemedText>;
   return (
     <View style={faqListWrap}>
-      {FAQ_ITEMS.map((item, i) => (
-        <View key={i} style={[faqItemWrap, { borderColor: accentColor + '30' }]}>
+      {items.map((item) => (
+        <View key={item.id} style={[faqItemWrap, { borderColor: accentColor + '30' }]}>
           <Pressable
-            onPress={() => toggle(i)}
+            onPress={() => toggle(item.id)}
             style={({ pressed }) => [faqQuestion, { opacity: pressed ? 0.75 : 1 }]}>
-            <ThemedText style={[faqQuestionText, { color: accentColor }]}>{item.q}</ThemedText>
+            <ThemedText style={[faqQuestionText, { color: accentColor }]}>{item.question}</ThemedText>
             <MaterialCommunityIcons
-              name={expanded === i ? 'chevron-up' : 'chevron-down'}
+              name={expanded === item.id ? 'chevron-up' : 'chevron-down'}
               size={16}
               color={accentColor}
             />
           </Pressable>
-          {expanded === i ? (
+          {expanded === item.id ? (
             <View style={[faqAnswerWrap, { borderTopColor: accentColor + '20' }]}>
-              <ThemedText style={faqAnswerText}>{item.a}</ThemedText>
+              <ThemedText style={faqAnswerText}>{item.answer}</ThemedText>
             </View>
           ) : null}
         </View>
@@ -458,6 +426,7 @@ export default function HomeScreen() {
   const [activeUpdateSlide, setActiveUpdateSlide] = useState(0);
   const { latestNews, latestUpdates, loading: liveLoading } = useLiveUpdates();
   const { overviewServices, loading: servicesLoading, error: servicesError } = useServicesCatalog();
+  const { content: helpContent, loading: helpLoading } = useHelpContent();
   const overviewServiceItems: OverviewServiceItem[] = overviewServices;
 
   const accentByTab: Record<HomeTab, string> = {
@@ -909,56 +878,156 @@ export default function HomeScreen() {
           />
         </Animated.View>
 
-        {/* FAQ section */}
-        <ThemedView style={[styles.contentCard, styles.premiumNewsCard, { borderColor: activeAccent, backgroundColor: activeAccent + '10' }]}>
-          <View style={styles.newsHeaderRow}>
-            <View style={styles.newsHeaderTitleWrap}>
-              <View style={[styles.newsHeaderIconWrap, { backgroundColor: activeAccent + '20' }]}>
-                <MaterialCommunityIcons name="frequently-asked-questions" size={14} color={activeAccent} />
-              </View>
-              <View>
-                <ThemedText type="defaultSemiBold" style={[styles.latestNewsTitle, { color: activeAccent }]}>FAQs</ThemedText>
-                <ThemedText style={styles.latestNewsSubtitle}>Common questions answered</ThemedText>
-              </View>
-            </View>
-          </View>
-          <FaqList accentColor={activeAccent} />
-        </ThemedView>
+        {helpLoading ? (
+          <ThemedView style={[styles.contentCard, { borderColor: activeAccent, backgroundColor: activeAccent + '10' }]}>
+            <ThemedText style={styles.latestNewsSubtitle}>Loading help content…</ThemedText>
+          </ThemedView>
+        ) : null}
 
-        {/* Support / Contact card */}
-        <ThemedView style={[styles.contentCard, styles.premiumNewsCard, { borderColor: activeAccent, backgroundColor: activeAccent + '10' }]}>
-          <View style={styles.newsHeaderRow}>
-            <View style={styles.newsHeaderTitleWrap}>
-              <View style={[styles.newsHeaderIconWrap, { backgroundColor: activeAccent + '20' }]}>
-                <MaterialCommunityIcons name="headset" size={14} color={activeAccent} />
-              </View>
-              <View>
-                <ThemedText type="defaultSemiBold" style={[styles.latestNewsTitle, { color: activeAccent }]}>Contact & Support</ThemedText>
-                <ThemedText style={styles.latestNewsSubtitle}>Reach TTD directly</ThemedText>
+        {/* ── Dress Code ── */}
+        {!helpLoading ? (
+          <ThemedView style={[styles.contentCard, styles.premiumNewsCard, { borderColor: activeAccent, backgroundColor: activeAccent + '10' }]}>
+            <View style={styles.newsHeaderRow}>
+              <View style={styles.newsHeaderTitleWrap}>
+                <View style={[styles.newsHeaderIconWrap, { backgroundColor: activeAccent + '20' }]}>
+                  <MaterialCommunityIcons name="tshirt-crew-outline" size={14} color={activeAccent} />
+                </View>
+                <View>
+                  <ThemedText type="defaultSemiBold" style={[styles.latestNewsTitle, { color: activeAccent }]}>Dress Code</ThemedText>
+                  <ThemedText style={styles.latestNewsSubtitle}>What to wear at Tirumala</ThemedText>
+                </View>
               </View>
             </View>
-          </View>
-          <View style={styles.supportLinksWrap}>
-            {SUPPORT_LINKS.map((item) => (
-              <Pressable
-                key={item.label}
-                onPress={() => Linking.openURL(item.url)}
-                style={({ pressed }) => [
-                  styles.supportLinkBtn,
-                  { borderColor: activeAccent + '40', backgroundColor: activeAccent + '10', opacity: pressed ? 0.75 : 1 },
-                ]}>
-                <View style={[styles.supportLinkIcon, { backgroundColor: activeAccent + '20' }]}>
-                  <MaterialCommunityIcons name={item.icon as any} size={16} color={activeAccent} />
+
+            {(['men', 'women', 'general'] as const).map((section) => {
+              const items = helpContent.dressCode[section];
+              if (items.length === 0) return null;
+              const sectionLabel = section === 'men' ? 'Men' : section === 'women' ? 'Women' : 'General';
+              const sectionIcon = section === 'men' ? 'human-male' : section === 'women' ? 'human-female' : 'information-outline';
+              return (
+                <View key={section} style={[dressSectionWrap, { borderColor: activeAccent + '20' }]}>
+                  <View style={[dressSectionHeader, { backgroundColor: activeAccent + '15' }]}>
+                    <MaterialCommunityIcons name={sectionIcon as any} size={13} color={activeAccent} />
+                    <ThemedText style={[dressSectionTitle, { color: activeAccent }]}>{sectionLabel}</ThemedText>
+                  </View>
+                  {items.map((item) => (
+                    <View key={item.id} style={dressItemRow}>
+                      <View style={[dressBullet, { backgroundColor: activeAccent }]} />
+                      <ThemedText style={dressItemText}>{item.content}</ThemedText>
+                    </View>
+                  ))}
                 </View>
-                <View style={{ flex: 1 }}>
-                  <ThemedText style={[styles.supportLinkLabel, { color: activeAccent }]}>{item.label}</ThemedText>
-                  <ThemedText style={styles.supportLinkSub}>{item.sub}</ThemedText>
+              );
+            })}
+          </ThemedView>
+        ) : null}
+
+        {/* ── Do's & Don'ts ── */}
+        {!helpLoading ? (
+          <ThemedView style={[styles.contentCard, styles.premiumNewsCard, { borderColor: activeAccent, backgroundColor: activeAccent + '10' }]}>
+            <View style={styles.newsHeaderRow}>
+              <View style={styles.newsHeaderTitleWrap}>
+                <View style={[styles.newsHeaderIconWrap, { backgroundColor: activeAccent + '20' }]}>
+                  <MaterialCommunityIcons name="clipboard-check-outline" size={14} color={activeAccent} />
                 </View>
-                <MaterialCommunityIcons name="open-in-new" size={13} color={activeAccent + 'AA'} />
-              </Pressable>
-            ))}
-          </View>
-        </ThemedView>
+                <View>
+                  <ThemedText type="defaultSemiBold" style={[styles.latestNewsTitle, { color: activeAccent }]}>Do's & Don'ts</ThemedText>
+                  <ThemedText style={styles.latestNewsSubtitle}>Tips for a smooth pilgrimage</ThemedText>
+                </View>
+              </View>
+            </View>
+
+            <View style={dosDontsGrid}>
+              {/* Do's column */}
+              <View style={dosDontsColumn}>
+                <View style={[dosDontsColHeader, { backgroundColor: '#16a34a18' }]}>
+                  <MaterialCommunityIcons name="check-circle-outline" size={13} color="#16a34a" />
+                  <ThemedText style={[dosDontsColTitle, { color: '#16a34a' }]}>Do's</ThemedText>
+                </View>
+                {helpContent.dos.map((item) => (
+                  <View key={item.id} style={dosDontsItemRow}>
+                    <MaterialCommunityIcons name="check" size={12} color="#16a34a" style={{ marginTop: 2 }} />
+                    <ThemedText style={dosDontsItemText}>{item.content}</ThemedText>
+                  </View>
+                ))}
+                {helpContent.dos.length === 0 ? <ThemedText style={dosDontsItemText}>No items.</ThemedText> : null}
+              </View>
+
+              {/* Don'ts column */}
+              <View style={dosDontsColumn}>
+                <View style={[dosDontsColHeader, { backgroundColor: '#dc262618' }]}>
+                  <MaterialCommunityIcons name="close-circle-outline" size={13} color="#dc2626" />
+                  <ThemedText style={[dosDontsColTitle, { color: '#dc2626' }]}>Don'ts</ThemedText>
+                </View>
+                {helpContent.donts.map((item) => (
+                  <View key={item.id} style={dosDontsItemRow}>
+                    <MaterialCommunityIcons name="close" size={12} color="#dc2626" style={{ marginTop: 2 }} />
+                    <ThemedText style={dosDontsItemText}>{item.content}</ThemedText>
+                  </View>
+                ))}
+                {helpContent.donts.length === 0 ? <ThemedText style={dosDontsItemText}>No items.</ThemedText> : null}
+              </View>
+            </View>
+          </ThemedView>
+        ) : null}
+
+        {/* ── FAQs ── */}
+        {!helpLoading ? (
+          <ThemedView style={[styles.contentCard, styles.premiumNewsCard, { borderColor: activeAccent, backgroundColor: activeAccent + '10' }]}>
+            <View style={styles.newsHeaderRow}>
+              <View style={styles.newsHeaderTitleWrap}>
+                <View style={[styles.newsHeaderIconWrap, { backgroundColor: activeAccent + '20' }]}>
+                  <MaterialCommunityIcons name="frequently-asked-questions" size={14} color={activeAccent} />
+                </View>
+                <View>
+                  <ThemedText type="defaultSemiBold" style={[styles.latestNewsTitle, { color: activeAccent }]}>FAQs</ThemedText>
+                  <ThemedText style={styles.latestNewsSubtitle}>Common questions answered</ThemedText>
+                </View>
+              </View>
+            </View>
+            <FaqList items={helpContent.faqs} accentColor={activeAccent} />
+          </ThemedView>
+        ) : null}
+
+        {/* ── Contact & Support ── */}
+        {!helpLoading ? (
+          <ThemedView style={[styles.contentCard, styles.premiumNewsCard, { borderColor: activeAccent, backgroundColor: activeAccent + '10' }]}>
+            <View style={styles.newsHeaderRow}>
+              <View style={styles.newsHeaderTitleWrap}>
+                <View style={[styles.newsHeaderIconWrap, { backgroundColor: activeAccent + '20' }]}>
+                  <MaterialCommunityIcons name="headset" size={14} color={activeAccent} />
+                </View>
+                <View>
+                  <ThemedText type="defaultSemiBold" style={[styles.latestNewsTitle, { color: activeAccent }]}>Contact & Support</ThemedText>
+                  <ThemedText style={styles.latestNewsSubtitle}>Reach TTD directly</ThemedText>
+                </View>
+              </View>
+            </View>
+            <View style={styles.supportLinksWrap}>
+              {helpContent.contactSupport.map((item) => (
+                <Pressable
+                  key={item.id}
+                  onPress={() => Linking.openURL(item.url)}
+                  style={({ pressed }) => [
+                    styles.supportLinkBtn,
+                    { borderColor: activeAccent + '40', backgroundColor: activeAccent + '10', opacity: pressed ? 0.75 : 1 },
+                  ]}>
+                  <View style={[styles.supportLinkIcon, { backgroundColor: activeAccent + '20' }]}>
+                    <MaterialCommunityIcons name={item.icon as any} size={16} color={activeAccent} />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <ThemedText style={[styles.supportLinkLabel, { color: activeAccent }]}>{item.label}</ThemedText>
+                    <ThemedText style={styles.supportLinkSub}>{item.sub_label}</ThemedText>
+                  </View>
+                  <MaterialCommunityIcons name="open-in-new" size={13} color={activeAccent + 'AA'} />
+                </Pressable>
+              ))}
+              {helpContent.contactSupport.length === 0 ? (
+                <ThemedText style={styles.newsDate}>No contact info available.</ThemedText>
+              ) : null}
+            </View>
+          </ThemedView>
+        ) : null}
       </View>
     );
   };
@@ -1149,3 +1218,19 @@ const styles = StyleSheet.create({
   supportLinkLabel: { fontSize: 13, fontWeight: '600' },
   supportLinkSub: { fontSize: 11, opacity: 0.62, marginTop: 1 },
 });
+
+// ── Dress Code flat styles ────────────────────────────────────────────────────
+const dressSectionWrap: import('react-native').ViewStyle = { borderWidth: 1, borderRadius: 10, overflow: 'hidden', marginTop: 4 };
+const dressSectionHeader: import('react-native').ViewStyle = { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 12, paddingVertical: 8 };
+const dressSectionTitle: import('react-native').TextStyle = { fontSize: 12, fontWeight: '700', letterSpacing: 0.3 };
+const dressItemRow: import('react-native').ViewStyle = { flexDirection: 'row', alignItems: 'flex-start', gap: 8, paddingHorizontal: 12, paddingVertical: 6 };
+const dressBullet: import('react-native').ViewStyle = { width: 5, height: 5, borderRadius: 3, marginTop: 5 };
+const dressItemText: import('react-native').TextStyle = { fontSize: 12, lineHeight: 18, flex: 1, opacity: 0.85 };
+
+// ── Do's & Don'ts flat styles ─────────────────────────────────────────────────
+const dosDontsGrid: import('react-native').ViewStyle = { flexDirection: 'row', gap: 8, marginTop: 4 };
+const dosDontsColumn: import('react-native').ViewStyle = { flex: 1, gap: 6 };
+const dosDontsColHeader: import('react-native').ViewStyle = { flexDirection: 'row', alignItems: 'center', gap: 5, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 6 };
+const dosDontsColTitle: import('react-native').TextStyle = { fontSize: 11.5, fontWeight: '700' };
+const dosDontsItemRow: import('react-native').ViewStyle = { flexDirection: 'row', alignItems: 'flex-start', gap: 6, paddingHorizontal: 4 };
+const dosDontsItemText: import('react-native').TextStyle = { fontSize: 11.5, lineHeight: 17, flex: 1, opacity: 0.84 };

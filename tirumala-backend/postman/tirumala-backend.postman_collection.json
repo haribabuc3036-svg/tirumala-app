@@ -40,6 +40,26 @@
       "key": "serviceImageId",
       "value": "1",
       "type": "string"
+    },
+    {
+      "key": "helpFaqId",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "helpDressCodeId",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "helpDosDontId",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "helpContactId",
+      "value": "1",
+      "type": "string"
     }
   ],
   "item": [
@@ -1283,6 +1303,388 @@
               "path": ["api", "places", "sync"]
             }
           }
+        }
+      ]
+    },
+    {
+      "name": "Help Content",
+      "description": "CRUD endpoints for the Help tab: FAQs, Dress Code, Do's & Don'ts, and Contact & Support. All data is stored in Supabase. The mobile app reads directly from Supabase (anon key, RLS). These endpoints use the service-role key to write.",
+      "item": [
+        {
+          "name": "FAQs",
+          "item": [
+            {
+              "name": "List All FAQs",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/help/faqs",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "help", "faqs"]
+                },
+                "description": "Returns all FAQ rows including inactive ones (admin view)."
+              },
+              "response": [
+                {
+                  "name": "200 OK",
+                  "status": "OK",
+                  "code": 200,
+                  "originalRequest": {
+                    "method": "GET",
+                    "header": [],
+                    "url": { "raw": "{{baseUrl}}/api/help/faqs", "host": ["{{baseUrl}}"], "path": ["api", "help", "faqs"] }
+                  },
+                  "body": "{\n  \"success\": true,\n  \"count\": 1,\n  \"data\": [\n    {\n      \"id\": 1,\n      \"question\": \"How do I get a free darshan ticket?\",\n      \"answer\": \"SSD tokens are issued daily at designated counters.\",\n      \"sort_order\": 1,\n      \"is_active\": true,\n      \"created_at\": \"2026-02-28T00:00:00.000Z\",\n      \"updated_at\": \"2026-02-28T00:00:00.000Z\"\n    }\n  ]\n}"
+                }
+              ]
+            },
+            {
+              "name": "Add FAQ",
+              "request": {
+                "method": "POST",
+                "header": [{ "key": "Content-Type", "value": "application/json" }],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"question\": \"What is the dress code at Tirumala?\",\n  \"answer\": \"Men must wear dhoti or pyjama with kurta. Women must wear saree or salwar kameez.\",\n  \"sort_order\": 2,\n  \"is_active\": true\n}",
+                  "options": { "raw": { "language": "json" } }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/help/faqs",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "help", "faqs"]
+                },
+                "description": "Add a new FAQ.\n\n**Required:** `question`, `answer`\n**Optional:** `sort_order` (default 0), `is_active` (default true)"
+              },
+              "response": [
+                {
+                  "name": "201 Created",
+                  "status": "Created",
+                  "code": 201,
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [{ "key": "Content-Type", "value": "application/json" }],
+                    "body": { "mode": "raw", "raw": "{\n  \"question\": \"What is the dress code at Tirumala?\",\n  \"answer\": \"Men must wear dhoti or pyjama with kurta.\",\n  \"sort_order\": 2,\n  \"is_active\": true\n}" },
+                    "url": { "raw": "{{baseUrl}}/api/help/faqs", "host": ["{{baseUrl}}"], "path": ["api", "help", "faqs"] }
+                  },
+                  "body": "{\n  \"success\": true,\n  \"data\": {\n    \"id\": 2,\n    \"question\": \"What is the dress code at Tirumala?\",\n    \"answer\": \"Men must wear dhoti or pyjama with kurta.\",\n    \"sort_order\": 2,\n    \"is_active\": true,\n    \"created_at\": \"2026-02-28T00:00:00.000Z\",\n    \"updated_at\": \"2026-02-28T00:00:00.000Z\"\n  }\n}"
+                }
+              ]
+            },
+            {
+              "name": "Update FAQ",
+              "request": {
+                "method": "PUT",
+                "header": [{ "key": "Content-Type", "value": "application/json" }],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"question\": \"Updated question text?\",\n  \"answer\": \"Updated answer text.\",\n  \"sort_order\": 1,\n  \"is_active\": true\n}",
+                  "options": { "raw": { "language": "json" } }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/help/faqs/{{helpFaqId}}",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "help", "faqs", "{{helpFaqId}}"]
+                },
+                "description": "Update any field of an existing FAQ by its numeric `id`."
+              }
+            },
+            {
+              "name": "Delete FAQ",
+              "request": {
+                "method": "DELETE",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/help/faqs/{{helpFaqId}}",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "help", "faqs", "{{helpFaqId}}"]
+                },
+                "description": "Permanently delete a FAQ by its numeric `id`."
+              }
+            }
+          ]
+        },
+        {
+          "name": "Dress Code",
+          "item": [
+            {
+              "name": "List All Dress Code Items",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/help/dress-code",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "help", "dress-code"]
+                },
+                "description": "Returns all dress code rows (including inactive). Ordered by section then sort_order."
+              },
+              "response": [
+                {
+                  "name": "200 OK",
+                  "status": "OK",
+                  "code": 200,
+                  "originalRequest": {
+                    "method": "GET",
+                    "header": [],
+                    "url": { "raw": "{{baseUrl}}/api/help/dress-code", "host": ["{{baseUrl}}"], "path": ["api", "help", "dress-code"] }
+                  },
+                  "body": "{\n  \"success\": true,\n  \"count\": 1,\n  \"data\": [\n    {\n      \"id\": 1,\n      \"section\": \"men\",\n      \"content\": \"Dhoti (veshti) with upper cloth or shirt\",\n      \"sort_order\": 1,\n      \"is_active\": true,\n      \"created_at\": \"2026-02-28T00:00:00.000Z\",\n      \"updated_at\": \"2026-02-28T00:00:00.000Z\"\n    }\n  ]\n}"
+                }
+              ]
+            },
+            {
+              "name": "Add Dress Code Item",
+              "request": {
+                "method": "POST",
+                "header": [{ "key": "Content-Type", "value": "application/json" }],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"section\": \"men\",\n  \"content\": \"Dhoti (veshti) with upper cloth or shirt\",\n  \"sort_order\": 1,\n  \"is_active\": true\n}",
+                  "options": { "raw": { "language": "json" } }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/help/dress-code",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "help", "dress-code"]
+                },
+                "description": "Add a new dress code item.\n\n**Required:** `section` (`\"men\"` | `\"women\"` | `\"general\"`), `content`\n**Optional:** `sort_order` (default 0), `is_active` (default true)"
+              },
+              "response": [
+                {
+                  "name": "201 Created",
+                  "status": "Created",
+                  "code": 201,
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [{ "key": "Content-Type", "value": "application/json" }],
+                    "body": { "mode": "raw", "raw": "{\n  \"section\": \"men\",\n  \"content\": \"Dhoti (veshti) with upper cloth or shirt\",\n  \"sort_order\": 1,\n  \"is_active\": true\n}" },
+                    "url": { "raw": "{{baseUrl}}/api/help/dress-code", "host": ["{{baseUrl}}"], "path": ["api", "help", "dress-code"] }
+                  },
+                  "body": "{\n  \"success\": true,\n  \"data\": {\n    \"id\": 6,\n    \"section\": \"men\",\n    \"content\": \"Dhoti (veshti) with upper cloth or shirt\",\n    \"sort_order\": 1,\n    \"is_active\": true,\n    \"created_at\": \"2026-02-28T00:00:00.000Z\",\n    \"updated_at\": \"2026-02-28T00:00:00.000Z\"\n  }\n}"
+                }
+              ]
+            },
+            {
+              "name": "Update Dress Code Item",
+              "request": {
+                "method": "PUT",
+                "header": [{ "key": "Content-Type", "value": "application/json" }],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"section\": \"women\",\n  \"content\": \"Updated dress code rule\",\n  \"sort_order\": 2,\n  \"is_active\": true\n}",
+                  "options": { "raw": { "language": "json" } }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/help/dress-code/{{helpDressCodeId}}",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "help", "dress-code", "{{helpDressCodeId}}"]
+                },
+                "description": "Update any field of a dress code item by its numeric `id`."
+              }
+            },
+            {
+              "name": "Delete Dress Code Item",
+              "request": {
+                "method": "DELETE",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/help/dress-code/{{helpDressCodeId}}",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "help", "dress-code", "{{helpDressCodeId}}"]
+                },
+                "description": "Permanently delete a dress code item by its numeric `id`."
+              }
+            }
+          ]
+        },
+        {
+          "name": "Do's & Don'ts",
+          "item": [
+            {
+              "name": "List All Do's & Don'ts",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/help/dos-donts",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "help", "dos-donts"]
+                },
+                "description": "Returns all do/dont rows (including inactive). Ordered by type then sort_order."
+              },
+              "response": [
+                {
+                  "name": "200 OK",
+                  "status": "OK",
+                  "code": 200,
+                  "originalRequest": {
+                    "method": "GET",
+                    "header": [],
+                    "url": { "raw": "{{baseUrl}}/api/help/dos-donts", "host": ["{{baseUrl}}"], "path": ["api", "help", "dos-donts"] }
+                  },
+                  "body": "{\n  \"success\": true,\n  \"count\": 2,\n  \"data\": [\n    { \"id\": 1, \"type\": \"do\", \"content\": \"Arrive early\", \"sort_order\": 1, \"is_active\": true },\n    { \"id\": 8, \"type\": \"dont\", \"content\": \"Do not bring mobile phones\", \"sort_order\": 1, \"is_active\": true }\n  ]\n}"
+                }
+              ]
+            },
+            {
+              "name": "Add Do/Don't Item",
+              "request": {
+                "method": "POST",
+                "header": [{ "key": "Content-Type", "value": "application/json" }],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"type\": \"do\",\n  \"content\": \"Carry valid government-issued photo ID\",\n  \"sort_order\": 2,\n  \"is_active\": true\n}",
+                  "options": { "raw": { "language": "json" } }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/help/dos-donts",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "help", "dos-donts"]
+                },
+                "description": "Add a new do or don't item.\n\n**Required:** `type` (`\"do\"` | `\"dont\"`), `content`\n**Optional:** `sort_order` (default 0), `is_active` (default true)"
+              },
+              "response": [
+                {
+                  "name": "201 Created",
+                  "status": "Created",
+                  "code": 201,
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [{ "key": "Content-Type", "value": "application/json" }],
+                    "body": { "mode": "raw", "raw": "{\n  \"type\": \"do\",\n  \"content\": \"Carry valid government-issued photo ID\",\n  \"sort_order\": 2,\n  \"is_active\": true\n}" },
+                    "url": { "raw": "{{baseUrl}}/api/help/dos-donts", "host": ["{{baseUrl}}"], "path": ["api", "help", "dos-donts"] }
+                  },
+                  "body": "{\n  \"success\": true,\n  \"data\": {\n    \"id\": 9,\n    \"type\": \"do\",\n    \"content\": \"Carry valid government-issued photo ID\",\n    \"sort_order\": 2,\n    \"is_active\": true,\n    \"created_at\": \"2026-02-28T00:00:00.000Z\",\n    \"updated_at\": \"2026-02-28T00:00:00.000Z\"\n  }\n}"
+                }
+              ]
+            },
+            {
+              "name": "Update Do/Don't Item",
+              "request": {
+                "method": "PUT",
+                "header": [{ "key": "Content-Type", "value": "application/json" }],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"type\": \"dont\",\n  \"content\": \"Updated don't rule\",\n  \"sort_order\": 3,\n  \"is_active\": true\n}",
+                  "options": { "raw": { "language": "json" } }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/help/dos-donts/{{helpDosDontId}}",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "help", "dos-donts", "{{helpDosDontId}}"]
+                },
+                "description": "Update any field of a do/don't item by its numeric `id`."
+              }
+            },
+            {
+              "name": "Delete Do/Don't Item",
+              "request": {
+                "method": "DELETE",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/help/dos-donts/{{helpDosDontId}}",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "help", "dos-donts", "{{helpDosDontId}}"]
+                },
+                "description": "Permanently delete a do/don't item by its numeric `id`."
+              }
+            }
+          ]
+        },
+        {
+          "name": "Contact & Support",
+          "item": [
+            {
+              "name": "List All Contact & Support",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/help/contact-support",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "help", "contact-support"]
+                },
+                "description": "Returns all contact/support entries (including inactive), ordered by sort_order."
+              },
+              "response": [
+                {
+                  "name": "200 OK",
+                  "status": "OK",
+                  "code": 200,
+                  "originalRequest": {
+                    "method": "GET",
+                    "header": [],
+                    "url": { "raw": "{{baseUrl}}/api/help/contact-support", "host": ["{{baseUrl}}"], "path": ["api", "help", "contact-support"] }
+                  },
+                  "body": "{\n  \"success\": true,\n  \"count\": 1,\n  \"data\": [\n    {\n      \"id\": 1,\n      \"label\": \"TTD Official Website\",\n      \"sub_label\": \"tirupatibalaji.ap.gov.in\",\n      \"icon\": \"web\",\n      \"url\": \"https://www.tirupatibalaji.ap.gov.in\",\n      \"sort_order\": 1,\n      \"is_active\": true,\n      \"created_at\": \"2026-02-28T00:00:00.000Z\",\n      \"updated_at\": \"2026-02-28T00:00:00.000Z\"\n    }\n  ]\n}"
+                }
+              ]
+            },
+            {
+              "name": "Add Contact & Support Entry",
+              "request": {
+                "method": "POST",
+                "header": [{ "key": "Content-Type", "value": "application/json" }],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"label\": \"TTD Official Website\",\n  \"sub_label\": \"tirupatibalaji.ap.gov.in\",\n  \"icon\": \"web\",\n  \"url\": \"https://www.tirupatibalaji.ap.gov.in\",\n  \"sort_order\": 1,\n  \"is_active\": true\n}",
+                  "options": { "raw": { "language": "json" } }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/help/contact-support",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "help", "contact-support"]
+                },
+                "description": "Add a new contact/support entry.\n\n**Required:** `label`, `url`\n**Optional:** `sub_label`, `icon` (MaterialCommunityIcons name, default `\"web\"`), `sort_order`, `is_active`"
+              },
+              "response": [
+                {
+                  "name": "201 Created",
+                  "status": "Created",
+                  "code": 201,
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [{ "key": "Content-Type", "value": "application/json" }],
+                    "body": { "mode": "raw", "raw": "{\n  \"label\": \"TTD Official Website\",\n  \"sub_label\": \"tirupatibalaji.ap.gov.in\",\n  \"icon\": \"web\",\n  \"url\": \"https://www.tirupatibalaji.ap.gov.in\",\n  \"sort_order\": 1\n}" },
+                    "url": { "raw": "{{baseUrl}}/api/help/contact-support", "host": ["{{baseUrl}}"], "path": ["api", "help", "contact-support"] }
+                  },
+                  "body": "{\n  \"success\": true,\n  \"data\": {\n    \"id\": 5,\n    \"label\": \"TTD Official Website\",\n    \"sub_label\": \"tirupatibalaji.ap.gov.in\",\n    \"icon\": \"web\",\n    \"url\": \"https://www.tirupatibalaji.ap.gov.in\",\n    \"sort_order\": 1,\n    \"is_active\": true,\n    \"created_at\": \"2026-02-28T00:00:00.000Z\",\n    \"updated_at\": \"2026-02-28T00:00:00.000Z\"\n  }\n}"
+                }
+              ]
+            },
+            {
+              "name": "Update Contact & Support Entry",
+              "request": {
+                "method": "PUT",
+                "header": [{ "key": "Content-Type", "value": "application/json" }],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"label\": \"Updated Label\",\n  \"sub_label\": \"Updated sub label\",\n  \"icon\": \"phone-outline\",\n  \"url\": \"tel:18004251333\",\n  \"sort_order\": 2,\n  \"is_active\": true\n}",
+                  "options": { "raw": { "language": "json" } }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/help/contact-support/{{helpContactId}}",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "help", "contact-support", "{{helpContactId}}"]
+                },
+                "description": "Update any field of a contact/support entry by its numeric `id`."
+              }
+            },
+            {
+              "name": "Delete Contact & Support Entry",
+              "request": {
+                "method": "DELETE",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/help/contact-support/{{helpContactId}}",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "help", "contact-support", "{{helpContactId}}"]
+                },
+                "description": "Permanently delete a contact/support entry by its numeric `id`."
+              }
+            }
+          ]
         }
       ]
     }
