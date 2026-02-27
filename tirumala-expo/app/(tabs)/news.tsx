@@ -1,6 +1,6 @@
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
-import { router } from 'expo-router';
-import { type ComponentProps, useState } from 'react';
+import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
+import { type ComponentProps, useCallback, useState } from 'react';
 import { ActivityIndicator, FlatList, Pressable, StyleSheet, View } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -132,7 +132,16 @@ export default function NewsScreen() {
   const borderColor = Colors[colorScheme].icon;
   const tintColor = MainTabAccent.news;
   const insets = useSafeAreaInsets();
+  const { tab: tabParam } = useLocalSearchParams<{ tab?: string }>();
   const [activeTab, setActiveTab] = useState<NewsSubTab>('pilgrims');
+
+  useFocusEffect(
+    useCallback(() => {
+      if (tabParam === 'ssd' || tabParam === 'schedule' || tabParam === 'pilgrims') {
+        setActiveTab(tabParam);
+      }
+    }, [tabParam])
+  );
 
   // ── Live Firebase data (merges over static fallbacks) ────────────────────
   const { ssdToken, pilgrimsToday, pilgrimsRecent, daySchedule, loading: liveLoading } = useLiveUpdates();

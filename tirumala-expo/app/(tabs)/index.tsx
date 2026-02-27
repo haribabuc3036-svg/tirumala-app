@@ -1,9 +1,10 @@
 import { Image } from 'expo-image';
 import * as Linking from 'expo-linking';
+import { LinearGradient } from 'expo-linear-gradient';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { router } from 'expo-router';
-import { useEffect, useState } from 'react';
-import { NativeScrollEvent, NativeSyntheticEvent, Pressable, ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
+import { Animated as RNAnimated, NativeScrollEvent, NativeSyntheticEvent, Pressable, ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -118,6 +119,110 @@ function UpdateSlideCard({
     </View>
   );
 }
+
+function SsdLiveButton({ onPress }: { onPress: () => void }) {
+  const pulseAnim = useRef(new RNAnimated.Value(1)).current;
+  const ringAnim = useRef(new RNAnimated.Value(0)).current;
+
+  useEffect(() => {
+    RNAnimated.loop(
+      RNAnimated.sequence([
+        RNAnimated.timing(pulseAnim, { toValue: 0.25, duration: 700, useNativeDriver: true }),
+        RNAnimated.timing(pulseAnim, { toValue: 1, duration: 700, useNativeDriver: true }),
+      ])
+    ).start();
+    RNAnimated.loop(
+      RNAnimated.timing(ringAnim, { toValue: 1, duration: 1400, useNativeDriver: true })
+    ).start();
+  }, [pulseAnim, ringAnim]);
+
+  const ringScale = ringAnim.interpolate({ inputRange: [0, 1], outputRange: [1, 2.4] });
+  const ringOpacity = ringAnim.interpolate({ inputRange: [0, 0.6, 1], outputRange: [0.6, 0.15, 0] });
+
+  return (
+    <Pressable
+      onPress={onPress}
+      style={({ pressed }) => [ssdBtnPressable, { opacity: pressed ? 0.88 : 1 }]}>
+      <LinearGradient
+        colors={['#1ac8f5', '#0A7EA4', '#065c78']}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={ssdBtnGradient}>
+        {/* Left icon + text */}
+        <View style={ssdBtnLeft}>
+          <View style={ssdBtnIconWrap}>
+            <MaterialCommunityIcons name="ticket-confirmation-outline" size={22} color="#fff" />
+          </View>
+          <View>
+            <ThemedText style={ssdBtnTitle}>SSD Token</ThemedText>
+            <ThemedText style={ssdBtnSubtitle}>Tap to view live availability</ThemedText>
+          </View>
+        </View>
+
+        {/* Live dot with ring */}
+        <View style={ssdBtnRight}>
+          <View style={ssdLiveDotWrap}>
+            <RNAnimated.View
+              style={[
+                ssdLiveRing,
+                { transform: [{ scale: ringScale }], opacity: ringOpacity },
+              ]}
+            />
+            <RNAnimated.View style={[ssdLiveDot, { opacity: pulseAnim }]} />
+          </View>
+          <ThemedText style={ssdLiveLabel}>LIVE</ThemedText>
+          <MaterialCommunityIcons name="chevron-right" size={18} color="rgba(255,255,255,0.8)" />
+        </View>
+      </LinearGradient>
+    </Pressable>
+  );
+}
+
+const ssdBtnPressable: import('react-native').ViewStyle = {
+  borderRadius: 18,
+  shadowColor: '#0A7EA4',
+  shadowOffset: { width: 0, height: 6 },
+  shadowOpacity: 0.45,
+  shadowRadius: 12,
+  elevation: 8,
+};
+const ssdBtnGradient: import('react-native').ViewStyle = {
+  flexDirection: 'row',
+  alignItems: 'center',
+  justifyContent: 'space-between',
+  borderRadius: 18,
+  paddingVertical: 16,
+  paddingHorizontal: 18,
+  borderWidth: 1,
+  borderColor: 'rgba(255,255,255,0.18)',
+};
+const ssdBtnLeft: import('react-native').ViewStyle = { flexDirection: 'row', alignItems: 'center', gap: 12, flex: 1 };
+const ssdBtnIconWrap: import('react-native').ViewStyle = {
+  width: 42,
+  height: 42,
+  borderRadius: 21,
+  backgroundColor: 'rgba(255,255,255,0.18)',
+  alignItems: 'center',
+  justifyContent: 'center',
+};
+const ssdBtnTitle: import('react-native').TextStyle = { fontSize: 15, fontWeight: '700', color: '#fff', letterSpacing: 0.2 };
+const ssdBtnSubtitle: import('react-native').TextStyle = { fontSize: 11, color: 'rgba(255,255,255,0.75)', marginTop: 1 };
+const ssdBtnRight: import('react-native').ViewStyle = { flexDirection: 'row', alignItems: 'center', gap: 6 };
+const ssdLiveDotWrap: import('react-native').ViewStyle = { width: 18, height: 18, alignItems: 'center', justifyContent: 'center' };
+const ssdLiveRing: import('react-native').ViewStyle = {
+  position: 'absolute',
+  width: 14,
+  height: 14,
+  borderRadius: 7,
+  backgroundColor: '#4ade80',
+};
+const ssdLiveDot: import('react-native').ViewStyle = {
+  width: 10,
+  height: 10,
+  borderRadius: 5,
+  backgroundColor: '#4ade80',
+};
+const ssdLiveLabel: import('react-native').TextStyle = { fontSize: 10, fontWeight: '800', color: '#4ade80', letterSpacing: 1 };
 
 // Flat style refs for UpdateSlideCard (defined outside main component to avoid re-creation)
 const updateSlideCardStyle: import('react-native').ViewStyle = { borderWidth: 1, borderRadius: 12, padding: 12, gap: 8 };
@@ -323,6 +428,10 @@ export default function HomeScreen() {
               </View>
             ) : null}
           </ThemedView>
+
+          <View style={styles.overviewQuickLinksWrap}>
+            <SsdLiveButton onPress={() => router.push({ pathname: '/(tabs)/news', params: { tab: 'ssd' } })} />
+          </View>
         </View>
       );
     }
@@ -602,6 +711,9 @@ const styles = StyleSheet.create({
   overviewServiceCategory: { fontSize: 9.5, opacity: 0.65 },
   overviewServiceTagPill: { borderRadius: 999, paddingHorizontal: 8, paddingVertical: 2 },
   overviewServiceTagText: { fontSize: 9, fontWeight: '700' },
+  overviewQuickLinksWrap: { gap: 10, paddingHorizontal: 2 },
+  overviewQuickLinkBtn: { flexDirection: 'row', alignItems: 'center', gap: 10, borderWidth: 1, borderRadius: 14, paddingVertical: 14, paddingHorizontal: 16 },
+  overviewQuickLinkText: { flex: 1, fontSize: 14, fontWeight: '600' },
   updateSlideCard: {},
   updateSlideHeader: {},
   updateSlideBadge: {},
