@@ -2,9 +2,9 @@ import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
-import { type ComponentProps, useCallback, useState } from 'react';
-import { ActivityIndicator, FlatList, Pressable, StyleSheet, View } from 'react-native';
-import Animated, { FadeInDown } from 'react-native-reanimated';
+import { type ComponentProps, useCallback, useEffect, useState } from 'react';
+import { ActivityIndicator, FlatList, Pressable, ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
+import Animated, { FadeInDown, useSharedValue, withRepeat, withSequence, withTiming, useAnimatedStyle } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
@@ -318,7 +318,7 @@ export default function NewsScreen() {
                     <MaterialCommunityIcons name="star-circle" size={13} color="#fff" />
                     <ThemedText style={styles.heroDateText}>{latestNews.date}</ThemedText>
                   </View>
-                  <View style={[styles.heroBadge, { backgroundColor: latestBadgeText === 'TODAY' ? '#4CAF50' : '#FFB300' }]}>
+                  <View style={[styles.heroBadge, { backgroundColor: '#4CAF50' }]}>
                     <ThemedText style={styles.heroBadgeText}>{latestBadgeText}</ThemedText>
                   </View>
                 </View>
@@ -360,12 +360,12 @@ export default function NewsScreen() {
             <View style={styles.recentSectionHeader}>
               <View style={[styles.recentSectionAccent, { backgroundColor: tintColor }]} />
               <ThemedText style={[styles.recentSectionTitle, { color: tintColor }]}>Recent Updates</ThemedText>
-              <ThemedText style={styles.recentSectionSub}>Historical pilgrim data</ThemedText>
+              {/* <ThemedText style={styles.recentSectionSub}>Historical pilgrim data</ThemedText> */}
             </View>
             </>
           }
           renderItem={({ item, index }) => {
-            const accent = CARD_PALETTES[index % CARD_PALETTES.length][2];
+            const accent = '#6b80ef';
             return (
             <Animated.View entering={FadeInDown.delay((index + 1) * 60).duration(360)} style={styles.cardWrap}>
               <ThemedView style={[styles.pilgrimCard, { borderColor: accent + '80', backgroundColor: accent + '14' }]}>
@@ -439,55 +439,95 @@ export default function NewsScreen() {
                 />
               </Animated.View>
               <Animated.View entering={FadeInDown.duration(420)} style={styles.ssdHeaderWrap}>
-              <ThemedView style={[styles.ssdHeaderCard, { borderColor, backgroundColor: tintColor + '12' }]}>
+              <ThemedView style={[styles.ssdHeaderCard, { borderColor: tintColor + '55', backgroundColor: tintColor + '0E' }]}>
+
+                {/* ── Top: icon + title + LIVE badge ── */}
                 <View style={styles.ssdTitleRow}>
-                  <View style={[styles.ssdTitleIconWrap, { backgroundColor: tintColor + '20' }]}>
-                    <MaterialCommunityIcons name="ticket-confirmation-outline" size={20} color={tintColor} />
+                  <LinearGradient
+                    colors={[tintColor + 'FF', tintColor + 'AA']}
+                    start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
+                    style={styles.ssdTitleIconWrap}
+                  >
+                    <MaterialCommunityIcons name="ticket-confirmation-outline" size={22} color="#fff" />
+                  </LinearGradient>
+                  <View style={{ flex: 1, gap: 2 }}>
+                    <ThemedText style={{ fontSize: 10, fontWeight: '700', color: tintColor, letterSpacing: 1.1, textTransform: 'uppercase' }}>Free Darshan Ticket</ThemedText>
+                    <ThemedText style={{ fontSize: 16, fontWeight: '900' }}>SSD Token</ThemedText>
+                    <ThemedText style={[styles.ssdTitleSubtext, { color: tintColor }]}>Updated: {ssdDisplayDate}</ThemedText>
                   </View>
-                  <View style={{ gap: 1 }}>
-                    <ThemedText type="defaultSemiBold" style={{ fontSize: 15 }}>SSD Token (Free Tickets)</ThemedText>
-                    <ThemedText style={styles.ssdTitleSubtext}>As of {ssdDisplayDate}</ThemedText>
+                  <BlinkingDot label="LIVE" />
+                </View>
+
+                {/* ── Balance tickets hero ── */}
+                <LinearGradient
+                  colors={[tintColor + 'FF', tintColor + 'CC']}
+                  start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
+                  style={styles.ssdBalanceHero}
+                >
+                  <View style={{ gap: 3 }}>
+                    <ThemedText style={{ fontSize: 11, color: 'rgba(255,255,255,0.75)', fontWeight: '600', letterSpacing: 0.8 }}>BALANCE TICKETS</ThemedText>
+                    <ThemedText style={{ fontSize: 52, fontWeight: '900', color: '#fff', lineHeight: 56 }}>{liveSsd.balanceTickets}</ThemedText>
+                    <ThemedText style={{ fontSize: 12, color: 'rgba(255,255,255,0.78)' }}>available for {liveSsd.balanceDate ?? ssdDisplayDate}</ThemedText>
                   </View>
-                  <View style={[styles.ssdStatusBadge, { backgroundColor: isSoldOut ? '#FF6B6B22' : '#4CAF5022', borderColor: isSoldOut ? '#FF6B6B55' : '#4CAF5055' }]}>
-                    <View style={[styles.ssdStatusDot, { backgroundColor: isSoldOut ? '#FF6B6B' : '#4CAF50' }]} />
-                    <ThemedText style={[styles.ssdStatusBadgeText, { color: isSoldOut ? '#FF6B6B' : '#4CAF50' }]}>
-                      {isSoldOut ? 'SOLD OUT' : 'AVAILABLE'}
-                    </ThemedText>
+                  <View style={{ alignItems: 'center', justifyContent: 'center', opacity: 0.25 }}>
+                    <MaterialCommunityIcons name="ticket-percent-outline" size={72} color="#fff" />
+                  </View>
+                </LinearGradient>
+
+                {/* ── View locations button ── */}
+                <Pressable
+                  onPress={() => router.push('/ssd-locations')}
+                  style={({ pressed }) => [styles.ssdLocationsBtn, { backgroundColor: pressed ? tintColor + 'DD' : tintColor + 'FF', borderRadius: 14 }]}>
+                  <View style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: 'rgba(255,255,255,0.22)', alignItems: 'center', justifyContent: 'center' }}>
+                    <MaterialCommunityIcons name="map-marker-radius-outline" size={18} color="#fff" />
+                  </View>
+                  <View style={{ flex: 1, gap: 1 }}>
+                    <ThemedText style={{ fontSize: 13, fontWeight: '800', color: '#fff' }}>View Counter Locations</ThemedText>
+                    <ThemedText style={{ fontSize: 10, color: 'rgba(255,255,255,0.75)' }}>Find physical SSD token counters</ThemedText>
+                  </View>
+                  <MaterialCommunityIcons name="chevron-right" size={20} color="rgba(255,255,255,0.8)" />
+                </Pressable>
+
+                {/* ── Divider ── */}
+                <View style={{ height: 1, backgroundColor: tintColor + '30' }} />
+
+                {/* ── Running slot info ── */}
+                <View style={{ borderRadius: 14, borderWidth: 1, borderColor: tintColor + '30', backgroundColor: tintColor + '0C', overflow: 'hidden' }}>
+                  <View style={{ height: 3, backgroundColor: tintColor + '90' }} />
+                  <View style={{ padding: 14, gap: 10 }}>
+                    {/* Label + active badge */}
+                    <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <ThemedText style={{ fontSize: 10, fontWeight: '700', letterSpacing: 0.9, opacity: 0.55, textTransform: 'uppercase' }}>Currently Running Slot</ThemedText>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#4CAF5020', borderRadius: 10, paddingHorizontal: 8, paddingVertical: 3, borderWidth: 1, borderColor: '#4CAF5055' }}>
+                        <View style={{ width: 5, height: 5, borderRadius: 2.5, backgroundColor: '#4CAF50' }} />
+                        <ThemedText style={{ fontSize: 9, fontWeight: '800', color: '#4CAF50', letterSpacing: 0.5 }}>ACTIVE</ThemedText>
+                      </View>
+                    </View>
+                    {/* Slot number card + info */}
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 16 }}>
+                      <LinearGradient
+                        colors={[tintColor + 'EE', tintColor + 'AA']}
+                        style={{ width: 76, height: 76, borderRadius: 20, alignItems: 'center', justifyContent: 'center' }}
+                      >
+                        <ThemedText style={{ fontSize: 36, fontWeight: '900', color: '#fff', lineHeight: 40 }}>{liveSsd.runningSlot}</ThemedText>
+                      </LinearGradient>
+                      <View style={{ flex: 1, gap: 5 }}>
+                        <ThemedText style={{ fontSize: 14, fontWeight: '800', color: tintColor }}>Currently Running</ThemedText>
+                        <ThemedText style={{ fontSize: 12, opacity: 0.55 }}>{liveSsd.slotDate ?? ssdDisplayDate}</ThemedText>
+                        <ThemedText style={{ fontSize: 10, fontWeight: '700', letterSpacing: 2, opacity: 0.22, textTransform: 'uppercase', marginTop: 2 }}>Tirumala</ThemedText>
+                      </View>
+                    </View>
                   </View>
                 </View>
 
-                <View style={styles.ssdMetricsRow}>
-                  <View style={[styles.ssdMetricCard, { borderColor, backgroundColor: tintColor + '18' }]}>
-                    <ThemedText style={styles.ssdMetricLabel}>Running Slot</ThemedText>
-                    <ThemedText type="title" style={[styles.ssdMetricValue, { color: tintColor }]}>
-                      {liveSsd.runningSlot}
-                    </ThemedText>
-                    <ThemedText style={styles.ssdMetricSubtext}>on {liveSsd.slotDate ?? ssdDisplayDate}</ThemedText>
-                  </View>
-
-                  <View style={[styles.ssdMetricCard, { borderColor, backgroundColor: isSoldOut ? '#FF6B6B14' : tintColor + '18' }]}>
-                    <ThemedText style={styles.ssdMetricLabel}>Balance Tickets</ThemedText>
-                    <ThemedText type="title" style={[styles.ssdMetricValue, { color: isSoldOut ? '#FF6B6B' : tintColor }]}>
-                      {liveSsd.balanceTickets}
-                    </ThemedText>
-                    <ThemedText style={styles.ssdMetricSubtext}>for {liveSsd.balanceDate ?? ssdDisplayDate}</ThemedText>
-                  </View>
-                </View>
-
-                <View style={[styles.ssdNoteBox, { borderColor: '#FF6B6B44', backgroundColor: '#FF6B6B0E' }]}>
-                  <MaterialCommunityIcons name="alert-circle-outline" size={16} color="#FF6B6B" />
-                  <ThemedText style={[styles.ssdNoteText, { color: undefined }]}>
-                    Live tickets status may vary by the time pilgrim reaches physically at the counters.
+                {/* ── Note box ── */}
+                <View style={[styles.ssdNoteBox, { borderColor: tintColor + '35', backgroundColor: tintColor + '0A' }]}>
+                  <MaterialCommunityIcons name="information-outline" size={15} color={tintColor} style={{ marginTop: 1 }} />
+                  <ThemedText style={[styles.ssdNoteText, { opacity: 0.7 }]}>
+                    Live ticket status may vary by the time pilgrim reaches the counter. Issued on first-come-first-serve basis.
                   </ThemedText>
                 </View>
 
-                <Pressable
-                  onPress={() => router.push('/ssd-locations')}
-                  style={({ pressed }) => [styles.ssdLocationsBtn, { backgroundColor: pressed ? tintColor + 'CC' : tintColor }]}>
-                  <MaterialCommunityIcons name="map-marker-radius-outline" size={16} color="#fff" />
-                  <ThemedText style={styles.ssdLocationsBtnText}>View Physical Counter Locations</ThemedText>
-                  <MaterialCommunityIcons name="chevron-right" size={16} color="#fff" style={{ marginLeft: 'auto' }} />
-                </Pressable>
               </ThemedView>
             </Animated.View>
             </>
@@ -527,8 +567,12 @@ export default function NewsScreen() {
                   transition={200}
                 />
               </Animated.View>
+
+              {/* ── Current / upcoming sevas carousel ── */}
+              <CurrentSevaCarousel schedules={effectiveDaySchedule.schedules} tintColor={'#6b80ef'} />
+
               <LinearGradient
-                colors={[tintColor + 'FF', tintColor + 'BB']}
+                colors={['#2d1b7a', '#5240c4','#6252d0', '#9D8FFF']}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
                 style={styles.scheduleDateHeader}
@@ -582,11 +626,11 @@ export default function NewsScreen() {
             const accentColor =
               status === 'past' ? '#E05050' :
               status === 'current' ? '#4CAF50' :
-              tintColor;
+              '#6b80ef';
             const pillBg =
               status === 'past' ? '#FF6B6B40' :
               status === 'current' ? '#4CAF5040' :
-              tintColor + '1A';
+              '#6b80ef1A';
 
             return (
               <View style={[styles.recentCard, { borderColor }, cardBg ? { backgroundColor: cardBg } : {}]}>
@@ -610,6 +654,91 @@ export default function NewsScreen() {
         />
       )}
     </ThemedView>
+  );
+}
+
+function CurrentSevaCarousel({ schedules, tintColor }: { schedules: DayScheduleItem[]; tintColor: string }) {
+  const { width } = useWindowDimensions();
+  const CARD_W = width - 12 * 2 - 32; // list padding minus a peek
+  const PEEK = 20;
+
+  // Collect current + upcoming (max 5)
+  const relevant = schedules
+    .map((s, i) => ({ ...s, _idx: i, status: getScheduleStatus(s.time) }))
+    .filter(s => s.status === 'current' || s.status === 'upcoming')
+    .slice(0, 5);
+
+  if (relevant.length === 0) return null;
+
+  return (
+    <View style={{ marginTop: 2, marginBottom: 10 }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 8, paddingHorizontal: 2 }}>
+        <View style={{ width: 3, height: 13, borderRadius: 2, backgroundColor: tintColor }} />
+        <ThemedText style={{ fontSize: 11, fontWeight: '700', color: tintColor, letterSpacing: 0.4 }}>Active & Upcoming</ThemedText>
+        <ThemedText style={{ fontSize: 10, opacity: 0.45 }}>swipe to see more</ThemedText>
+      </View>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        snapToInterval={CARD_W + 10}
+        decelerationRate="fast"
+        contentContainerStyle={{ paddingRight: PEEK + 10 }}
+      >
+        {relevant.map((item, i) => {
+          const isCurrent = item.status === 'current';
+          const bg = isCurrent ? '#4CAF5018' : tintColor + '12';
+          const border = isCurrent ? '#4CAF5060' : tintColor + '45';
+          const accent = isCurrent ? '#4CAF50' : tintColor;
+          const displayTime = formatScheduleTime12h(item.time);
+          return (
+            <View
+              key={item._idx}
+              style={{ width: CARD_W, borderWidth: 1, borderRadius: 14, backgroundColor: bg, borderColor: border, padding: 13, gap: 7, marginRight: 10 }}
+            >
+              {/* Status pill */}
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5, alignSelf: 'flex-start', backgroundColor: accent + '20', borderRadius: 20, paddingHorizontal: 9, paddingVertical: 4, borderWidth: 1, borderColor: accent + '50' }}>
+                {isCurrent && <View style={{ width: 5, height: 5, borderRadius: 2.5, backgroundColor: accent }} />}
+                <MaterialCommunityIcons name={isCurrent ? 'play-circle-outline' : 'clock-outline'} size={11} color={accent} />
+                <ThemedText style={{ fontSize: 9, fontWeight: '800', color: accent, letterSpacing: 0.6 }}>{isCurrent ? 'IN PROGRESS' : 'UPCOMING'}</ThemedText>
+              </View>
+              {/* Event name */}
+              <ThemedText style={{ fontSize: 13, fontWeight: '800', lineHeight: 18 }}>{item.event}</ThemedText>
+              {/* Time */}
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
+                <MaterialCommunityIcons name="clock-time-four-outline" size={13} color={accent} />
+                <ThemedText style={{ fontSize: 11, fontWeight: '600', color: accent }}>{displayTime}</ThemedText>
+              </View>
+            </View>
+          );
+        })}
+      </ScrollView>
+    </View>
+  );
+}
+
+function BlinkingDot({ label }: { label: string }) {
+  const GREEN = '#4CAF50';
+  const ringScale = useSharedValue(0.8);
+  const ringOpacity = useSharedValue(0.8);
+
+  useEffect(() => {
+    ringScale.value = withRepeat(withTiming(2.6, { duration: 1300 }), -1, false);
+    ringOpacity.value = withRepeat(withTiming(0, { duration: 1300 }), -1, false);
+  }, []);
+
+  const ringStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: ringScale.value }],
+    opacity: ringOpacity.value,
+  }));
+
+  return (
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: GREEN + '1A', borderWidth: 1, borderColor: GREEN + '50', borderRadius: 20, paddingHorizontal: 10, paddingVertical: 5 }}>
+      <View style={{ width: 14, height: 14, alignItems: 'center', justifyContent: 'center' }}>
+        <Animated.View style={[{ position: 'absolute', width: 9, height: 9, borderRadius: 4.5, borderWidth: 1.5, borderColor: GREEN }, ringStyle]} />
+        <View style={{ width: 7, height: 7, borderRadius: 3.5, backgroundColor: GREEN }} />
+      </View>
+      <ThemedText style={{ fontSize: 10, fontWeight: '800', color: GREEN, letterSpacing: 0.8 }}>{label}</ThemedText>
+    </View>
   );
 }
 
@@ -807,9 +936,10 @@ const styles = StyleSheet.create({
   ssdInfoTitle: { fontSize: 14 },
   ssdInfoDetail: { fontSize: 13, lineHeight: 19, opacity: 0.8 },
   ssdHeaderWrap: { marginBottom: 12 },
-  ssdHeaderCard: { borderWidth: 1, borderRadius: 16, padding: 16, gap: 14 },
+  ssdBalanceHero: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderRadius: 16, padding: 18, overflow: 'hidden' },
+  ssdHeaderCard: { borderWidth: 1, borderRadius: 20, padding: 18, gap: 16 },
   ssdTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  ssdTitleIconWrap: { width: 44, height: 44, borderRadius: 22, justifyContent: 'center', alignItems: 'center' },
+  ssdTitleIconWrap: { width: 48, height: 48, borderRadius: 24, justifyContent: 'center', alignItems: 'center' },
   ssdTitleSubtext: { fontSize: 11, lineHeight: 15, opacity: 0.65 },
   ssdStatusBadge: { marginLeft: 'auto', flexDirection: 'row', alignItems: 'center', gap: 5, borderWidth: 1, borderRadius: 20, paddingHorizontal: 8, paddingVertical: 4 },
   ssdStatusDot: { width: 6, height: 6, borderRadius: 3 },

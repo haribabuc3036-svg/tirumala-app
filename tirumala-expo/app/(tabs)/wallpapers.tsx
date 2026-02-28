@@ -2,6 +2,8 @@ import { Image } from 'expo-image';
 import * as FileSystem from 'expo-file-system/legacy';
 import * as IntentLauncher from 'expo-intent-launcher';
 import * as MediaLibrary from 'expo-media-library';
+import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
+import { LinearGradient } from 'expo-linear-gradient';
 import React, { memo, useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Alert,
@@ -39,7 +41,6 @@ type WallpaperCardProps = {
   isSettingWallpaper: boolean;
   onDownload: (item: WallpaperItem) => Promise<void>;
   onSetWallpaper: (item: WallpaperItem) => Promise<void>;
-  cardColor: string;
   borderColor: string;
   tintColor: string;
 };
@@ -51,58 +52,64 @@ const WallpaperCard = memo(function WallpaperCard({
   isSettingWallpaper,
   onDownload,
   onSetWallpaper,
-  cardColor,
   borderColor,
   tintColor,
 }: WallpaperCardProps) {
   const pressed = useSharedValue(1);
 
-  const animatedStyle = useAnimatedStyle(() => {
-    return {
-      transform: [{ scale: pressed.value }],
-    };
-  });
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: pressed.value }],
+  }));
 
   const handlePressIn = () => {
-    pressed.value = withSpring(0.97, { damping: 18, stiffness: 260 });
+    pressed.value = withSpring(0.96, { damping: 18, stiffness: 260 });
   };
-
   const handlePressOut = () => {
     pressed.value = withSpring(1, { damping: 18, stiffness: 260 });
   };
 
+  const busy = isDownloading || isSettingWallpaper;
+
   return (
-    <Animated.View entering={FadeInDown.delay(index * 80).duration(450)} style={styles.cardWrapper}>
+    <Animated.View entering={FadeInDown.delay(index * 70).duration(420)} style={styles.cardWrapper}>
       <Animated.View style={animatedStyle}>
-        <ThemedView style={[styles.card, { borderColor, backgroundColor: cardColor }]}> 
-          <Pressable
-            onPress={() => void onSetWallpaper(item)}
-            disabled={isSettingWallpaper || isDownloading}
-            style={styles.imagePressable}>
-            <Image source={{ uri: item.url }} style={styles.image} contentFit="cover" transition={250} />
-          </Pressable>
+        <Pressable
+          onPress={() => void onSetWallpaper(item)}
+          onPressIn={handlePressIn}
+          onPressOut={handlePressOut}
+          disabled={busy}
+          style={[styles.card, { borderColor }]}>
+          {/* Image fills the card */}
+          <Image source={{ uri: item.url }} style={styles.image} contentFit="cover" transition={250} />
 
-          <View style={styles.cardFooter}>
-            <ThemedText type="defaultSemiBold" numberOfLines={1}>
-              {item.title}
-            </ThemedText>
+          {/* Gradient overlay bottom */}
+          <LinearGradient
+            colors={['transparent', 'rgba(0,0,0,0.72)']}
+            style={styles.imageOverlay}
+          >
+            <ThemedText numberOfLines={2} style={styles.overlayTitle}>{item.title}</ThemedText>
+            <View style={styles.overlayActions}>
+              {/* Download button */}
+              <Pressable
+                onPress={() => void onDownload(item)}
+                disabled={busy}
+                style={[styles.overlayBtn, { backgroundColor: 'rgba(255,255,255,0.18)', borderColor: 'rgba(255,255,255,0.35)' }]}>
+                <MaterialCommunityIcons
+                  name={isDownloading ? 'loading' : 'download-outline'}
+                  size={15}
+                  color="#fff"
+                />
+                <ThemedText style={styles.overlayBtnText}>{isDownloading ? 'Saving…' : 'Save'}</ThemedText>
+              </Pressable>
+              {/* Set wallpaper hint */}
+              <View style={styles.overlayHint}>
+                <MaterialCommunityIcons name="cellphone" size={11} color="rgba(255,255,255,0.6)" />
+                <ThemedText style={styles.overlayHintText}>{isSettingWallpaper ? 'Opening…' : 'Tap to set'}</ThemedText>
+              </View>
+            </View>
+          </LinearGradient>
 
-            <ThemedText style={styles.tapHint}>
-              {isSettingWallpaper ? 'Opening wallpaper chooser...' : 'Tap image to set as wallpaper'}
-            </ThemedText>
-
-            <Pressable
-              onPress={() => void onDownload(item)}
-              onPressIn={handlePressIn}
-              onPressOut={handlePressOut}
-              style={[styles.downloadButton, { borderColor: tintColor }]}
-              disabled={isDownloading || isSettingWallpaper}>
-              <ThemedText style={[styles.downloadText, { color: tintColor }]}>
-                {isDownloading ? 'Downloading...' : 'Download'}
-              </ThemedText>
-            </Pressable>
-          </View>
-        </ThemedView>
+        </Pressable>
       </Animated.View>
     </Animated.View>
   );
@@ -120,7 +127,6 @@ export default function WallpapersScreen() {
     () => ({
       borderColor: Colors[colorScheme].icon,
       tintColor: MainTabAccent.wallpapers,
-      cardColor: Colors[colorScheme].background,
     }),
     [colorScheme]
   );
@@ -223,7 +229,6 @@ export default function WallpapersScreen() {
         isSettingWallpaper={settingWallpaperId === item.id}
         onDownload={downloadWallpaper}
         onSetWallpaper={setAsWallpaper}
-        cardColor={palette.cardColor}
         borderColor={palette.borderColor}
         tintColor={palette.tintColor}
       />
@@ -232,7 +237,6 @@ export default function WallpapersScreen() {
       downloadWallpaper,
       downloadingId,
       palette.borderColor,
-      palette.cardColor,
       palette.tintColor,
       setAsWallpaper,
       settingWallpaperId,
@@ -244,9 +248,17 @@ export default function WallpapersScreen() {
   return (
     <ThemedView style={styles.container}>
       <View style={[styles.header, { paddingTop: insets.top + 12 }]}>
-        <ThemedText type="title">Wallpapers</ThemedText>
-        <ThemedText>Tap Download to save wallpaper to your Android gallery.</ThemedText>
-        {error ? <ThemedText style={styles.errorText}>Unable to load wallpapers: {error}</ThemedText> : null}
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+          <MaterialCommunityIcons name="image-multiple-outline" size={24} color={palette.tintColor} />
+          <ThemedText type="title">Wallpapers</ThemedText>
+          {wallpapers.length > 0 && (
+            <View style={{ backgroundColor: palette.tintColor + '22', borderRadius: 12, paddingHorizontal: 9, paddingVertical: 3, borderWidth: 1, borderColor: palette.tintColor + '50' }}>
+              <ThemedText style={{ fontSize: 11, fontWeight: '700', color: palette.tintColor }}>{wallpapers.length}</ThemedText>
+            </View>
+          )}
+        </View>
+        <ThemedText style={{ fontSize: 12, opacity: 0.55 }}>Tap a wallpaper to set it • Save to gallery</ThemedText>
+        {error ? <ThemedText style={styles.errorText}>Unable to load: {error}</ThemedText> : null}
       </View>
 
       {loading ? (
@@ -277,63 +289,23 @@ export default function WallpapersScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
+  container: { flex: 1 },
+  header: { paddingHorizontal: 16, paddingTop: 16, gap: 5, paddingBottom: 8 },
+  listContent: { paddingHorizontal: 10, paddingTop: 10, paddingBottom: 28, gap: 10 },
+  column: { gap: 10 },
+  cardWrapper: { flex: 1 },
+  card: { borderWidth: 1, borderRadius: 16, overflow: 'hidden' },
+  image: { width: '100%', height: 220 },
+  imageOverlay: {
+    position: 'absolute', bottom: 0, left: 0, right: 0,
+    paddingHorizontal: 10, paddingTop: 32, paddingBottom: 10, gap: 6,
   },
-  header: {
-    paddingHorizontal: 16,
-    paddingTop: 16,
-    gap: 6,
-  },
-  listContent: {
-    paddingHorizontal: 12,
-    paddingTop: 14,
-    paddingBottom: 24,
-    gap: 12,
-  },
-  column: {
-    gap: 12,
-  },
-  cardWrapper: {
-    flex: 1,
-  },
-  card: {
-    borderWidth: 1,
-    borderRadius: 14,
-    overflow: 'hidden',
-  },
-  image: {
-    width: '100%',
-    height: 200,
-  },
-  imagePressable: {
-    width: '100%',
-  },
-  cardFooter: {
-    padding: 10,
-    gap: 10,
-  },
-  tapHint: {
-    fontSize: 13,
-    lineHeight: 18,
-  },
-  downloadButton: {
-    borderWidth: 1,
-    borderRadius: 10,
-    paddingVertical: 8,
-    alignItems: 'center',
-  },
-  downloadText: {
-    fontWeight: '700',
-  },
-  stateWrap: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-  },
-  errorText: {
-    fontSize: 12,
-    opacity: 0.75,
-  },
+  overlayTitle: { color: '#fff', fontSize: 12, fontWeight: '700', lineHeight: 16 },
+  overlayActions: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  overlayBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, borderWidth: 1, borderRadius: 20, paddingHorizontal: 9, paddingVertical: 5 },
+  overlayBtnText: { color: '#fff', fontSize: 11, fontWeight: '700' },
+  overlayHint: { flexDirection: 'row', alignItems: 'center', gap: 3 },
+  overlayHintText: { color: 'rgba(255,255,255,0.6)', fontSize: 10 },
+  stateWrap: { alignItems: 'center', justifyContent: 'center', paddingHorizontal: 16, paddingVertical: 12 },
+  errorText: { fontSize: 12, opacity: 0.75 },
 });

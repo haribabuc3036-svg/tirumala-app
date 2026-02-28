@@ -5,7 +5,7 @@ import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { router } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Animated as RNAnimated, NativeScrollEvent, NativeSyntheticEvent, Pressable, ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
-import Animated, { FadeInDown } from 'react-native-reanimated';
+import Animated, { FadeInDown, useSharedValue, withTiming, useAnimatedStyle } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
@@ -487,6 +487,66 @@ const helpGuideBtnPressable: import('react-native').ViewStyle = {
   shadowRadius: 12,
   elevation: 8,
 };
+
+function CollapsibleHelpCard({
+  title,
+  subtitle,
+  icon,
+  accentColor,
+  defaultExpanded = false,
+  children,
+}: {
+  title: string;
+  subtitle: string;
+  icon: React.ComponentProps<typeof MaterialCommunityIcons>['name'];
+  accentColor: string;
+  defaultExpanded?: boolean;
+  children: React.ReactNode;
+}) {
+  const [expanded, setExpanded] = useState(defaultExpanded);
+  const rotation = useSharedValue(defaultExpanded ? 180 : 0);
+
+  const toggle = () => {
+    const next = !expanded;
+    rotation.value = withTiming(next ? 180 : 0, { duration: 250 });
+    setExpanded(next);
+  };
+
+  const chevronStyle = useAnimatedStyle(() => ({
+    transform: [{ rotate: `${rotation.value}deg` }],
+  }));
+
+  return (
+    <ThemedView style={[collapsibleCardWrap, { borderColor: accentColor, backgroundColor: accentColor + '10' }]}>
+      <Pressable
+        onPress={toggle}
+        style={({ pressed }) => [collapsibleCardHeader, { opacity: pressed ? 0.75 : 1 }]}
+      >
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1 }}>
+          <View style={[collapsibleIconWrap, { backgroundColor: accentColor + '20' }]}>
+            <MaterialCommunityIcons name={icon} size={16} color={accentColor} />
+          </View>
+          <View style={{ flex: 1 }}>
+            <ThemedText style={[collapsibleTitle, { color: accentColor }]}>{title}</ThemedText>
+            <ThemedText style={collapsibleSubtitle}>{subtitle}</ThemedText>
+          </View>
+        </View>
+        <Animated.View style={[collapsibleChevronWrap, { backgroundColor: accentColor + '18', borderColor: accentColor + '35' }, chevronStyle]}>
+          <MaterialCommunityIcons name="chevron-down" size={18} color={accentColor} />
+        </Animated.View>
+      </Pressable>
+      {expanded ? <View style={collapsibleBody}>{children}</View> : null}
+    </ThemedView>
+  );
+}
+
+const collapsibleCardWrap: import('react-native').ViewStyle = { borderWidth: 1, borderRadius: 16, overflow: 'hidden', marginBottom: 0 };
+const collapsibleCardHeader: import('react-native').ViewStyle = { flexDirection: 'row', alignItems: 'center', padding: 14, gap: 10 };
+const collapsibleIconWrap: import('react-native').ViewStyle = { width: 34, height: 34, borderRadius: 10, alignItems: 'center', justifyContent: 'center' };
+const collapsibleTitle: import('react-native').TextStyle = { fontSize: 14, fontWeight: '700', lineHeight: 18 };
+const collapsibleSubtitle: import('react-native').TextStyle = { fontSize: 11, opacity: 0.55, marginTop: 1 };
+const collapsibleChevronWrap: import('react-native').ViewStyle = { width: 28, height: 28, borderRadius: 14, borderWidth: 1, alignItems: 'center', justifyContent: 'center' };
+const collapsibleBody: import('react-native').ViewStyle = { paddingHorizontal: 14, paddingBottom: 14, gap: 10 };
 
 // Flat style refs for UpdateSlideCard (defined outside main component to avoid re-creation)
 const updateSlideCardStyle: import('react-native').ViewStyle = { borderWidth: 1, borderRadius: 12, padding: 12, gap: 8 };
@@ -1215,19 +1275,7 @@ export default function HomeScreen() {
 
         {/* ── Dress Code ── */}
         {!helpLoading ? (
-          <ThemedView style={[styles.contentCard, styles.premiumNewsCard, { borderColor: activeAccent, backgroundColor: activeAccent + '10' }]}>
-            <View style={styles.newsHeaderRow}>
-              <View style={styles.newsHeaderTitleWrap}>
-                <View style={[styles.newsHeaderIconWrap, { backgroundColor: activeAccent + '20' }]}>
-                  <MaterialCommunityIcons name="tshirt-crew-outline" size={14} color={activeAccent} />
-                </View>
-                <View>
-                  <ThemedText type="defaultSemiBold" style={[styles.latestNewsTitle, { color: activeAccent }]}>Dress Code</ThemedText>
-                  <ThemedText style={styles.latestNewsSubtitle}>What to wear at Tirumala</ThemedText>
-                </View>
-              </View>
-            </View>
-
+          <CollapsibleHelpCard title="Dress Code" subtitle="What to wear at Tirumala" icon="tshirt-crew-outline" accentColor={activeAccent}>
             {(['men', 'women', 'general'] as const).map((section) => {
               const items = helpContent.dressCode[section];
               if (items.length === 0) return null;
@@ -1248,24 +1296,12 @@ export default function HomeScreen() {
                 </View>
               );
             })}
-          </ThemedView>
+          </CollapsibleHelpCard>
         ) : null}
 
         {/* ── Do's & Don'ts ── */}
         {!helpLoading ? (
-          <ThemedView style={[styles.contentCard, styles.premiumNewsCard, { borderColor: activeAccent, backgroundColor: activeAccent + '10' }]}>
-            <View style={styles.newsHeaderRow}>
-              <View style={styles.newsHeaderTitleWrap}>
-                <View style={[styles.newsHeaderIconWrap, { backgroundColor: activeAccent + '20' }]}>
-                  <MaterialCommunityIcons name="clipboard-check-outline" size={14} color={activeAccent} />
-                </View>
-                <View>
-                  <ThemedText type="defaultSemiBold" style={[styles.latestNewsTitle, { color: activeAccent }]}>Do's & Don'ts</ThemedText>
-                  <ThemedText style={styles.latestNewsSubtitle}>Tips for a smooth pilgrimage</ThemedText>
-                </View>
-              </View>
-            </View>
-
+          <CollapsibleHelpCard title="Do's & Don'ts" subtitle="Tips for a smooth pilgrimage" icon="clipboard-check-outline" accentColor={activeAccent}>
             <View style={dosDontsGrid}>
               {/* Do's column */}
               <View style={dosDontsColumn}>
@@ -1297,41 +1333,19 @@ export default function HomeScreen() {
                 {helpContent.donts.length === 0 ? <ThemedText style={dosDontsItemText}>No items.</ThemedText> : null}
               </View>
             </View>
-          </ThemedView>
+          </CollapsibleHelpCard>
         ) : null}
 
         {/* ── FAQs ── */}
         {!helpLoading ? (
-          <ThemedView style={[styles.contentCard, styles.premiumNewsCard, { borderColor: activeAccent, backgroundColor: activeAccent + '10' }]}>
-            <View style={styles.newsHeaderRow}>
-              <View style={styles.newsHeaderTitleWrap}>
-                <View style={[styles.newsHeaderIconWrap, { backgroundColor: activeAccent + '20' }]}>
-                  <MaterialCommunityIcons name="frequently-asked-questions" size={14} color={activeAccent} />
-                </View>
-                <View>
-                  <ThemedText type="defaultSemiBold" style={[styles.latestNewsTitle, { color: activeAccent }]}>FAQs</ThemedText>
-                  <ThemedText style={styles.latestNewsSubtitle}>Common questions answered</ThemedText>
-                </View>
-              </View>
-            </View>
+          <CollapsibleHelpCard title="FAQs" subtitle="Common questions answered" icon="frequently-asked-questions" accentColor={activeAccent}>
             <FaqList items={helpContent.faqs} accentColor={activeAccent} />
-          </ThemedView>
+          </CollapsibleHelpCard>
         ) : null}
 
         {/* ── Contact & Support ── */}
         {!helpLoading ? (
-          <ThemedView style={[styles.contentCard, styles.premiumNewsCard, { borderColor: activeAccent, backgroundColor: activeAccent + '10' }]}>
-            <View style={styles.newsHeaderRow}>
-              <View style={styles.newsHeaderTitleWrap}>
-                <View style={[styles.newsHeaderIconWrap, { backgroundColor: activeAccent + '20' }]}>
-                  <MaterialCommunityIcons name="headset" size={14} color={activeAccent} />
-                </View>
-                <View>
-                  <ThemedText type="defaultSemiBold" style={[styles.latestNewsTitle, { color: activeAccent }]}>Contact & Support</ThemedText>
-                  <ThemedText style={styles.latestNewsSubtitle}>Reach TTD directly</ThemedText>
-                </View>
-              </View>
-            </View>
+          <CollapsibleHelpCard title="Contact & Support" subtitle="Reach TTD directly" icon="headset" accentColor={activeAccent}>
             <View style={styles.supportLinksWrap}>
               {helpContent.contactSupport.map((item) => (
                 <Pressable
@@ -1355,7 +1369,7 @@ export default function HomeScreen() {
                 <ThemedText style={styles.newsDate}>No contact info available.</ThemedText>
               ) : null}
             </View>
-          </ThemedView>
+          </CollapsibleHelpCard>
         ) : null}
       </View>
     );
