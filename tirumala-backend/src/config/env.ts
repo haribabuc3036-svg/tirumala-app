@@ -11,6 +11,11 @@ export const env = {
   port: parseInt(process.env.PORT ?? '3000', 10),
   nodeEnv: process.env.NODE_ENV ?? 'development',
 
+  /** Secret used to sign / verify JWT tokens */
+  jwtSecret: required('JWT_SECRET'),
+  /** Token expiry (default 7 days) */
+  jwtExpiresIn: process.env.JWT_EXPIRES_IN ?? '7d',
+
   /** node-cron expression for the TTD website poller (default: every 5 min) */
   scrapeSchedule: process.env.SCRAPE_SCHEDULE ?? '*/5 * * * *',
 

@@ -131,6 +131,46 @@ const sql = `
 
   CREATE INDEX IF NOT EXISTS idx_place_photos_place_sort_order
     ON public.place_photos (place_id ASC, sort_order ASC);
+
+  -- ─── Admin Users ──────────────────────────────────────────────────────────
+  CREATE TABLE IF NOT EXISTS public.admin_users (
+    id            BIGSERIAL    PRIMARY KEY,
+    username      TEXT         NOT NULL UNIQUE,
+    password_hash TEXT         NOT NULL,
+    is_active     BOOLEAN      NOT NULL DEFAULT TRUE,
+    created_at    TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+    updated_at    TIMESTAMPTZ  NOT NULL DEFAULT NOW()
+  );
+
+  CREATE OR REPLACE FUNCTION public.set_updated_at()
+  RETURNS TRIGGER AS $$
+  BEGIN
+    NEW.updated_at = NOW();
+    RETURN NEW;
+  END;
+  $$ LANGUAGE plpgsql;
+
+  DO $$ BEGIN
+    IF NOT EXISTS (
+      SELECT 1 FROM pg_trigger WHERE tgname = 'trg_admin_users_updated_at'
+    ) THEN
+      CREATE TRIGGER trg_admin_users_updated_at
+        BEFORE UPDATE ON public.admin_users
+        FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
+    END IF;
+  END; $$;
+
+  ALTER TABLE public.admin_users ENABLE ROW LEVEL SECURITY;
+
+  DO $$ BEGIN
+    IF NOT EXISTS (
+      SELECT 1 FROM pg_policies
+      WHERE tablename = 'admin_users' AND policyname = 'No public access'
+    ) THEN
+      CREATE POLICY "No public access" ON public.admin_users
+        AS RESTRICTIVE FOR ALL TO public USING (false);
+    END IF;
+  END; $$;
 `;
 
 client.connect()
@@ -148,6 +188,7 @@ client.connect()
     console.log('   - public.place_regions');
     console.log('   - public.places');
     console.log('   - public.place_photos');
+    console.log('   - public.admin_users');
     client.end();
   })
   .catch((err) => {

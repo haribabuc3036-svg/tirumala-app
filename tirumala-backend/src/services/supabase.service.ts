@@ -1061,3 +1061,25 @@ export async function deleteSsdLocation(id: number): Promise<boolean> {
   if (error) throw new Error(error.message);
   return true;
 }
+
+// ─── Admin Users ───────────────────────────────────────────────────────────────
+
+type AdminUserRow = Database['public']['Tables']['admin_users']['Row'];
+
+/**
+ * Look up a single active admin user by username.
+ * Returns null if the user doesn't exist or is inactive.
+ * Uses the service-role client so RLS is bypassed (this table has no public access).
+ */
+export async function getAdminUserByUsername(
+  username: string
+): Promise<AdminUserRow | null> {
+  const { data, error } = await supabaseAdmin
+    .from('admin_users')
+    .select('*')
+    .eq('username', username)
+    .eq('is_active', true)
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  return data;
+}

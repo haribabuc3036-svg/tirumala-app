@@ -456,6 +456,32 @@ export type Database = {
         };
         Relationships: [];
       };
+      admin_users: {
+        Row: {
+          id: number;
+          username: string;
+          password_hash: string;
+          is_active: boolean;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: never;
+          username: string;
+          password_hash: string;
+          is_active?: boolean;
+          created_at?: string | null;
+          updated_at?: string | null;
+        };
+        Update: {
+          id?: never;
+          username?: string;
+          password_hash?: string;
+          is_active?: boolean;
+          updated_at?: string | null;
+        };
+        Relationships: [];
+      };
     };
     Views: {
       [_ in never]: never;
