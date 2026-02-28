@@ -13,6 +13,8 @@ export type Service = {
   tagColor?: string;
   showOnOverview?: boolean;
   overviewOrder?: number;
+  bookingDate?: string | null;
+  instructions?: string[] | null;
 };
 
 export type ServiceCategory = {

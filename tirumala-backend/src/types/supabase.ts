@@ -85,6 +85,8 @@ export type Database = {
           sort_order: number;
           show_on_overview: boolean;
           overview_order: number;
+          booking_date: string | null;
+          instructions: string[] | null;
           created_at: string;
           updated_at: string;
         };
@@ -107,6 +109,8 @@ export type Database = {
           sort_order?: number;
           show_on_overview?: boolean;
           overview_order?: number;
+          booking_date?: string | null;
+          instructions?: string[] | null;
           created_at?: string | null;
           updated_at?: string | null;
         };
@@ -129,6 +133,8 @@ export type Database = {
           sort_order?: number;
           show_on_overview?: boolean;
           overview_order?: number;
+          booking_date?: string | null;
+          instructions?: string[] | null;
           created_at?: string | null;
           updated_at?: string | null;
         };

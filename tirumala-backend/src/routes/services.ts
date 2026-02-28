@@ -344,6 +344,46 @@ router.put(
 );
 
 /**
+ * PATCH /api/services/:id/booking
+ * Set or clear booking_date and/or instructions for one service.
+ * Body: { booking_date?: string | null; instructions?: string[] | null }
+ * - booking_date: ISO-8601 timestamp string (e.g. "2026-03-15T09:00:00+05:30") or null to clear.
+ * - instructions: ordered array of instruction strings, or null to clear.
+ */
+router.patch(
+  '/:id/booking',
+  asyncHandler(async (req: Request, res: Response) => {
+    const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+    const { booking_date, instructions } = req.body ?? {};
+
+    if (booking_date === undefined && instructions === undefined) {
+      res.status(400).json({ success: false, error: 'Provide at least one of: booking_date (ISO string or null), instructions (string[] or null)' });
+      return;
+    }
+    if (booking_date !== undefined && booking_date !== null && typeof booking_date !== 'string') {
+      res.status(400).json({ success: false, error: '"booking_date" must be an ISO-8601 string or null' });
+      return;
+    }
+    if (instructions !== undefined && instructions !== null && (!Array.isArray(instructions) || instructions.some((s: unknown) => typeof s !== 'string'))) {
+      res.status(400).json({ success: false, error: '"instructions" must be an array of strings or null' });
+      return;
+    }
+
+    const patch: { booking_date?: string | null; instructions?: string[] | null } = {};
+    if (booking_date !== undefined) patch.booking_date = booking_date;
+    if (instructions !== undefined) patch.instructions = instructions;
+
+    const data = await updateServiceCatalogItem(id, patch);
+    if (!data) {
+      res.status(404).json({ success: false, error: 'Service not found' });
+      return;
+    }
+
+    res.json({ success: true, data });
+  })
+);
+
+/**
  * PATCH /api/services/:id/overview
  * Toggle show_on_overview and/or set overview_order for one service.
  * Body: { show_on_overview?: boolean; overview_order?: number }

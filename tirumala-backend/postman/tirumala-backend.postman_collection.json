@@ -813,6 +813,65 @@
           ]
         },
         {
+          "name": "Set Booking Date & Instructions",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"booking_date\": \"2026-03-15T09:00:00+05:30\",\n  \"instructions\": [\n    \"Carry a valid government-issued photo ID (Aadhaar / Passport / Voter ID).\",\n    \"Traditional dress code is strictly enforced – men must wear dhoti or pajama, women must wear saree or salwar kameez.\",\n    \"Arrive at least 30 minutes before your allotted slot time.\",\n    \"Mobile phones and electronic devices are not permitted inside the sanctum sanctorum.\",\n    \"Children below 10 years are not allowed for special darshan tickets.\"\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/services/{{serviceId}}/booking",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "services", "{{serviceId}}", "booking"]
+            },
+            "description": "Sets or clears `booking_date` (ISO-8601 timestamptz) and/or `instructions` (string[]) for a service. Pass `null` to either field to clear it. These fields drive the countdown timer and instructions list on the service detail screen."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "originalRequest": {
+                "method": "PATCH",
+                "header": [{ "key": "Content-Type", "value": "application/json" }],
+                "url": {
+                  "raw": "{{baseUrl}}/api/services/{{serviceId}}/booking",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "services", "{{serviceId}}", "booking"]
+                }
+              },
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"id\": \"srv-001\",\n    \"booking_date\": \"2026-03-15T09:00:00+05:30\",\n    \"instructions\": [\"Carry a valid ID.\", \"Traditional dress code enforced.\"]\n  }\n}"
+            },
+            {
+              "name": "400 Bad Request – no fields",
+              "status": "Bad Request",
+              "code": 400,
+              "originalRequest": {
+                "method": "PATCH",
+                "header": [{ "key": "Content-Type", "value": "application/json" }],
+                "url": {
+                  "raw": "{{baseUrl}}/api/services/{{serviceId}}/booking",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "services", "{{serviceId}}", "booking"]
+                }
+              },
+              "body": "{\n  \"success\": false,\n  \"error\": \"Provide at least one of: booking_date (ISO string or null), instructions (string[] or null)\"\n}"
+            }
+          ]
+        },
+        {
           "name": "Delete Service",
           "request": {
             "method": "DELETE",
