@@ -1002,3 +1002,58 @@ export async function deleteContactSupport(id: number): Promise<boolean> {
   if (error) throw new Error(error.message);
   return true;
 }
+
+// ─── SSD Locations ────────────────────────────────────────────────────────────
+
+type SsdLocationRow = Database['public']['Tables']['ssd_locations']['Row'];
+type SsdLocationInsert = Database['public']['Tables']['ssd_locations']['Insert'];
+type SsdLocationUpdate = Database['public']['Tables']['ssd_locations']['Update'];
+
+export async function getAllSsdLocations(): Promise<SsdLocationRow[]> {
+  const { data, error } = await supabaseAdmin
+    .from('ssd_locations')
+    .select('*')
+    .order('sort_order', { ascending: true });
+  if (error) throw new Error(error.message);
+  return data ?? [];
+}
+
+export async function getSsdLocationById(id: number): Promise<SsdLocationRow | null> {
+  const { data, error } = await supabaseAdmin
+    .from('ssd_locations')
+    .select('*')
+    .eq('id', id)
+    .single();
+  if (error) {
+    if (error.code === 'PGRST116') return null; // not found
+    throw new Error(error.message);
+  }
+  return data;
+}
+
+export async function insertSsdLocation(payload: SsdLocationInsert): Promise<SsdLocationRow> {
+  const { data, error } = await supabaseAdmin
+    .from('ssd_locations')
+    .insert({ ...payload, updated_at: new Date().toISOString() })
+    .select()
+    .single();
+  if (error) throw new Error(error.message);
+  return data;
+}
+
+export async function updateSsdLocation(id: number, payload: SsdLocationUpdate): Promise<SsdLocationRow> {
+  const { data, error } = await supabaseAdmin
+    .from('ssd_locations')
+    .update({ ...payload, updated_at: new Date().toISOString() })
+    .eq('id', id)
+    .select()
+    .single();
+  if (error) throw new Error(error.message);
+  return data;
+}
+
+export async function deleteSsdLocation(id: number): Promise<boolean> {
+  const { error } = await supabaseAdmin.from('ssd_locations').delete().eq('id', id);
+  if (error) throw new Error(error.message);
+  return true;
+}

@@ -34,5 +34,6 @@ export const env = {
     folder: process.env.CLOUDINARY_FOLDER ?? 'tirumala/wallpapers',
     placesFolder: process.env.CLOUDINARY_PLACES_FOLDER ?? 'tirumala/places',
     servicesFolder: process.env.CLOUDINARY_SERVICES_FOLDER ?? 'tirumala/services',
+    ssdLocationsFolder: process.env.CLOUDINARY_SSD_LOCATIONS_FOLDER ?? 'tirumala/ssd-locations',
   },
 };

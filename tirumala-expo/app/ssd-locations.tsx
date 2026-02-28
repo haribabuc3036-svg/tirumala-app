@@ -1,6 +1,9 @@
-import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
+﻿import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
+import { Image } from 'expo-image';
+import * as Linking from 'expo-linking';
+import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -8,70 +11,23 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
+import { useSsdLocations } from '@/hooks/use-ssd-locations';
 
-type Location = {
-  id: string;
-  name: string;
-  area: string;
-  timings: string;
-  icon: 'map-marker-outline' | 'office-building-marker-outline' | 'home-city-outline' | 'store-marker-outline' | 'bank-outline' | 'hospital-building';
-  note?: string;
-};
-
-const SSD_LOCATIONS: Location[] = [
-  {
-    id: '1',
-    name: 'Vishnu Nivasam Counter',
-    area: 'Tirumala, Near Bus Stand',
-    timings: '06:00 AM – 06:00 PM',
-    icon: 'office-building-marker-outline',
-    note: 'Main distribution point. Highest daily quota.',
-  },
-  {
-    id: '2',
-    name: 'Padmavathi Guest House Counter',
-    area: 'Tirumala, West Mada Street',
-    timings: '06:00 AM – 06:00 PM',
-    icon: 'home-city-outline',
-  },
-  {
-    id: '3',
-    name: 'Srinivasam Complex Counter',
-    area: 'Tirumala, Near Alipiri Check-post',
-    timings: '06:00 AM – 05:00 PM',
-    icon: 'office-building-marker-outline',
-  },
-  {
-    id: '4',
-    name: 'Kalyanakattu Counter',
-    area: 'Tirumala, Near Mahadwaram',
-    timings: '05:30 AM – 06:00 PM',
-    icon: 'store-marker-outline',
-    note: 'Opens early. Limited tokens available.',
-  },
-  {
-    id: '5',
-    name: 'Central Reception Office (CRO)',
-    area: 'Tirupati, Near Railway Station',
-    timings: '07:00 AM – 07:00 PM',
-    icon: 'bank-outline',
-    note: 'Pre-booking for pilgrims arriving by train.',
-  },
-  {
-    id: '6',
-    name: 'Alipiri Foot-path Pilgrim Facilitation',
-    area: 'Alipiri, Tirupati',
-    timings: '05:00 AM – 04:00 PM',
-    icon: 'map-marker-outline',
-    note: 'Issued to pilgrims climbing on foot only.',
-  },
+// Placeholder images used when a location has no remote image_url
+const PLACEHOLDER_IMAGES = [
+  require('../assets/images/banner-image.png'),
+  require('../assets/images/explore-hero-image.png'),
+  require('../assets/images/support-hero-image.png'),
+  require('../assets/images/banner-image.png'),
+  require('../assets/images/explore-hero-image.png'),
+  require('../assets/images/support-hero-image.png'),
 ];
 
 export default function SsdLocationsScreen() {
   const colorScheme = useColorScheme() ?? 'light';
   const tintColor = Colors[colorScheme].tint;
-  const borderColor = Colors[colorScheme].icon;
   const insets = useSafeAreaInsets();
+  const { locations, loading, error } = useSsdLocations();
 
   return (
     <ThemedView style={styles.container}>
@@ -79,52 +35,134 @@ export default function SsdLocationsScreen() {
       <View style={[styles.header, { paddingTop: insets.top + 10 }]}>
         <Pressable
           onPress={() => router.back()}
-          style={({ pressed }) => [styles.backBtn, { opacity: pressed ? 0.6 : 1 }]}>
-          <MaterialCommunityIcons name="arrow-left" size={22} color={tintColor} />
+          style={({ pressed }) => [styles.backBtn, { opacity: pressed ? 0.6 : 1, borderColor: tintColor + '40' }]}>
+          <MaterialCommunityIcons name="arrow-left" size={20} color={tintColor} />
         </Pressable>
         <View style={styles.titleWrap}>
           <ThemedText type="title" style={styles.title}>SSD Token Counters</ThemedText>
-          <ThemedText style={styles.subtitle}>Physical counter locations for free tickets</ThemedText>
+          <ThemedText style={styles.subtitle}>Physical counter locations for free darshan tickets</ThemedText>
         </View>
       </View>
 
       {/* Info banner */}
-      <Animated.View entering={FadeInDown.duration(350)} style={{ paddingHorizontal: 16, paddingBottom: 10 }}>
-        <View style={[styles.infoBanner, { borderColor: tintColor + '44', backgroundColor: tintColor + '12' }]}>
-          <MaterialCommunityIcons name="information-outline" size={18} color={tintColor} />
+      <Animated.View entering={FadeInDown.duration(300)} style={styles.bannerWrap}>
+        <View style={[styles.infoBanner, { borderColor: tintColor + '44', backgroundColor: tintColor + '10' }]}>
+          <View style={[styles.infoIconWrap, { backgroundColor: tintColor + '20' }]}>
+            <MaterialCommunityIcons name="ticket-percent-outline" size={17} color={tintColor} />
+          </View>
           <ThemedText style={[styles.infoBannerText, { color: tintColor }]}>
-            SSD Tokens are <ThemedText style={[styles.bold, { color: tintColor }]}>free of cost</ThemedText>. Issued on first-come-first-serve basis at counters below.
+            SSD Tokens are <ThemedText style={[styles.bold, { color: tintColor }]}>completely free</ThemedText>. Distributed on first-come-first-serve basis. Tokens run out fast - arrive early.
           </ThemedText>
         </View>
       </Animated.View>
 
+      {/* Count pill */}
+      <View style={styles.countWrap}>
+        <View style={[styles.countPill, { backgroundColor: tintColor + '15', borderColor: tintColor + '30' }]}>
+          <MaterialCommunityIcons name="map-marker-multiple-outline" size={13} color={tintColor} />
+          <ThemedText style={[styles.countText, { color: tintColor }]}>
+            {loading ? '...' : `${locations.length} counter locations`}
+          </ThemedText>
+        </View>
+      </View>
+
+      {/* Loading state */}
+      {loading && (
+        <View style={styles.centerState}>
+          <ActivityIndicator size="large" color={tintColor} />
+          <ThemedText style={styles.centerStateText}>Loading locations...</ThemedText>
+        </View>
+      )}
+
+      {/* Error state */}
+      {!loading && error ? (
+        <View style={styles.centerState}>
+          <MaterialCommunityIcons name="alert-circle-outline" size={40} color={tintColor} />
+          <ThemedText style={styles.centerStateText}>Could not load locations</ThemedText>
+        </View>
+      ) : null}
+
+      {/* Empty state */}
+      {!loading && !error && locations.length === 0 ? (
+        <View style={styles.centerState}>
+          <MaterialCommunityIcons name="map-marker-off-outline" size={40} color={tintColor} />
+          <ThemedText style={styles.centerStateText}>No locations available</ThemedText>
+        </View>
+      ) : null}
+
       <ScrollView
-        contentContainerStyle={[styles.list, { paddingBottom: insets.bottom + 24 }]}
+        contentContainerStyle={[styles.list, { paddingBottom: insets.bottom + 28 }]}
         showsVerticalScrollIndicator={false}>
-        {SSD_LOCATIONS.map((loc, index) => (
-          <Animated.View key={loc.id} entering={FadeInDown.delay(index * 70).duration(380)}>
-            <ThemedView style={[styles.locationCard, { borderColor, borderLeftColor: tintColor }]}>
-              <View style={[styles.iconCircle, { backgroundColor: tintColor + '1E' }]}>
-                <MaterialCommunityIcons name={loc.icon} size={22} color={tintColor} />
-              </View>
-              <View style={styles.cardContent}>
-                <ThemedText type="defaultSemiBold" style={styles.locationName}>{loc.name}</ThemedText>
-                <View style={styles.metaRow}>
-                  <MaterialCommunityIcons name="map-marker-outline" size={13} color={tintColor} />
-                  <ThemedText style={styles.metaText}>{loc.area}</ThemedText>
-                </View>
-                <View style={styles.metaRow}>
-                  <MaterialCommunityIcons name="clock-outline" size={13} color={tintColor} />
-                  <ThemedText style={styles.metaText}>{loc.timings}</ThemedText>
-                </View>
-                {loc.note && (
-                  <View style={[styles.noteRow, { backgroundColor: tintColor + '12', borderColor: tintColor + '30' }]}>
-                    <MaterialCommunityIcons name="lightbulb-on-outline" size={12} color={tintColor} />
-                    <ThemedText style={[styles.noteText, { color: tintColor }]}>{loc.note}</ThemedText>
+        {locations.map((loc, index) => (
+          <Animated.View key={loc.id} entering={FadeInDown.delay(index * 80).duration(380)}>
+            <View style={[styles.card, { borderColor: tintColor + '25' }]}>
+
+              {/* Image with gradient overlay */}
+              <View style={styles.imageWrap}>
+                <Image
+                  source={loc.image_url ? { uri: loc.image_url } : PLACEHOLDER_IMAGES[index % PLACEHOLDER_IMAGES.length]}
+                  style={styles.cardImage}
+                  contentFit="cover"
+                  contentPosition="center"
+                  transition={200}
+                />
+                <LinearGradient
+                  colors={['transparent', 'rgba(0,0,0,0.72)']}
+                  style={styles.imageGradient}
+                />
+
+                {/* Tag badge */}
+                {loc.tag ? (
+                  <View style={[styles.tagBadge, { backgroundColor: tintColor }]}>
+                    <ThemedText style={styles.tagText}>{loc.tag}</ThemedText>
                   </View>
-                )}
+                ) : null}
+
+                {/* Location name on image */}
+                <View style={styles.imageOverlayContent}>
+                  <ThemedText style={styles.cardName}>{loc.name}</ThemedText>
+                  <View style={styles.areaRow}>
+                    <MaterialCommunityIcons name="map-marker" size={12} color="rgba(255,255,255,0.85)" />
+                    <ThemedText style={styles.areaText}>{loc.area}</ThemedText>
+                  </View>
+                </View>
               </View>
-            </ThemedView>
+
+              {/* Card info rows */}
+              <View style={styles.cardBody}>
+
+                {/* Timings */}
+                <View style={[styles.infoRow, { borderColor: tintColor + '20', backgroundColor: tintColor + '08' }]}>
+                  <View style={[styles.infoRowIcon, { backgroundColor: tintColor + '20' }]}>
+                    <MaterialCommunityIcons name="clock-time-four-outline" size={14} color={tintColor} />
+                  </View>
+                  <View style={styles.infoRowContent}>
+                    <ThemedText style={styles.infoRowLabel}>Counter Timings</ThemedText>
+                    <ThemedText style={[styles.infoRowValue, { color: tintColor }]}>{loc.timings}</ThemedText>
+                  </View>
+                </View>
+
+                {/* Note */}
+                {loc.note ? (
+                  <View style={[styles.noteRow, { borderColor: '#f59e0b44', backgroundColor: '#f59e0b0E' }]}>
+                    <MaterialCommunityIcons name="lightbulb-on-outline" size={14} color="#d97706" />
+                    <ThemedText style={styles.noteText}>{loc.note}</ThemedText>
+                  </View>
+                ) : null}
+
+                {/* Google Maps button */}
+                <Pressable
+                  onPress={() => Linking.openURL(loc.maps_url)}
+                  style={({ pressed }) => [
+                    styles.mapsBtn,
+                    { borderColor: tintColor, backgroundColor: tintColor + '14', opacity: pressed ? 0.75 : 1 },
+                  ]}>
+                  <MaterialCommunityIcons name="google-maps" size={16} color={tintColor} />
+                  <ThemedText style={[styles.mapsBtnText, { color: tintColor }]}>Open in Google Maps</ThemedText>
+                  <MaterialCommunityIcons name="open-in-new" size={12} color={tintColor + 'CC'} />
+                </Pressable>
+              </View>
+            </View>
           </Animated.View>
         ))}
       </ScrollView>
@@ -134,21 +172,142 @@ export default function SsdLocationsScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  header: { flexDirection: 'row', alignItems: 'flex-start', gap: 12, paddingHorizontal: 16, paddingBottom: 12 },
-  backBtn: { marginTop: 4, padding: 2 },
-  titleWrap: { flex: 1, gap: 2 },
-  title: { fontSize: 22 },
-  subtitle: { fontSize: 13, lineHeight: 18, opacity: 0.7 },
-  infoBanner: { borderWidth: 1, borderRadius: 12, padding: 12, flexDirection: 'row', gap: 8, alignItems: 'flex-start' },
-  infoBannerText: { flex: 1, fontSize: 13, lineHeight: 19 },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 12,
+    paddingHorizontal: 16,
+    paddingBottom: 10,
+  },
+  backBtn: {
+    marginTop: 4,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  titleWrap: { flex: 1, gap: 3 },
+  title: { fontSize: 21 },
+  subtitle: { fontSize: 12.5, lineHeight: 18, opacity: 0.68 },
+  bannerWrap: { paddingHorizontal: 16, paddingBottom: 8 },
+  infoBanner: {
+    borderWidth: 1,
+    borderRadius: 14,
+    padding: 12,
+    flexDirection: 'row',
+    gap: 10,
+    alignItems: 'flex-start',
+  },
+  infoIconWrap: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  infoBannerText: { flex: 1, fontSize: 12.5, lineHeight: 19 },
   bold: { fontWeight: '700' },
-  list: { paddingHorizontal: 16, gap: 12 },
-  locationCard: { borderWidth: 1, borderLeftWidth: 4, borderRadius: 14, padding: 14, flexDirection: 'row', gap: 12, alignItems: 'flex-start' },
-  iconCircle: { width: 44, height: 44, borderRadius: 22, justifyContent: 'center', alignItems: 'center' },
-  cardContent: { flex: 1, gap: 5 },
-  locationName: { fontSize: 14, lineHeight: 20 },
-  metaRow: { flexDirection: 'row', alignItems: 'center', gap: 5 },
-  metaText: { fontSize: 12, lineHeight: 17, opacity: 0.8 },
-  noteRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 5, borderWidth: 1, borderRadius: 8, paddingHorizontal: 8, paddingVertical: 5, marginTop: 2 },
-  noteText: { flex: 1, fontSize: 11, lineHeight: 16 },
+  countWrap: { paddingHorizontal: 16, paddingBottom: 10 },
+  countPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    alignSelf: 'flex-start',
+    borderWidth: 1,
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+  },
+  countText: { fontSize: 11.5, fontWeight: '600' },
+  centerState: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 10, paddingHorizontal: 24 },
+  centerStateText: { fontSize: 14, opacity: 0.6, textAlign: 'center' },
+  list: { paddingHorizontal: 16, gap: 16 },
+
+  // Card
+  card: {
+    borderWidth: 1,
+    borderRadius: 18,
+    overflow: 'hidden',
+  },
+
+  // Image
+  imageWrap: { position: 'relative', height: 170 },
+  cardImage: { width: '100%', height: '100%' },
+  imageGradient: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: 110,
+  },
+  tagBadge: {
+    position: 'absolute',
+    top: 10,
+    right: 10,
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+  },
+  tagText: { fontSize: 10, fontWeight: '700', color: '#fff', letterSpacing: 0.3 },
+  imageOverlayContent: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    padding: 12,
+    gap: 3,
+  },
+  cardName: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#fff',
+    lineHeight: 21,
+  },
+  areaRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  areaText: { fontSize: 11.5, color: 'rgba(255,255,255,0.85)', flex: 1 },
+
+  // Card body
+  cardBody: { padding: 12, gap: 10 },
+  infoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    borderWidth: 1,
+    borderRadius: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+  },
+  infoRowIcon: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  infoRowContent: { flex: 1, gap: 1 },
+  infoRowLabel: { fontSize: 10.5, opacity: 0.6 },
+  infoRowValue: { fontSize: 13, fontWeight: '600' },
+  noteRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 8,
+    borderWidth: 1,
+    borderRadius: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+  },
+  noteText: { flex: 1, fontSize: 12, lineHeight: 17, opacity: 0.85, marginTop: 0.5 },
+  mapsBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 7,
+    borderWidth: 1,
+    borderRadius: 12,
+    paddingVertical: 11,
+    paddingHorizontal: 16,
+  },
+  mapsBtnText: { fontSize: 13, fontWeight: '700', flex: 1, textAlign: 'center' },
 });

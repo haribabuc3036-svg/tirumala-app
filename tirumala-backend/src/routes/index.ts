@@ -6,6 +6,7 @@ import servicesRouter from './services';
 import wallpapersRouter from './wallpapers';
 import placesRouter from './places';
 import helpRouter from './help';
+import ssdLocationsRouter from './ssd-locations';
 
 const router = Router();
 
@@ -16,5 +17,6 @@ router.use('/services', servicesRouter);
 router.use('/wallpapers', wallpapersRouter);
 router.use('/places', placesRouter);
 router.use('/help', helpRouter);
+router.use('/ssd-locations', ssdLocationsRouter);
 
 export default router;

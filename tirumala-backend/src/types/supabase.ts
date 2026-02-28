@@ -403,6 +403,53 @@ export type Database = {
         };
         Relationships: [];
       };
+      ssd_locations: {
+        Row: {
+          id: number;
+          name: string;
+          area: string;
+          timings: string;
+          note: string | null;
+          image_url: string | null;
+          image_public_id: string | null;
+          maps_url: string;
+          tag: string | null;
+          sort_order: number;
+          is_active: boolean;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: never;
+          name: string;
+          area: string;
+          timings: string;
+          note?: string | null;
+          image_url?: string | null;
+          image_public_id?: string | null;
+          maps_url: string;
+          tag?: string | null;
+          sort_order?: number;
+          is_active?: boolean;
+          created_at?: string | null;
+          updated_at?: string | null;
+        };
+        Update: {
+          id?: never;
+          name?: string;
+          area?: string;
+          timings?: string;
+          note?: string | null;
+          image_url?: string | null;
+          image_public_id?: string | null;
+          maps_url?: string;
+          tag?: string | null;
+          sort_order?: number;
+          is_active?: boolean;
+          updated_at?: string | null;
+        };
+        Relationships: [];
+      };
     };
     Views: {
       [_ in never]: never;

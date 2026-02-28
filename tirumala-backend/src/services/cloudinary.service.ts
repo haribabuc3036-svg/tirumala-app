@@ -110,6 +110,13 @@ export async function uploadServiceCategoryImageToCloudinary(
   return uploadImageToCloudinary(fileBuffer, fileName, `${env.cloudinary.servicesFolder}/categories`);
 }
 
+export async function uploadSsdLocationImageToCloudinary(
+  fileBuffer: Buffer,
+  fileName: string
+): Promise<CloudinaryUploadResult> {
+  return uploadImageToCloudinary(fileBuffer, fileName, env.cloudinary.ssdLocationsFolder);
+}
+
 export async function uploadPlacePhotoUrlToCloudinary(
   sourceUrl: string,
   fileName: string
