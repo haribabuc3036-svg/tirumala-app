@@ -145,6 +145,17 @@ export default function ServiceDetailScreen() {
   const instructions = (service?.instructions && service.instructions.length > 0) ? service.instructions : null;
 
   const bookButtonScale = useRef(new Animated.Value(1)).current;
+  const arrowAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(arrowAnim, { toValue: 6, duration: 420, useNativeDriver: true }),
+        Animated.timing(arrowAnim, { toValue: 0, duration: 320, useNativeDriver: true }),
+        Animated.delay(800),
+      ])
+    ).start();
+  }, []);
 
   const onBookNow = async () => {
     if (!service) return;
@@ -196,8 +207,10 @@ export default function ServiceDetailScreen() {
           <View style={styles.bookShine} />
           {/* Content */}
           <MaterialCommunityIcons name="calendar-check" size={20} color="#ffffff" />
-          <ThemedText style={styles.bookText}>Book Now</ThemedText>
-          <MaterialCommunityIcons name="arrow-right-circle" size={18} color="rgba(255,255,255,0.7)" />
+          <ThemedText style={styles.bookText}>Check Availability</ThemedText>
+          <Animated.View style={{ transform: [{ translateX: arrowAnim }] }}>
+            <MaterialCommunityIcons name="arrow-right-circle" size={18} color="rgba(255,255,255,0.7)" />
+          </Animated.View>
         </LinearGradient>
       </Pressable>
     </Animated.View>

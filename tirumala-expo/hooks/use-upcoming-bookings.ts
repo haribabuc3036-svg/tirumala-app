@@ -9,7 +9,7 @@ export type UpcomingBookingService = {
   bookingDate: string;
 };
 
-export function useUpcomingBookings(windowDays = 3) {
+export function useUpcomingBookings() {
   const [services, setServices] = useState<UpcomingBookingService[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -18,15 +18,10 @@ export function useUpcomingBookings(windowDays = 3) {
 
     async function load() {
       try {
-        const now = new Date().toISOString();
-        const limit = new Date(Date.now() + windowDays * 24 * 60 * 60 * 1000).toISOString();
-
         const { data, error } = await supabase
           .from('services_catalog')
           .select('id,title,icon,image,booking_date')
           .not('booking_date', 'is', null)
-          .gt('booking_date', now)
-          .lte('booking_date', limit)
           .order('booking_date', { ascending: true });
 
         if (!cancelled && !error && data) {
@@ -49,7 +44,7 @@ export function useUpcomingBookings(windowDays = 3) {
     return () => {
       cancelled = true;
     };
-  }, [windowDays]);
+  }, []);
 
   return { services, loading };
 }

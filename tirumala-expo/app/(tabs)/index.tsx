@@ -125,6 +125,7 @@ function UpdateSlideCard({
 function SsdLiveButton({ onPress }: { onPress: () => void }) {
   const pulseAnim = useRef(new RNAnimated.Value(1)).current;
   const ringAnim = useRef(new RNAnimated.Value(0)).current;
+  const chevronAnim = useRef(new RNAnimated.Value(0)).current;
 
   useEffect(() => {
     RNAnimated.loop(
@@ -135,6 +136,13 @@ function SsdLiveButton({ onPress }: { onPress: () => void }) {
     ).start();
     RNAnimated.loop(
       RNAnimated.timing(ringAnim, { toValue: 1, duration: 1400, useNativeDriver: true })
+    ).start();
+    RNAnimated.loop(
+      RNAnimated.sequence([
+        RNAnimated.timing(chevronAnim, { toValue: 6, duration: 420, useNativeDriver: true }),
+        RNAnimated.timing(chevronAnim, { toValue: 0, duration: 320, useNativeDriver: true }),
+        RNAnimated.delay(800),
+      ])
     ).start();
   }, [pulseAnim, ringAnim]);
 
@@ -173,7 +181,9 @@ function SsdLiveButton({ onPress }: { onPress: () => void }) {
             <RNAnimated.View style={[ssdLiveDot, { opacity: pulseAnim }]} />
           </View>
           <ThemedText style={ssdLiveLabel}>LIVE</ThemedText>
-          <MaterialCommunityIcons name="chevron-right" size={18} color="rgba(255,255,255,0.8)" />
+          <RNAnimated.View style={{ transform: [{ translateX: chevronAnim }] }}>
+            <MaterialCommunityIcons name="chevron-right" size={18} color="rgba(255,255,255,0.8)" />
+          </RNAnimated.View>
         </View>
       </LinearGradient>
     </Pressable>
@@ -406,6 +416,78 @@ const counterBtnPressable: import('react-native').ViewStyle = {
   elevation: 8,
 };
 
+function ExploreNewsButton({ onPress }: { onPress: () => void }) {
+  return (
+    <Pressable
+      onPress={onPress}
+      style={({ pressed }) => [exploreNewsBtnPressable, { opacity: pressed ? 0.88 : 1 }]}>
+      <LinearGradient
+        colors={['#10d9a0', '#059669', '#064e3b']}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={ssdBtnGradient}>
+        <View style={ssdBtnLeft}>
+          <View style={ssdBtnIconWrap}>
+            <MaterialCommunityIcons name="newspaper-variant-multiple-outline" size={22} color="#fff" />
+          </View>
+          <View>
+            <ThemedText style={ssdBtnTitle}>Browse News</ThemedText>
+            <ThemedText style={ssdBtnSubtitle}>Tap to explore the Darshan News tab</ThemedText>
+          </View>
+        </View>
+        <View style={ssdBtnRight}>
+          <MaterialCommunityIcons name="chevron-right" size={18} color="rgba(255,255,255,0.8)" />
+        </View>
+      </LinearGradient>
+    </Pressable>
+  );
+}
+
+const exploreNewsBtnPressable: import('react-native').ViewStyle = {
+  borderRadius: 18,
+  shadowColor: '#059669',
+  shadowOffset: { width: 0, height: 6 },
+  shadowOpacity: 0.4,
+  shadowRadius: 12,
+  elevation: 8,
+};
+
+function HelpGuideButton({ onPress }: { onPress: () => void }) {
+  return (
+    <Pressable
+      onPress={onPress}
+      style={({ pressed }) => [helpGuideBtnPressable, { opacity: pressed ? 0.88 : 1 }]}>
+      <LinearGradient
+        colors={['#fbbf24', '#d97706', '#92400e']}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={ssdBtnGradient}>
+        <View style={ssdBtnLeft}>
+          <View style={ssdBtnIconWrap}>
+            <MaterialCommunityIcons name="help-circle-outline" size={22} color="#fff" />
+          </View>
+          <View>
+            <ThemedText style={ssdBtnTitle}>Help & Guide</ThemedText>
+            <ThemedText style={ssdBtnSubtitle}>FAQs, dress code & contact support</ThemedText>
+          </View>
+        </View>
+        <View style={ssdBtnRight}>
+          <MaterialCommunityIcons name="chevron-right" size={18} color="rgba(255,255,255,0.8)" />
+        </View>
+      </LinearGradient>
+    </Pressable>
+  );
+}
+
+const helpGuideBtnPressable: import('react-native').ViewStyle = {
+  borderRadius: 18,
+  shadowColor: '#d97706',
+  shadowOffset: { width: 0, height: 6 },
+  shadowOpacity: 0.4,
+  shadowRadius: 12,
+  elevation: 8,
+};
+
 // Flat style refs for UpdateSlideCard (defined outside main component to avoid re-creation)
 const updateSlideCardStyle: import('react-native').ViewStyle = { borderWidth: 1, borderRadius: 12, padding: 12, gap: 8 };
 const updateSlideHeaderStyle: import('react-native').ViewStyle = { flexDirection: 'row', alignItems: 'center' };
@@ -439,6 +521,18 @@ function BookingCountdownCard({
   cardWidth: number;
 }) {
   const [cd, setCd] = useState<BookingCd>(() => getBookingCountdown(service.bookingDate));
+  const arrowAnim = useRef(new RNAnimated.Value(0)).current;
+
+  useEffect(() => {
+    RNAnimated.loop(
+      RNAnimated.sequence([
+        RNAnimated.timing(arrowAnim, { toValue: 6, duration: 420, useNativeDriver: true }),
+        RNAnimated.timing(arrowAnim, { toValue: 0, duration: 320, useNativeDriver: true }),
+        RNAnimated.delay(800),
+      ])
+    ).start();
+  }, []);
+
   useEffect(() => {
     const timer = setInterval(() => {
       const next = getBookingCountdown(service.bookingDate);
@@ -527,7 +621,9 @@ function BookingCountdownCard({
         })}
         onPress={() => router.push({ pathname: '/service/[id]', params: { id: service.id } })}>
         <ThemedText style={{ color: '#fff', fontSize: 13, fontWeight: '700' }}>View Details</ThemedText>
-        <MaterialCommunityIcons name="arrow-right" size={14} color="#fff" />
+        <RNAnimated.View style={{ transform: [{ translateX: arrowAnim }] }}>
+          <MaterialCommunityIcons name="arrow-right" size={14} color="#fff" />
+        </RNAnimated.View>
       </Pressable>
     </LinearGradient>
   );
@@ -552,7 +648,7 @@ export default function HomeScreen() {
   const { overviewServices, loading: servicesLoading, error: servicesError } = useServicesCatalog();
   const { content: helpContent, loading: helpLoading } = useHelpContent();
   const overviewServiceItems: OverviewServiceItem[] = overviewServices;
-  const { services: upcomingBookings } = useUpcomingBookings(3);
+  const { services: upcomingBookings } = useUpcomingBookings();
   const bookingCardWidth = upcomingBookings.length === 1 ? screenWidth - 48 : screenWidth - 48 - 20;
 
   const accentByTab: Record<HomeTab, string> = {
@@ -612,14 +708,24 @@ export default function HomeScreen() {
             {/* ── Opening Soon carousel ── */}
             {upcomingBookings.length > 0 ? (
               <>
-                <View style={styles.newsHeaderTitleWrap}>
-                  <View style={[styles.newsHeaderIconWrap, { backgroundColor: '#7c3aed22' }]}>
-                    <MaterialCommunityIcons name="clock-fast" size={14} color="#7c3aed" />
+                <View style={styles.overviewServicesHeader}>
+                  <View style={styles.newsHeaderTitleWrap}>
+                    <View style={[styles.newsHeaderIconWrap, { backgroundColor: '#7c3aed22' }]}>
+                      <MaterialCommunityIcons name="clock-fast" size={14} color="#7c3aed" />
+                    </View>
+                    <View>
+                      <ThemedText type="defaultSemiBold" style={[styles.latestNewsTitle, { color: '#7c3aed' }]}>Opening Soon</ThemedText>
+                      <ThemedText style={styles.latestNewsSubtitle}>Upcoming booking schedules</ThemedText>
+                    </View>
                   </View>
-                  <View>
-                    <ThemedText type="defaultSemiBold" style={[styles.latestNewsTitle, { color: '#7c3aed' }]}>Opening Soon</ThemedText>
-                    <ThemedText style={styles.latestNewsSubtitle}>Booking opens within 3 days</ThemedText>
-                  </View>
+                  <Pressable
+                    onPress={() => router.push('/upcoming-bookings' as any)}
+                    style={({ pressed }) => [
+                      styles.viewMoreBtn,
+                      { borderColor: '#7c3aed', backgroundColor: '#7c3aed14', opacity: pressed ? 0.78 : 1 },
+                    ]}>
+                    <ThemedText style={[styles.viewMoreText, { color: '#7c3aed' }]}>View All</ThemedText>
+                  </Pressable>
                 </View>
                 <ScrollView
                   horizontal
@@ -872,6 +978,74 @@ export default function HomeScreen() {
               />
               <View style={styles.sectionBtnsWrap}>
                 <DayScheduleButton onPress={() => router.push({ pathname: '/(tabs)/news', params: { tab: 'schedule' } })} />
+              </View>
+            </View>
+
+            {/* ── Latest News ── */}
+            <View style={styles.sectionCard}>
+              <View style={styles.sectionBannerWrap}>
+                <Image
+                  source={require('../../assets/images/explore-hero-image.png')}
+                  style={StyleSheet.absoluteFillObject}
+                  contentFit="cover"
+                  contentPosition="center"
+                />
+                <LinearGradient
+                  colors={['rgba(16,217,160,0.82)', 'rgba(5,150,105,0.90)', 'rgba(6,78,59,0.96)']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                  style={styles.sectionBanner}>
+                  <View style={styles.sectionBannerIconWrap}>
+                    <MaterialCommunityIcons name="newspaper-variant-multiple-outline" size={20} color="#fff" />
+                  </View>
+                  <View>
+                    <ThemedText style={styles.sectionBannerTitle}>Latest News</ThemedText>
+                    <ThemedText style={styles.sectionBannerSubtitle}>Darshan news, SSD & live updates</ThemedText>
+                  </View>
+                </LinearGradient>
+              </View>
+              <Image
+                source={require('../../assets/images/explore-hero-image.png')}
+                style={styles.sectionInnerImage}
+                contentFit="cover"
+                contentPosition="center"
+              />
+              <View style={styles.sectionBtnsWrap}>
+                <ExploreNewsButton onPress={() => setActiveTab('explore')} />
+              </View>
+            </View>
+
+            {/* ── Help & Guide ── */}
+            <View style={styles.sectionCard}>
+              <View style={styles.sectionBannerWrap}>
+                <Image
+                  source={require('../../assets/images/support-hero-image.png')}
+                  style={StyleSheet.absoluteFillObject}
+                  contentFit="cover"
+                  contentPosition="center"
+                />
+                <LinearGradient
+                  colors={['rgba(251,191,36,0.82)', 'rgba(217,119,6,0.90)', 'rgba(146,64,14,0.96)']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                  style={styles.sectionBanner}>
+                  <View style={styles.sectionBannerIconWrap}>
+                    <MaterialCommunityIcons name="help-circle-outline" size={20} color="#fff" />
+                  </View>
+                  <View>
+                    <ThemedText style={styles.sectionBannerTitle}>Help & Guide</ThemedText>
+                    <ThemedText style={styles.sectionBannerSubtitle}>FAQs, dress code & contact support</ThemedText>
+                  </View>
+                </LinearGradient>
+              </View>
+              <Image
+                source={require('../../assets/images/support-hero-image.png')}
+                style={styles.sectionInnerImage}
+                contentFit="cover"
+                contentPosition="center"
+              />
+              <View style={styles.sectionBtnsWrap}>
+                <HelpGuideButton onPress={() => setActiveTab('help')} />
               </View>
             </View>
 
