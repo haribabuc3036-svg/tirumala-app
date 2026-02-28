@@ -307,6 +307,24 @@ router.delete(
 );
 
 /**
+ * GET /api/places/:placeId/photos
+ * Returns all photos for one place.
+ */
+router.get(
+  '/:placeId/photos',
+  asyncHandler(async (req: Request, res: Response) => {
+    const placeId = Array.isArray(req.params.placeId) ? req.params.placeId[0] : req.params.placeId;
+    const exists = await placeExists(placeId);
+    if (!exists) {
+      res.status(404).json({ success: false, error: 'Place not found' });
+      return;
+    }
+    const data = await getPlacePhotosByPlaceId(placeId);
+    res.json({ success: true, count: data.length, data });
+  })
+);
+
+/**
  * GET /api/places/:placeId
  * Returns one place detail by id.
  */

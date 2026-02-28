@@ -15,6 +15,7 @@ import {
   getNextServiceImageSortOrder,
   getServiceDetailById,
   getServiceImageById,
+  getServiceImagesByServiceId,
   getServiceById,
   getServicesByCategoryId,
   getOverviewServices,
@@ -119,6 +120,31 @@ router.get(
       return;
     }
     res.json({ success: true, data });
+  })
+);
+
+/**
+ * GET /api/services/:id/images
+ * Returns all detail gallery images for a service with id and publicId for admin management.
+ */
+router.get(
+  '/:id/images',
+  asyncHandler(async (req: Request, res: Response) => {
+    const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+    const service = await getServiceById(id);
+    if (!service) {
+      res.status(404).json({ success: false, error: 'Service not found' });
+      return;
+    }
+    const images = await getServiceImagesByServiceId(id);
+    const data = images.map((img) => ({
+      id: img.id,
+      serviceId: img.service_id,
+      imageUrl: img.image_url,
+      publicId: img.public_id,
+      sortOrder: img.sort_order,
+    }));
+    res.json({ success: true, count: data.length, data });
   })
 );
 

@@ -466,14 +466,21 @@ export async function deleteWallpaper(id: string): Promise<boolean> {
 export type PlaceRegionResponse = {
   id: string;
   title: string;
-  subtitle?: string;
+  subtitle: string | null;
+  sort_order: number;
 };
 
 export type PlaceSummaryResponse = {
   id: string;
+  region_id: string;
   name: string;
-  distanceFromTirumalaKm: number;
   description: string;
+  maps_url: string;
+  distance_from_tirumala_km: number;
+  sort_order: number;
+  created_at: string;
+  // camelCase aliases (kept for mobile-app compatibility)
+  distanceFromTirumalaKm: number;
   mapsUrl: string;
   photos: string[];
 };
@@ -494,16 +501,23 @@ function mapRegionRow(row: PlaceRegionRow): PlaceRegionResponse {
   return {
     id: row.id,
     title: row.title,
-    ...(row.subtitle ? { subtitle: row.subtitle } : {}),
+    subtitle: row.subtitle ?? null,
+    sort_order: row.sort_order ?? 0,
   };
 }
 
 function mapPlaceRow(row: PlaceRow, photos: PlacePhotoRow[]): PlaceSummaryResponse {
   return {
     id: row.id,
+    region_id: row.region_id,
     name: row.name,
-    distanceFromTirumalaKm: Number(row.distance_from_tirumala_km),
     description: row.description,
+    maps_url: row.maps_url,
+    distance_from_tirumala_km: Number(row.distance_from_tirumala_km),
+    sort_order: row.sort_order ?? 0,
+    created_at: row.created_at ?? '',
+    // camelCase aliases
+    distanceFromTirumalaKm: Number(row.distance_from_tirumala_km),
     mapsUrl: row.maps_url,
     photos: photos
       .sort((a, b) => a.sort_order - b.sort_order)
