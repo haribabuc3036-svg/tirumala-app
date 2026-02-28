@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
+import cookieParser from 'cookie-parser';
 
 import { env } from './config/env';
 import apiRouter from './routes';
@@ -16,12 +17,27 @@ const app = express();
 
 // ─── Security & Logging ────────────────────────────────────────────────────────
 app.use(helmet());
-app.use(cors());
+
+// Allow credentials (cookies) from the configured frontend origin(s)
+const allowedOrigins = env.corsOrigin.split(',').map((o) => o.trim());
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      // Allow requests with no origin (curl, Postman, server-to-server)
+      if (!origin) return callback(null, true);
+      if (allowedOrigins.includes(origin)) return callback(null, true);
+      callback(new Error(`CORS: origin '${origin}' is not allowed`));
+    },
+    credentials: true, // required to send/receive cookies cross-origin
+  })
+);
+
 app.use(morgan(env.nodeEnv === 'production' ? 'combined' : 'dev'));
 
-// ─── Body Parsing ──────────────────────────────────────────────────────────────
+// ─── Body Parsing & Cookies ───────────────────────────────────────────────────
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser());
 
 // ─── Health Check ──────────────────────────────────────────────────────────────
 app.get('/health', (_req, res) => {

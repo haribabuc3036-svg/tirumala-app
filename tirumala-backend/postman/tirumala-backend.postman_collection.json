@@ -2,16 +2,10 @@
     "info":  {
                  "_postman_id":  "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
                  "name":  "Tirumala Backend API",
-                 "description":  "API collection for the Tirumala TTD backend service.\n\nSet the `baseUrl` variable to your running server (default: `http://localhost:3000`).\n\n## Authentication\nWrite endpoints (POST / PUT / PATCH / DELETE) require a JWT Bearer token.\n\n**Steps:**\n1. Call **Auth → Login** with your username + password.\n2. The token is automatically saved to the `authToken` collection variable.\n3. All subsequent write requests will include `Authorization: Bearer {{authToken}}` automatically.\n\n## Routes\n- `/health` — server health check\n- `/api/auth` — login\n- `/api/darshan` — TTD pilgrim stats\n- `/api/ssd` — SSD Token / Free Tickets status\n- `/api/places` — places \u0026 regions\n- `/api/services` — services catalog\n- `/api/wallpapers` — wallpapers\n- `/api/help` — FAQs, dress code, dos \u0026 don\u0027ts, contacts\n- `/api/ssd-locations` — SSD pickup locations\n- `/api/scraper` — manual scrape triggers",
+                 "description":  "API collection for the Tirumala TTD backend service.\n\nSet the `baseUrl` variable to your running server (default: `http://localhost:3000`).\n\n## Authentication\nWrite endpoints (POST / PUT / PATCH / DELETE) require an authenticated session.\n\n**How it works (cookie-based JWT):**\n1. Call **Auth → Login** — the server sets an `httpOnly` `Set-Cookie: auth_token` header.\n2. Postman stores the cookie in its jar and sends it automatically with every request.\n3. To end the session call **Auth → Logout**.\n\n\u003e Non-browser clients can also send `Authorization: Bearer \u003ctoken\u003e` as a header fallback.\n\n## Routes\n- `/health` — server health check\n- `/api/auth` — login / logout / me\n- `/api/darshan` — TTD pilgrim stats\n- `/api/ssd` — SSD Token / Free Tickets status\n- `/api/places` — places \u0026 regions\n- `/api/services` — services catalog\n- `/api/wallpapers` — wallpapers\n- `/api/help` — FAQs, dress code, dos \u0026 don\u0027ts, contacts\n- `/api/ssd-locations` — SSD pickup locations\n- `/api/scraper` — manual scrape triggers",
                  "schema":  "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
              },
     "variable":  [
-                     {
-                         "key":  "authToken",
-                         "value":  "",
-                         "type":  "string",
-                         "description":  "JWT token returned by POST /api/auth/login — auto-populated by the Login request test script."
-                     },
                      {
                          "key":  "baseUrl",
                          "value":  "http://localhost:3000",
@@ -86,12 +80,14 @@
                                                         "script":  {
                                                                        "type":  "text/javascript",
                                                                        "exec":  [
-                                                                                    "var json = pm.response.json();",
-                                                                                    "if (json.success \u0026\u0026 json.token) {",
-                                                                                    "    pm.collectionVariables.set(\u0027authToken\u0027, json.token);",
-                                                                                    "    console.log(\u0027Token saved to authToken variable:\u0027, json.token.substring(0, 20) + \u0027...\u0027);",
+                                                                                    "// Postman automatically stores the httpOnly cookie in its cookie jar.",
+                                                                                    "// No manual token extraction needed \\u2014 cookies are sent automatically.",
+                                                                                    "if (pm.response.code === 200) {",
+                                                                                    "    var json = pm.response.json();",
+                                                                                    "    console.log(\u0027Logged in as:\u0027, json.username, \u0027| Expires in:\u0027, json.expiresIn);",
+                                                                                    "    console.log(\u0027Cookie auth_token is now stored in Postman cookie jar.\u0027);",
                                                                                     "} else {",
-                                                                                    "    console.error(\u0027Login failed:\u0027, JSON.stringify(json));",
+                                                                                    "    console.error(\u0027Login failed:\u0027, JSON.stringify(pm.response.json()));",
                                                                                     "}"
                                                                                 ]
                                                                    }
@@ -128,7 +124,7 @@
                                                                                "login"
                                                                            ]
                                                               },
-                                                      "description":  "Authenticate with username + password.\n\nOn success the test script automatically stores the JWT in the `authToken` collection variable so all subsequent write requests are authenticated.\n\nToken is valid for the duration set in `JWT_EXPIRES_IN` (default 7 days)."
+                                                      "description":  "Authenticate with username + password.\n\nOn success the server sets an **httpOnly** `Set-Cookie: auth_token=\u003cjwt\u003e` header.\n\n- **Browser / web frontend**: the cookie is stored automatically and sent with every subsequent request. The token is NOT exposed in the response body.\n\n- **Postman**: Postman\u0027s built-in cookie jar stores the cookie automatically. All subsequent requests to `{{baseUrl}}` will include it. No manual token handling needed.\n\nToken is valid for the duration set in `JWT_EXPIRES_IN` (default 7 days)."
                                                   },
                                       "response":  [
                                                        {
@@ -159,7 +155,7 @@
                                                                                                         ]
                                                                                            }
                                                                                },
-                                                           "body":  "{\\n  \"success\": true,\\n  \"token\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\u003ctruncated\u003e\",\\n  \"expiresIn\": \"7d\",\\n  \"username\": \"harib\"\\n}"
+                                                           "body":  "{\\n  \"success\": true,\\n  \"expiresIn\": \"7d\",\\n  \"username\": \"harib\"\\n}"
                                                        },
                                                        {
                                                            "name":  "401 Unauthorized – bad credentials",
@@ -190,6 +186,121 @@
                                                                                            }
                                                                                },
                                                            "body":  "{\\n  \"success\": false,\\n  \"error\": \"Invalid credentials\"\\n}"
+                                                       }
+                                                   ]
+                                  },
+                                  {
+                                      "name":  "Logout",
+                                      "request":  {
+                                                      "method":  "POST",
+                                                      "header":  [
+
+                                                                 ],
+                                                      "url":  {
+                                                                  "raw":  "{{baseUrl}}/api/auth/logout",
+                                                                  "host":  [
+                                                                               "{{baseUrl}}"
+                                                                           ],
+                                                                  "path":  [
+                                                                               "api",
+                                                                               "auth",
+                                                                               "logout"
+                                                                           ]
+                                                              },
+                                                      "description":  "Clears the `auth_token` httpOnly cookie.\n\nAfter calling this, the browser (or Postman cookie jar) will no longer send the token and all write requests will return 401."
+                                                  },
+                                      "response":  [
+                                                       {
+                                                           "name":  "200 OK",
+                                                           "status":  "OK",
+                                                           "code":  200,
+                                                           "originalRequest":  {
+                                                                                   "method":  "POST",
+                                                                                   "header":  [
+
+                                                                                              ],
+                                                                                   "url":  {
+                                                                                               "raw":  "{{baseUrl}}/api/auth/logout",
+                                                                                               "host":  [
+                                                                                                            "{{baseUrl}}"
+                                                                                                        ],
+                                                                                               "path":  [
+                                                                                                            "api",
+                                                                                                            "auth",
+                                                                                                            "logout"
+                                                                                                        ]
+                                                                                           }
+                                                                               },
+                                                           "body":  "{\\n  \"success\": true,\\n  \"message\": \"Logged out\"\\n}"
+                                                       }
+                                                   ]
+                                  },
+                                  {
+                                      "name":  "Me (check session)",
+                                      "request":  {
+                                                      "method":  "GET",
+                                                      "header":  [
+
+                                                                 ],
+                                                      "url":  {
+                                                                  "raw":  "{{baseUrl}}/api/auth/me",
+                                                                  "host":  [
+                                                                               "{{baseUrl}}"
+                                                                           ],
+                                                                  "path":  [
+                                                                               "api",
+                                                                               "auth",
+                                                                               "me"
+                                                                           ]
+                                                              },
+                                                      "description":  "Returns the currently authenticated username based on the `auth_token` cookie.\n\nUseful for the frontend to verify the session is still valid on page load."
+                                                  },
+                                      "response":  [
+                                                       {
+                                                           "name":  "200 OK – authenticated",
+                                                           "status":  "OK",
+                                                           "code":  200,
+                                                           "originalRequest":  {
+                                                                                   "method":  "GET",
+                                                                                   "header":  [
+
+                                                                                              ],
+                                                                                   "url":  {
+                                                                                               "raw":  "{{baseUrl}}/api/auth/me",
+                                                                                               "host":  [
+                                                                                                            "{{baseUrl}}"
+                                                                                                        ],
+                                                                                               "path":  [
+                                                                                                            "api",
+                                                                                                            "auth",
+                                                                                                            "me"
+                                                                                                        ]
+                                                                                           }
+                                                                               },
+                                                           "body":  "{\\n  \"success\": true,\\n  \"username\": \"harib\"\\n}"
+                                                       },
+                                                       {
+                                                           "name":  "401 – not authenticated",
+                                                           "status":  "Unauthorized",
+                                                           "code":  401,
+                                                           "originalRequest":  {
+                                                                                   "method":  "GET",
+                                                                                   "header":  [
+
+                                                                                              ],
+                                                                                   "url":  {
+                                                                                               "raw":  "{{baseUrl}}/api/auth/me",
+                                                                                               "host":  [
+                                                                                                            "{{baseUrl}}"
+                                                                                                        ],
+                                                                                               "path":  [
+                                                                                                            "api",
+                                                                                                            "auth",
+                                                                                                            "me"
+                                                                                                        ]
+                                                                                           }
+                                                                               },
+                                                           "body":  "{\\n  \"success\": false,\\n  \"error\": \"Not authenticated\"\\n}"
                                                        }
                                                    ]
                                   }
@@ -2988,15 +3099,5 @@
                                   }
                               ]
                  }
-             ],
-    "auth":  {
-                 "type":  "bearer",
-                 "bearer":  [
-                                {
-                                    "key":  "token",
-                                    "value":  "{{authToken}}",
-                                    "type":  "string"
-                                }
-                            ]
-             }
+             ]
 }

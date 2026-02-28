@@ -13,8 +13,12 @@ export const env = {
 
   /** Secret used to sign / verify JWT tokens */
   jwtSecret: required('JWT_SECRET'),
-  /** Token expiry (default 7 days) */
+  /** Token expiry (default 7 days). Used for both the JWT and the cookie maxAge. */
   jwtExpiresIn: process.env.JWT_EXPIRES_IN ?? '7d',
+  /** Allowed CORS origin (browser frontend URL). Comma-separate multiple origins. */
+  corsOrigin: process.env.CORS_ORIGIN ?? 'http://localhost:8081',
+  /** Cookie name for the JWT token */
+  cookieName: process.env.COOKIE_NAME ?? 'auth_token',
 
   /** node-cron expression for the TTD website poller (default: every 5 min) */
   scrapeSchedule: process.env.SCRAPE_SCHEDULE ?? '*/5 * * * *',
