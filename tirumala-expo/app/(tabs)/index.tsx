@@ -16,6 +16,7 @@ import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useLiveUpdates, type LiveLatestUpdateItem } from '@/hooks/use-live-updates';
 import { useServicesCatalog } from '@/hooks/use-services-catalog';
 import { useHelpContent } from '@/hooks/use-help-content';
+import { useUpcomingBookings, type UpcomingBookingService } from '@/hooks/use-upcoming-bookings';
 import { type Service } from '@/types/services';
 
 type HomeTab = 'overview' | 'explore' | 'help';
@@ -415,6 +416,129 @@ const updateClickHereBtnStyle: import('react-native').ViewStyle = { flexDirectio
 const updateClickHereTextStyle: import('react-native').TextStyle = { fontSize: 11.5, fontWeight: '700' };
 const updateReadMoreStyle: import('react-native').TextStyle = { fontSize: 11.5, fontWeight: '700', marginTop: 2 };
 
+// ── Upcoming booking countdown helpers ────────────────────────────────────
+type BookingCd = { days: number; hours: number; minutes: number; seconds: number; expired: boolean };
+
+function getBookingCountdown(isoDate: string): BookingCd {
+  const diff = new Date(isoDate).getTime() - Date.now();
+  if (diff <= 0) return { days: 0, hours: 0, minutes: 0, seconds: 0, expired: true };
+  return {
+    days:    Math.floor(diff / 86400000),
+    hours:   Math.floor((diff % 86400000) / 3600000),
+    minutes: Math.floor((diff % 3600000)  / 60000),
+    seconds: Math.floor((diff % 60000)    / 1000),
+    expired: false,
+  };
+}
+
+function BookingCountdownCard({
+  service,
+  cardWidth,
+}: {
+  service: UpcomingBookingService;
+  cardWidth: number;
+}) {
+  const [cd, setCd] = useState<BookingCd>(() => getBookingCountdown(service.bookingDate));
+  useEffect(() => {
+    const timer = setInterval(() => {
+      const next = getBookingCountdown(service.bookingDate);
+      setCd(next);
+      if (next.expired) clearInterval(timer);
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [service.bookingDate]);
+
+  const blocks: { value: number; label: string }[] = [
+    { value: cd.days,    label: 'Days' },
+    { value: cd.hours,   label: 'Hrs'  },
+    { value: cd.minutes, label: 'Mins' },
+    { value: cd.seconds, label: 'Secs' },
+  ];
+
+  return (
+    <LinearGradient
+      colors={['#0f172a', '#1e1b4b', '#4c1d95']}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 1, y: 1 }}
+      style={[bookingCardBaseStyle, { width: cardWidth }]}>
+      {/* decorative bubbles */}
+      <View style={{ position: 'absolute', width: 90, height: 90, borderRadius: 45, backgroundColor: '#fff', opacity: 0.04, top: -24, right: -20 }} />
+      <View style={{ position: 'absolute', width: 55, height: 55, borderRadius: 28, backgroundColor: '#fff', opacity: 0.05, bottom: -14, left: 12 }} />
+      <View style={{ position: 'absolute', width: 22, height: 22, borderRadius: 11, backgroundColor: '#fff', opacity: 0.09, top: 14, right: 40 }} />
+
+      {/* title */}
+      <ThemedText style={{ color: '#fff', fontSize: 14, fontWeight: '800', lineHeight: 18 }} numberOfLines={2}>
+        {service.title}
+      </ThemedText>
+
+      {/* label */}
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5, marginTop: 6 }}>
+        <MaterialCommunityIcons name="alarm" size={12} color="rgba(255,255,255,0.55)" />
+        <ThemedText style={{ color: 'rgba(255,255,255,0.55)', fontSize: 10.5, fontWeight: '600', letterSpacing: 0.3 }}>
+          BOOKING OPENS IN
+        </ThemedText>
+      </View>
+
+      {/* countdown blocks */}
+      <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 8 }}>
+        {blocks.map(({ value, label }, i) => (
+          <View key={label} style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <View style={{ alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.13)', borderRadius: 8, paddingHorizontal: 7, paddingVertical: 6, minWidth: 40 }}>
+              <ThemedText style={{ color: '#fff', fontSize: 20, fontWeight: '800', lineHeight: 24 }}>
+                {String(value).padStart(2, '0')}
+              </ThemedText>
+              <ThemedText style={{ color: 'rgba(255,255,255,0.55)', fontSize: 9, fontWeight: '600', marginTop: 1 }}>
+                {label}
+              </ThemedText>
+            </View>
+            {i < blocks.length - 1 && (
+              <ThemedText style={{ color: 'rgba(255,255,255,0.5)', fontSize: 18, fontWeight: '800', marginHorizontal: 3, marginBottom: 10 }}>:</ThemedText>
+            )}
+          </View>
+        ))}
+      </View>
+
+      {/* date */}
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5, marginTop: 8 }}>
+        <MaterialCommunityIcons name="calendar-clock" size={12} color="rgba(255,255,255,0.6)" />
+        <ThemedText style={{ color: 'rgba(255,255,255,0.6)', fontSize: 11 }}>
+          {new Date(service.bookingDate).toLocaleString('en-IN', {
+            day: 'numeric', month: 'short', year: 'numeric',
+            hour: '2-digit', minute: '2-digit', hour12: true,
+            timeZone: 'Asia/Kolkata',
+          })} IST
+        </ThemedText>
+      </View>
+
+      {/* view details */}
+      <Pressable
+        style={({ pressed }) => ({
+          marginTop: 14,
+          backgroundColor: 'rgba(255,255,255,0.14)',
+          borderRadius: 10,
+          paddingVertical: 9,
+          flexDirection: 'row' as const,
+          alignItems: 'center' as const,
+          justifyContent: 'center' as const,
+          gap: 6,
+          borderWidth: 1,
+          borderColor: 'rgba(255,255,255,0.22)',
+          opacity: pressed ? 0.72 : 1,
+        })}
+        onPress={() => router.push({ pathname: '/service/[id]', params: { id: service.id } })}>
+        <ThemedText style={{ color: '#fff', fontSize: 13, fontWeight: '700' }}>View Details</ThemedText>
+        <MaterialCommunityIcons name="arrow-right" size={14} color="#fff" />
+      </Pressable>
+    </LinearGradient>
+  );
+}
+
+const bookingCardBaseStyle: import('react-native').ViewStyle = {
+  borderRadius: 16,
+  padding: 14,
+  overflow: 'hidden',
+};
+
 export default function HomeScreen() {
   const colorScheme = useColorScheme() ?? 'light';
   const tintColor = MainTabAccent.index;
@@ -428,6 +552,8 @@ export default function HomeScreen() {
   const { overviewServices, loading: servicesLoading, error: servicesError } = useServicesCatalog();
   const { content: helpContent, loading: helpLoading } = useHelpContent();
   const overviewServiceItems: OverviewServiceItem[] = overviewServices;
+  const { services: upcomingBookings } = useUpcomingBookings(3);
+  const bookingCardWidth = upcomingBookings.length === 1 ? screenWidth - 48 : screenWidth - 48 - 20;
 
   const accentByTab: Record<HomeTab, string> = {
     overview: tintColor,
@@ -437,8 +563,12 @@ export default function HomeScreen() {
   const activeAccent = accentByTab[activeTab];
   const newsItems: LatestNewsItem[] = latestNews;
   const previewNewsItems = newsItems.slice(0, 4);
-  const newsSlideWidth = Math.max(260, screenWidth - 52);
-  const updateSlideWidth = newsSlideWidth;
+  const newsSlideWidth = previewNewsItems.length > 1
+    ? Math.max(240, screenWidth - 52 - 28)
+    : Math.max(260, screenWidth - 52);
+  const updateSlideWidth = latestUpdates.length > 1
+    ? Math.max(240, screenWidth - 52 - 28)
+    : Math.max(260, screenWidth - 52);
 
   useEffect(() => {
     if (activeNewsSlide >= previewNewsItems.length) {
@@ -550,6 +680,33 @@ export default function HomeScreen() {
                 })}
               </View>
             ) : null}
+
+            {/* ── Opening Soon carousel ── */}
+            {upcomingBookings.length > 0 ? (
+              <>
+                <View style={[styles.bookingCarouselDivider, { backgroundColor: activeAccent + '25' }]} />
+                <View style={styles.newsHeaderTitleWrap}>
+                  <View style={[styles.newsHeaderIconWrap, { backgroundColor: '#7c3aed22' }]}>
+                    <MaterialCommunityIcons name="clock-fast" size={14} color="#7c3aed" />
+                  </View>
+                  <View>
+                    <ThemedText type="defaultSemiBold" style={[styles.latestNewsTitle, { color: '#7c3aed' }]}>Opening Soon</ThemedText>
+                    <ThemedText style={styles.latestNewsSubtitle}>Booking opens within 3 days</ThemedText>
+                  </View>
+                </View>
+                <ScrollView
+                  horizontal
+                  pagingEnabled={false}
+                  showsHorizontalScrollIndicator={false}
+                  snapToInterval={bookingCardWidth + 10}
+                  decelerationRate="fast"
+                  contentContainerStyle={{ gap: 10, paddingRight: 4 }}>
+                  {upcomingBookings.map((svc) => (
+                    <BookingCountdownCard key={svc.id} service={svc} cardWidth={bookingCardWidth} />
+                  ))}
+                </ScrollView>
+              </>
+            ) : null}
           </ThemedView>
 
           <ThemedView style={[styles.contentCard, styles.overviewServicesCard, { borderColor: activeAccent, backgroundColor: activeAccent + '10' }]}>
@@ -571,7 +728,6 @@ export default function HomeScreen() {
               <View style={styles.newsListWrap}>
                 <ScrollView
                   horizontal
-                  pagingEnabled
                   showsHorizontalScrollIndicator={false}
                   decelerationRate="fast"
                   snapToInterval={updateSlideWidth + 8}
@@ -766,7 +922,6 @@ export default function HomeScreen() {
               <View style={styles.newsListWrap}>
                 <ScrollView
                   horizontal
-                  pagingEnabled
                   showsHorizontalScrollIndicator={false}
                   decelerationRate="fast"
                   snapToInterval={newsSlideWidth + 8}
@@ -1175,6 +1330,7 @@ const styles = StyleSheet.create({
   overviewServiceCategory: { fontSize: 9.5, opacity: 0.65 },
   overviewServiceTagPill: { borderRadius: 999, paddingHorizontal: 8, paddingVertical: 2 },
   overviewServiceTagText: { fontSize: 9, fontWeight: '700' },
+  bookingCarouselDivider: { height: 1, borderRadius: 1, marginVertical: 2 },
   overviewQuickLinksWrap: { gap: 16, paddingHorizontal: 2 },
   overviewQuickLinkBtn: { flexDirection: 'row', alignItems: 'center', gap: 10, borderWidth: 1, borderRadius: 14, paddingVertical: 14, paddingHorizontal: 16 },
   overviewQuickLinkText: { flex: 1, fontSize: 14, fontWeight: '600' },
