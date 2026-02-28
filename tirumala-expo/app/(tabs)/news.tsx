@@ -1,4 +1,6 @@
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
+import { Image } from 'expo-image';
+import { LinearGradient } from 'expo-linear-gradient';
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { type ComponentProps, useCallback, useState } from 'react';
 import { ActivityIndicator, FlatList, Pressable, StyleSheet, View } from 'react-native';
@@ -87,6 +89,18 @@ function getIstDateKey(): string {
   return new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' });
 }
 
+// Cycling gradient palettes for recent cards (all distinct from the hero purple)
+const CARD_PALETTES: [string, string, string][] = [
+  ['#0a3d3a', '#0e6b5e', '#2abfaa'],   // teal
+  ['#1a1f60', '#2e3ea8', '#6b80ef'],   // indigo-blue
+  ['#3a1a00', '#8b4200', '#e08030'],   // deep amber
+  ['#0d300f', '#1a6b2e', '#43c870'],   // forest green
+  ['#4a0d18', '#8b1a2e', '#e0566a'],   // crimson
+  ['#1a0a40', '#3d1a88', '#8b60d0'],   // deep violet (differs from hero)
+  ['#003044', '#006080', '#20b0d0'],   // ocean blue
+  ['#2a1a00', '#6b4000', '#c07820'],   // bronze
+];
+
 function normalizeDateKey(input: string): string {
   if (/^\d{4}-\d{2}-\d{2}$/.test(input)) return input;
 
@@ -108,24 +122,111 @@ function normalizeDateKey(input: string): string {
   return input;
 }
 
+// Expand abbreviated units to full words
+function expandHundi(val: string): string {
+  return val.replace(/\s*crores?\s*/gi, ' Crores').replace(/\s*CR\s*/gi, ' Crores').trim();
+}
+
+function expandDarshanTime(val: string): string {
+  // "12-15H" → "12-15 Hours"  |  "06 H" → "06 Hours"
+  return val
+    .replace(/(\d)\s*-\s*(\d+)\s*H\b/gi, '$1–$2 Hours')
+    .replace(/(\d+)\s*H\b/gi, '$1 Hours')
+    .trim();
+}
+
 const DAY_SCHEDULE_DATA: DayScheduleData = {
-  date: '2026-02-26',
-  day: 'Thursday',
+  date: '2026-03-01',
+  day: 'Sunday',
   schedules: [
-    { event: 'Suprabhatam', time: '02:30 - 03:00 hrs' },
-    { event: 'Thomala Seva', time: '03:30 - 04:00 hrs' },
-    { event: 'Koluvu and Panchanga Sravanam', time: '04:00 - 04:15 hrs' },
-    { event: 'First Archana', time: '04:15 - 05:00 hrs' },
-    { event: 'Abhishekam and second Archana', time: '06:00 - 08:00 hrs' },
-    { event: 'Darshanam', time: '09:30 - 19:00 hrs' },
-    { event: 'Arjitha Sevas', time: '12:00 - 17:00 hrs' },
+    { event: 'Suprabhatam', time: '02:30-03:00 hrs' },
+    { event: 'Thomala Seva (Ekantam)', time: '03:30 - 04:00 hrs' },
+    { event: 'Koluvu and Panchanga Sravanam (Ekantam)', time: '04:00 - 04:15 hrs' },
+    { event: 'First Archana, Sahasranama Archana (Ekantam)', time: '04:00 - 04:30 hrs' },
+    { event: 'FirstBell, Bali and Sattumura', time: '06:30- 07:00 hrs' },
+    { event: 'Suddhi Second Archana (Ekantam), SecondBell,etc.', time: '07:00 - 07:30 hrs' },
+    { event: 'Darshanam', time: '07:30 - 19:00 hrs' },
+    { event: 'Kalyanostavam, Brahmostavam, Vasanthostavam, Unjal Seva', time: '12:00 - 17:00 hrs' },
     { event: 'Sahasra Deepalankarana Seva', time: '17:30 - 18:30 hrs' },
-    { event: 'Suddhi and Night Kainkaryams', time: '19:00 - 20:00 hrs' },
+    { event: 'Suddhi, Night Kainkaryams (Ekantam) and Night Bell', time: '19:00 - 20:00 hrs' },
     { event: 'Darshanam', time: '20:00 - 00:30 hrs' },
-    { event: 'Suddhi and preparation for Ekanta Seva', time: '00:30 - 00:45 hrs' },
+    { event: 'Suddi and preparations for Ekanta Seva', time: '00:30 - 00:45 hrs' },
     { event: 'Ekanta Seva', time: '00:45 hrs' },
   ],
 };
+
+function to12h(h: number, m: number): string {
+  const period = h < 12 ? 'AM' : 'PM';
+  const hour = h % 12 === 0 ? 12 : h % 12;
+  const min = m.toString().padStart(2, '0');
+  return `${hour}:${min} ${period}`;
+}
+
+function formatScheduleTime12h(timeStr: string): string {
+  const rangeMatch = timeStr.match(/(\d{2}):(\d{2})\s*-\s*(\d{2}):(\d{2})/);
+  if (rangeMatch) {
+    const sh = parseInt(rangeMatch[1]);
+    const sm = parseInt(rangeMatch[2]);
+    const eh = parseInt(rangeMatch[3]);
+    const em = parseInt(rangeMatch[4]);
+    return `${to12h(sh, sm)} – ${to12h(eh, em)}`;
+  }
+  const pointMatch = timeStr.match(/(\d{2}):(\d{2})/);
+  if (pointMatch) {
+    return to12h(parseInt(pointMatch[1]), parseInt(pointMatch[2]));
+  }
+  return timeStr;
+}
+
+function parseScheduleMinutes(timeStr: string): { startMin: number; endMin: number | null } {
+  const rangeMatch = timeStr.match(/(\d{2}):(\d{2})\s*-\s*(\d{2}):(\d{2})/);
+  if (rangeMatch) {
+    const sh = parseInt(rangeMatch[1]);
+    const sm = parseInt(rangeMatch[2]);
+    const eh = parseInt(rangeMatch[3]);
+    const em = parseInt(rangeMatch[4]);
+    let startMin = sh * 60 + sm;
+    let endMin = eh * 60 + em;
+    // hours 0-1 belong to next calendar day in this schedule (day starts at ~02:30)
+    if (sh < 2) startMin += 24 * 60;
+    if (sh >= 2 && eh < 2) endMin += 24 * 60; // crosses midnight
+    if (sh < 2 && eh < 2) { startMin += 0; endMin += 24 * 60; } // both next-day, already offset above for startMin
+    return { startMin, endMin };
+  }
+  const pointMatch = timeStr.match(/(\d{2}):(\d{2})/);
+  if (pointMatch) {
+    const sh = parseInt(pointMatch[1]);
+    const sm = parseInt(pointMatch[2]);
+    let startMin = sh * 60 + sm;
+    if (sh < 2) startMin += 24 * 60;
+    return { startMin, endMin: null };
+  }
+  return { startMin: -1, endMin: null };
+}
+
+function getScheduleStatus(timeStr: string): 'past' | 'current' | 'upcoming' {
+  // IST = UTC + 5:30 — avoid toLocaleString timezone which is unreliable in Hermes
+  const istOffsetMs = (5 * 60 + 30) * 60 * 1000;
+  const istDate = new Date(Date.now() + istOffsetMs);
+  const istHour = istDate.getUTCHours();
+  const istMinute = istDate.getUTCMinutes();
+  // Anything between 00:00–01:59 is the "next-day" tail in this schedule
+  let currentMin = istHour * 60 + istMinute;
+  if (istHour < 2) currentMin += 24 * 60;
+
+  const { startMin, endMin } = parseScheduleMinutes(timeStr);
+  if (startMin === -1) return 'upcoming';
+
+  if (endMin !== null) {
+    if (endMin <= currentMin) return 'past';
+    if (startMin <= currentMin) return 'current';
+    return 'upcoming';
+  } else {
+    if (startMin + 30 <= currentMin) return 'past';
+    if (startMin <= currentMin) return 'current';
+    return 'upcoming';
+  }
+}
 
 export default function NewsScreen() {
   const colorScheme = useColorScheme() ?? 'light';
@@ -177,8 +278,6 @@ export default function NewsScreen() {
             </View>
           ) : null}
         </View>
-        <ThemedText>Daily TTD crowd, tonsure, hundi and darshan-time updates.</ThemedText>
-
 
         <View style={[styles.subTabsWrap, { borderColor }]}>
           <SubTabButton label="Pilgrim Updates" active={activeTab === 'pilgrims'} onPress={() => setActiveTab('pilgrims')} tintColor={tintColor} />
@@ -196,74 +295,130 @@ export default function NewsScreen() {
           contentContainerStyle={styles.listContent}
           showsVerticalScrollIndicator={false}
           ListHeaderComponent={
-            <Animated.View entering={FadeInDown.duration(450)} style={styles.featuredWrap}>
-              <ThemedView style={[styles.featuredCard, { borderColor, borderLeftColor: tintColor, backgroundColor: tintColor + '10' }]}>
-                <View style={styles.featuredHeaderRow}>
-                  <View style={styles.dateRow}>
-                    <MaterialCommunityIcons name="star-circle" size={16} color={tintColor} />
-                    <ThemedText type="defaultSemiBold" style={{ fontSize: 14 }}>{latestNews.date}</ThemedText>
+            <>
+              <Animated.View entering={FadeInDown.duration(280)} style={styles.bannerWrap}>
+                <Image
+                  source={require('../../assets/images/banner-image.png')}
+                  style={styles.bannerImage}
+                  contentFit="cover"
+                  contentPosition="center"
+                  transition={200}
+                />
+              </Animated.View>
+              <Animated.View entering={FadeInDown.duration(450)} style={styles.featuredWrap}>
+              <LinearGradient
+                colors={['#2d1b7a', '#5240c4', '#9D8FFF']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.heroCard}
+              >
+                {/* Header: date + badge */}
+                <View style={styles.heroHeaderRow}>
+                  <View style={styles.heroDatePill}>
+                    <MaterialCommunityIcons name="star-circle" size={13} color="#fff" />
+                    <ThemedText style={styles.heroDateText}>{latestNews.date}</ThemedText>
                   </View>
-                  <View style={[styles.todayBadge, { backgroundColor: tintColor, borderColor: tintColor }]}>
-                    <ThemedText style={styles.todayBadgeText}>{latestBadgeText}</ThemedText>
+                  <View style={[styles.heroBadge, { backgroundColor: latestBadgeText === 'TODAY' ? '#4CAF50' : '#FFB300' }]}>
+                    <ThemedText style={styles.heroBadgeText}>{latestBadgeText}</ThemedText>
                   </View>
                 </View>
 
-                <View style={styles.pilgrimsHeroRow}>
-                  <View style={[styles.pilgrimsHeroIconWrap, { backgroundColor: tintColor + '20' }]}>
-                    <MaterialCommunityIcons name="account-group-outline" size={28} color={tintColor} />
+                {/* Hero pilgrim count */}
+                <View style={styles.heroCountSection}>
+                  <View style={styles.heroCountIcon}>
+                    <MaterialCommunityIcons name="account-group" size={44} color="rgba(255,255,255,0.92)" />
                   </View>
-                  <View>
-                    <ThemedText style={[styles.pilgrims, { color: tintColor }]}>{latestNews.pilgrims}</ThemedText>
-                    <ThemedText style={styles.pilgrimLabel}>Pilgrims had darshan</ThemedText>
+                  <View style={{ gap: 3 }}>
+                    <ThemedText style={styles.heroCount}>{latestNews.pilgrims}</ThemedText>
+                    <ThemedText style={styles.heroCountLabel}>Pilgrims had Darshan</ThemedText>
                   </View>
                 </View>
 
-                <View style={styles.metricChipsRow}>
-                  <MetricChip icon="content-cut" label="Tonsures" value={latestNews.tonsures} tintColor={tintColor} borderColor={borderColor} />
-                  <MetricChip icon="cash-multiple" label="Hundi" value={latestNews.hundi} tintColor={tintColor} borderColor={borderColor} />
-                  <MetricChip icon="timer-sand" label="Darshan" value={latestNews.time} tintColor={tintColor} borderColor={borderColor} />
+                {/* Divider */}
+                <View style={styles.heroDivider} />
+
+                {/* Stats row */}
+                <View style={styles.heroStatsRow}>
+                  <HeroStat icon="content-cut" label="Tonsures" value={latestNews.tonsures} />
+                  <View style={styles.heroStatSeparator} />
+                  <HeroStat icon="cash-multiple" label="Hundi Collected" value={expandHundi(latestNews.hundi)} />
+                  <View style={styles.heroStatSeparator} />
+                  <HeroStat icon="timer-sand" label="Darshan Time" value={expandDarshanTime(latestNews.time)} />
                 </View>
 
-                <View style={[styles.waitingBox, { borderColor: tintColor + '40', backgroundColor: tintColor + '0A' }]}>
-                  <View style={styles.waitingTitleRow}>
-                    <MaterialCommunityIcons name="map-marker-path" size={14} color={tintColor} />
-                    <ThemedText type="defaultSemiBold" style={[styles.waitingTitle, { color: tintColor }]}>Queue / Waiting</ThemedText>
+                {/* Waiting */}
+                <View style={styles.heroWaitingBox}>
+                  <View style={styles.heroWaitingTitleRow}>
+                    <MaterialCommunityIcons name="map-marker-path" size={14} color="rgba(255,255,255,0.65)" />
+                    <ThemedText style={styles.heroWaitingTitle}>Queue / Waiting Position</ThemedText>
                   </View>
-                  <ThemedText style={styles.waitingValue}>{latestNews.waiting}</ThemedText>
+                  <ThemedText style={styles.heroWaitingValue}>{latestNews.waiting}</ThemedText>
                 </View>
-              </ThemedView>
+              </LinearGradient>
             </Animated.View>
+            {/* Recent section header */}
+            <View style={styles.recentSectionHeader}>
+              <View style={[styles.recentSectionAccent, { backgroundColor: tintColor }]} />
+              <ThemedText style={[styles.recentSectionTitle, { color: tintColor }]}>Recent Updates</ThemedText>
+              <ThemedText style={styles.recentSectionSub}>Historical pilgrim data</ThemedText>
+            </View>
+            </>
           }
-          renderItem={({ item, index }) => (
+          renderItem={({ item, index }) => {
+            const accent = CARD_PALETTES[index % CARD_PALETTES.length][2];
+            return (
             <Animated.View entering={FadeInDown.delay((index + 1) * 60).duration(360)} style={styles.cardWrap}>
-              <ThemedView style={[styles.featuredCard, { borderColor, borderLeftColor: tintColor }]}>
-                <View style={styles.featuredHeaderRow}>
-                  <View style={styles.dateRow}>
-                    <MaterialCommunityIcons name="calendar-month-outline" size={14} color={tintColor} />
-                    <ThemedText type="defaultSemiBold" style={{ fontSize: 13 }}>{item.date}</ThemedText>
+              <ThemedView style={[styles.pilgrimCard, { borderColor: accent + '80', backgroundColor: accent + '14' }]}>
+
+                {/* Title row: date + pilgrim count */}
+                <View style={styles.ssdTitleRow}>
+                  <View style={[styles.ssdTitleIconWrap, { backgroundColor: accent + '28' }]}>
+                    <MaterialCommunityIcons name="account-group" size={20} color={accent} />
                   </View>
-                  <View style={styles.dateRow}>
-                    <MaterialCommunityIcons name="account-group-outline" size={14} color={tintColor} />
-                    <ThemedText style={[styles.inlineCount, { color: tintColor }]}>{item.pilgrims}</ThemedText>
+                  <View style={{ flex: 1, gap: 1 }}>
+                    <ThemedText style={{ fontSize: 18, fontWeight: '900', color: accent, lineHeight: 22 }}>{item.pilgrims}</ThemedText>
+                    <ThemedText style={{ fontSize: 10, opacity: 0.6, lineHeight: 14 }}>Pilgrims had Darshan</ThemedText>
+                  </View>
+                  <View style={[styles.ssdStatusBadge, { backgroundColor: accent + '20', borderColor: accent + '55' }]}>
+                    <MaterialCommunityIcons name="calendar-today" size={11} color={accent} />
+                    <ThemedText style={[styles.ssdStatusBadgeText, { color: accent }]}>{item.date}</ThemedText>
                   </View>
                 </View>
 
-                <View style={styles.metricChipsRow}>
-                  <MetricChip icon="content-cut" label="Tonsures" value={item.tonsures} tintColor={tintColor} borderColor={borderColor} />
-                  <MetricChip icon="cash-multiple" label="Hundi" value={item.hundi} tintColor={tintColor} borderColor={borderColor} />
-                  <MetricChip icon="timer-sand" label="Darshan" value={item.time} tintColor={tintColor} borderColor={borderColor} />
+                {/* Divider */}
+                <View style={{ height: 1, backgroundColor: accent + '30', marginVertical: 2 }} />
+
+                {/* 3 metric boxes */}
+                <View style={styles.ssdMetricsRow}>
+                  <View style={[styles.pilgrimMetricCard, { borderColor: accent + '40', backgroundColor: accent + '10' }]}>
+                    <MaterialCommunityIcons name="content-cut" size={14} color={accent} />
+                    <ThemedText style={[styles.ssdMetricLabel, { textAlign: 'center' }]}>Tonsures</ThemedText>
+                    <ThemedText style={[styles.pilgrimMetricValue, { color: accent }]}>{item.tonsures}</ThemedText>
+                  </View>
+                  <View style={[styles.pilgrimMetricCard, { borderColor: accent + '40', backgroundColor: accent + '10' }]}>
+                    <MaterialCommunityIcons name="cash-multiple" size={14} color={accent} />
+                    <ThemedText style={[styles.ssdMetricLabel, { textAlign: 'center' }]}>Hundi</ThemedText>
+                    <ThemedText style={[styles.pilgrimMetricValue, { color: accent }]}>{expandHundi(item.hundi)}</ThemedText>
+                  </View>
+                  <View style={[styles.pilgrimMetricCard, { borderColor: accent + '40', backgroundColor: accent + '10' }]}>
+                    <MaterialCommunityIcons name="timer-sand" size={14} color={accent} />
+                    <ThemedText style={[styles.ssdMetricLabel, { textAlign: 'center' }]}>Darshan</ThemedText>
+                    <ThemedText style={[styles.pilgrimMetricValue, { color: accent }]}>{expandDarshanTime(item.time)}</ThemedText>
+                  </View>
                 </View>
 
-                <View style={[styles.waitingBox, { borderColor: borderColor + '80' }]}>
-                  <View style={styles.waitingTitleRow}>
-                    <MaterialCommunityIcons name="map-marker-path" size={13} color={tintColor} />
-                    <ThemedText style={[styles.waitingTitle, { opacity: 0.7 }]}>Waiting</ThemedText>
+                {/* Waiting box */}
+                <View style={[styles.ssdNoteBox, { borderColor: accent + '35', backgroundColor: accent + '0D' }]}>
+                  <MaterialCommunityIcons name="map-marker-path" size={14} color={accent} style={{ marginTop: 1 }} />
+                  <View style={{ flex: 1, gap: 2 }}>
+                    <ThemedText style={{ fontSize: 10, fontWeight: '700', color: accent, letterSpacing: 0.3 }}>QUEUE / WAITING POSITION</ThemedText>
+                    <ThemedText style={styles.ssdNoteText}>{item.waiting}</ThemedText>
                   </View>
-                  <ThemedText style={styles.waitingValue}>{item.waiting}</ThemedText>
                 </View>
               </ThemedView>
             </Animated.View>
-          )}
+            );
+          }}
         />
       ) : activeTab === 'ssd' ? (
         <FlatList
@@ -273,7 +428,17 @@ export default function NewsScreen() {
           contentContainerStyle={styles.ssdListContent}
           showsVerticalScrollIndicator={false}
           ListHeaderComponent={
-            <Animated.View entering={FadeInDown.duration(420)} style={styles.ssdHeaderWrap}>
+            <>
+              <Animated.View entering={FadeInDown.duration(280)} style={styles.bannerWrap}>
+                <Image
+                  source={require('../../assets/images/banner-image.png')}
+                  style={styles.bannerImage}
+                  contentFit="cover"
+                  contentPosition="center"
+                  transition={200}
+                />
+              </Animated.View>
+              <Animated.View entering={FadeInDown.duration(420)} style={styles.ssdHeaderWrap}>
               <ThemedView style={[styles.ssdHeaderCard, { borderColor, backgroundColor: tintColor + '12' }]}>
                 <View style={styles.ssdTitleRow}>
                   <View style={[styles.ssdTitleIconWrap, { backgroundColor: tintColor + '20' }]}>
@@ -325,18 +490,22 @@ export default function NewsScreen() {
                 </Pressable>
               </ThemedView>
             </Animated.View>
+            </>
           }
           renderItem={({ item, index }) => (
             <Animated.View entering={FadeInDown.delay(index * 70).duration(360)}>
-              <ThemedView style={[styles.ssdInfoCard, { borderColor, backgroundColor: tintColor + '0D' }]}>
-                <View style={[styles.ssdInfoIconCircle, { backgroundColor: tintColor + '28' }]}>
-                  <MaterialCommunityIcons name={item.icon} size={22} color={tintColor} />
+              <View style={[styles.recentCard, { borderColor }]}>
+                <View style={[styles.recentAccentBar, { backgroundColor: tintColor }]} />
+                <View style={[styles.recentCardBody, { flexDirection: 'row', alignItems: 'flex-start', gap: 12 }]}>
+                  <View style={[styles.ssdInfoIconCircle, { backgroundColor: tintColor + '28' }]}>
+                    <MaterialCommunityIcons name={item.icon} size={24} color={tintColor} />
+                  </View>
+                  <View style={styles.ssdInfoContent}>
+                    <ThemedText type="defaultSemiBold" style={[styles.ssdInfoTitle, { color: tintColor }]}>{item.title}</ThemedText>
+                    <ThemedText style={styles.ssdInfoDetail}>{item.detail}</ThemedText>
+                  </View>
                 </View>
-                <View style={styles.ssdInfoContent}>
-                  <ThemedText type="defaultSemiBold" style={[styles.ssdInfoTitle, { color: tintColor }]}>{item.title}</ThemedText>
-                  <ThemedText style={styles.ssdInfoDetail}>{item.detail}</ThemedText>
-                </View>
-              </ThemedView>
+              </View>
             </Animated.View>
           )}
         />
@@ -348,24 +517,94 @@ export default function NewsScreen() {
           contentContainerStyle={styles.scheduleListContent}
           showsVerticalScrollIndicator={false}
           ListHeaderComponent={
-            <ThemedView style={[styles.scheduleDateHeader, { borderColor, backgroundColor: tintColor + '14' }]}> 
-              <View style={{ gap: 2 }}>
-                <ThemedText type="defaultSemiBold" style={[styles.scheduleDateTitle, { color: tintColor }]}>Today's Schedule</ThemedText>
-                <ThemedText style={styles.scheduleDateSubtext}>{effectiveDaySchedule.day} • {effectiveDaySchedule.date}</ThemedText>
-              </View>
-            </ThemedView>
+            <>
+              <Animated.View entering={FadeInDown.duration(280)} style={styles.bannerWrap}>
+                <Image
+                  source={require('../../assets/images/banner-image.png')}
+                  style={styles.bannerImage}
+                  contentFit="cover"
+                  contentPosition="center"
+                  transition={200}
+                />
+              </Animated.View>
+              <LinearGradient
+                colors={[tintColor + 'FF', tintColor + 'BB']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.scheduleDateHeader}
+              >
+                {/* Top row: icon + title + event count */}
+                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                    <View style={{ width: 46, height: 46, borderRadius: 23, backgroundColor: 'rgba(255,255,255,0.25)', alignItems: 'center', justifyContent: 'center' }}>
+                      <MaterialCommunityIcons name="calendar-clock" size={24} color="#fff" />
+                    </View>
+                    <View style={{ gap: 1 }}>
+                      <ThemedText style={{ fontSize: 11, color: 'rgba(255,255,255,0.70)', fontWeight: '600', letterSpacing: 1.2, textTransform: 'uppercase' }}>Temple Schedule</ThemedText>
+                      <ThemedText style={{ fontSize: 18, fontWeight: '900', color: '#fff', letterSpacing: 0.2 }}>Today's Sevas</ThemedText>
+                    </View>
+                  </View>
+                  <View style={{ backgroundColor: 'rgba(0,0,0,0.18)', borderRadius: 14, paddingHorizontal: 12, paddingVertical: 8, alignItems: 'center', gap: 1 }}>
+                    <ThemedText style={{ fontSize: 20, fontWeight: '900', color: '#fff', lineHeight: 24 }}>
+                      {effectiveDaySchedule.schedules.length}
+                    </ThemedText>
+                    <ThemedText style={{ fontSize: 9, color: 'rgba(255,255,255,0.70)', letterSpacing: 1, fontWeight: '700' }}>EVENTS</ThemedText>
+                  </View>
+                </View>
+
+                {/* Divider */}
+                <View style={{ height: 1, backgroundColor: 'rgba(255,255,255,0.25)', marginTop: 14, marginBottom: 12 }} />
+
+                {/* Bottom row: day pill + date pill */}
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: 'rgba(255,255,255,0.22)', borderRadius: 20, paddingHorizontal: 12, paddingVertical: 6 }}>
+                    <MaterialCommunityIcons name="weather-sunny" size={13} color="#fff" />
+                    <ThemedText style={{ fontSize: 12, fontWeight: '700', color: '#fff' }}>{effectiveDaySchedule.day}</ThemedText>
+                  </View>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: 'rgba(255,255,255,0.22)', borderRadius: 20, paddingHorizontal: 12, paddingVertical: 6 }}>
+                    <MaterialCommunityIcons name="calendar-today" size={13} color="#fff" />
+                    <ThemedText style={{ fontSize: 12, fontWeight: '700', color: '#fff' }}>{effectiveDaySchedule.date}</ThemedText>
+                  </View>
+                </View>
+              </LinearGradient>
+            </>
           }
           renderItem={({ item }) => {
             const timePart = item.time;
+            const displayTime = formatScheduleTime12h(timePart);
             const sevaName = item.event;
+            const status = getScheduleStatus(timePart);
+
+            const cardBg =
+              status === 'past' ? '#FF6B6B38' :
+              status === 'current' ? '#4CAF5038' :
+              undefined;
+            const accentColor =
+              status === 'past' ? '#E05050' :
+              status === 'current' ? '#4CAF50' :
+              tintColor;
+            const pillBg =
+              status === 'past' ? '#FF6B6B40' :
+              status === 'current' ? '#4CAF5040' :
+              tintColor + '1A';
 
             return (
-              <ThemedView style={[styles.scheduleCard, { borderColor, borderLeftColor: tintColor }]}> 
-                <View style={[styles.scheduleTimePill, { backgroundColor: tintColor + '1A' }]}> 
-                  <ThemedText style={[styles.scheduleTimeText, { color: tintColor }]}>{timePart}</ThemedText>
+              <View style={[styles.recentCard, { borderColor }, cardBg ? { backgroundColor: cardBg } : {}]}>
+                <View style={[styles.recentAccentBar, { backgroundColor: accentColor }]} />
+                <View style={styles.recentCardBody}>
+                  <View style={[styles.scheduleTimePill, { backgroundColor: pillBg, alignSelf: 'flex-start' }]}>
+                    <MaterialCommunityIcons name="clock-time-four-outline" size={12} color={accentColor} style={{ marginRight: 4 }} />
+                    <ThemedText style={[styles.scheduleTimeText, { color: accentColor }]}>{displayTime}</ThemedText>
+                  </View>
+                  <ThemedText type="defaultSemiBold" style={styles.scheduleSevaName}>{sevaName}</ThemedText>
+                  {status === 'current' && (
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 2 }}>
+                      <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: '#4CAF50' }} />
+                      <ThemedText style={{ fontSize: 11, color: '#4CAF50', fontWeight: '600' }}>In Progress</ThemedText>
+                    </View>
+                  )}
                 </View>
-                <ThemedText type="defaultSemiBold" style={styles.scheduleSevaName}>{sevaName}</ThemedText>
-              </ThemedView>
+              </View>
             );
           }}
         />
@@ -422,6 +661,46 @@ function MetricChip({
   );
 }
 
+function HeroStat({
+  icon,
+  label,
+  value,
+}: {
+  icon: ComponentProps<typeof MaterialCommunityIcons>['name'];
+  label: string;
+  value: string;
+}) {
+  return (
+    <View style={styles.heroStatBlock}>
+      <MaterialCommunityIcons name={icon} size={19} color="rgba(255,255,255,0.75)" />
+      <ThemedText style={styles.heroStatValue}>{value}</ThemedText>
+      <ThemedText style={styles.heroStatLabel}>{label}</ThemedText>
+    </View>
+  );
+}
+
+function RecentStat({
+  icon,
+  label,
+  value,
+  tintColor,
+  borderColor,
+}: {
+  icon: ComponentProps<typeof MaterialCommunityIcons>['name'];
+  label: string;
+  value: string;
+  tintColor: string;
+  borderColor: string;
+}) {
+  return (
+    <View style={[styles.recentStatBlock, { borderColor: borderColor + '60', backgroundColor: tintColor + '0D' }]}>
+      <MaterialCommunityIcons name={icon} size={16} color={tintColor} />
+      <ThemedText style={[styles.recentStatValue, { color: tintColor }]}>{value}</ThemedText>
+      <ThemedText style={styles.recentStatLabel}>{label}</ThemedText>
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
   liveBadge: { flexDirection: 'row', alignItems: 'center', gap: 5, borderWidth: 1, borderRadius: 20, paddingHorizontal: 8, paddingVertical: 3, marginLeft: 6 },
   liveDot: { width: 6, height: 6, borderRadius: 3 },
@@ -430,7 +709,8 @@ const styles = StyleSheet.create({
   header: { paddingHorizontal: 16, paddingTop: 16, gap: 10, paddingBottom: 10 },
   titleRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   banner: { borderWidth: 1, borderRadius: 14, overflow: 'hidden' },
-  bannerImage: { width: '100%', height: 120 },
+  bannerWrap: { borderRadius: 14, overflow: 'hidden', marginBottom: 14, alignItems: 'center', justifyContent: 'center' },
+  bannerImage: { width: '100%', height: 165 },
   bannerOverlay: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 10, paddingVertical: 8 },
   bannerText: { fontSize: 13 },
   subTabsWrap: { borderWidth: 1, borderRadius: 12, padding: 4, flexDirection: 'row' },
@@ -440,6 +720,56 @@ const styles = StyleSheet.create({
   listContent: { paddingHorizontal: 12, paddingTop: 14, paddingBottom: 24, gap: 12 },
   cardWrap: { width: '100%' },
   featuredWrap: { marginBottom: 4 },
+  // Hero gradient card
+  heroCard: { borderRadius: 22, padding: 18, gap: 16 },
+  miniHeroCard: { borderRadius: 18, padding: 14, gap: 12 },
+  miniHeroPilgrimsRow: { flexDirection: 'row', alignItems: 'center', gap: 5 },
+  miniHeroPilgrimsCount: { fontSize: 15, fontWeight: '800', color: '#fff' },
+  miniHeroPilgrimsLabel: { fontSize: 10, color: 'rgba(255,255,255,0.62)', marginTop: 2 },
+  heroHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  heroDatePill: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: 'rgba(255,255,255,0.18)', borderRadius: 20, paddingHorizontal: 10, paddingVertical: 5 },
+  heroDateText: { fontSize: 12, fontWeight: '600', color: '#fff' },
+  heroBadge: { borderRadius: 20, paddingHorizontal: 12, paddingVertical: 5 },
+  heroBadgeText: { fontSize: 10, fontWeight: '800', color: '#fff', letterSpacing: 1 },
+  heroCountSection: { flexDirection: 'row', alignItems: 'center', gap: 14 },
+  heroCountIcon: { width: 76, height: 76, borderRadius: 38, backgroundColor: 'rgba(255,255,255,0.18)', alignItems: 'center', justifyContent: 'center' },
+  heroCount: { fontSize: 38, fontWeight: '900', color: '#fff', lineHeight: 43 },
+  heroCountLabel: { fontSize: 13, color: 'rgba(255,255,255,0.72)', marginTop: 2 },
+  heroDivider: { height: 1, backgroundColor: 'rgba(255,255,255,0.2)' },
+  heroStatsRow: { flexDirection: 'row', alignItems: 'stretch' },
+  heroStatSeparator: { width: 1, alignSelf: 'stretch', backgroundColor: 'rgba(255,255,255,0.2)' },
+  heroStatBlock: { flex: 1, alignItems: 'center', gap: 5, paddingVertical: 6, paddingHorizontal: 4 },
+  heroStatValue: { fontSize: 13, fontWeight: '800', color: '#fff', textAlign: 'center', lineHeight: 18 },
+  heroStatLabel: { fontSize: 9.5, color: 'rgba(255,255,255,0.62)', letterSpacing: 0.3, textAlign: 'center' },
+  heroWaitingBox: { backgroundColor: 'rgba(0,0,0,0.22)', borderRadius: 12, padding: 12, gap: 6 },
+  heroWaitingTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  heroWaitingTitle: { fontSize: 11, fontWeight: '600', color: 'rgba(255,255,255,0.65)' },
+  heroWaitingValue: { fontSize: 13, color: '#fff', lineHeight: 19 },
+  // Recent section header
+  recentSectionHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 4, marginBottom: -4 },
+  recentSectionAccent: { width: 3, height: 16, borderRadius: 2 },
+  recentSectionTitle: { fontSize: 13, fontWeight: '700', letterSpacing: 0.3 },
+  recentSectionSub: { fontSize: 11, opacity: 0.5, marginLeft: 2 },
+  pilgrimCard: { borderWidth: 1, borderRadius: 16, padding: 14, gap: 12 },
+  pilgrimMetricCard: { flex: 1, borderWidth: 1, borderRadius: 11, paddingVertical: 10, paddingHorizontal: 6, alignItems: 'center', gap: 4 },
+  pilgrimMetricValue: { fontSize: 12, fontWeight: '800', textAlign: 'center', lineHeight: 16 },
+  // Recent cards
+  recentCard: { flexDirection: 'row', borderWidth: 1, borderRadius: 14, overflow: 'hidden' },
+  recentAccentBar: { width: 4 },
+  recentCardBody: { flex: 1, padding: 12, gap: 10 },
+  recentTopRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  recentDateWrap: { flexDirection: 'row', alignItems: 'center', gap: 5 },
+  recentDate: { fontSize: 13, fontWeight: '700' },
+  recentPilgrimsWrap: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  recentPilgrimsCount: { fontSize: 16, fontWeight: '800' },
+  recentPilgrimsLabel: { fontSize: 10, opacity: 0.55, marginTop: 3 },
+  recentStatsRow: { flexDirection: 'row', gap: 6 },
+  recentStatBlock: { flex: 1, borderWidth: 1, borderRadius: 9, paddingVertical: 9, paddingHorizontal: 4, alignItems: 'center', gap: 4 },
+  recentStatValue: { fontSize: 11.5, fontWeight: '800', textAlign: 'center', lineHeight: 16 },
+  recentStatLabel: { fontSize: 9.5, opacity: 0.62, textAlign: 'center' },
+  recentWaitingRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 5, borderTopWidth: 1, paddingTop: 9 },
+  recentWaitingLabel: { fontSize: 11.5, fontWeight: '700', marginTop: 0.5 },
+  recentWaitingValue: { flex: 1, fontSize: 11.5, lineHeight: 17, opacity: 0.82 },
   featuredCard: { borderWidth: 1, borderLeftWidth: 4, borderRadius: 16, padding: 14, gap: 10 },
   featuredHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   dateRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
@@ -461,11 +791,11 @@ const styles = StyleSheet.create({
   infoDetail: { fontSize: 14, lineHeight: 20 },
   // Day Schedule
   scheduleListContent: { paddingHorizontal: 12, paddingTop: 14, paddingBottom: 24, gap: 10 },
-  scheduleDateHeader: { borderWidth: 1, borderRadius: 14, padding: 14, marginBottom: 4 },
+  scheduleDateHeader: { borderRadius: 18, padding: 18, marginBottom: 6 },
   scheduleDateTitle: { fontSize: 15 },
   scheduleDateSubtext: { fontSize: 12, lineHeight: 17, opacity: 0.7 },
   scheduleCard: { borderWidth: 1, borderLeftWidth: 4, borderRadius: 12, padding: 12, gap: 6 },
-  scheduleTimePill: { alignSelf: 'flex-start', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 20 },
+  scheduleTimePill: { flexDirection: 'row', alignItems: 'center', alignSelf: 'flex-start', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 20 },
   scheduleTimeText: { fontSize: 11, fontWeight: '600', lineHeight: 16 },
   scheduleSevaName: { fontSize: 14, lineHeight: 20 },
   scheduleDetail: { fontSize: 12, lineHeight: 17, opacity: 0.75 },

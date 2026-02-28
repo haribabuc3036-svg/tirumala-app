@@ -8,8 +8,6 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { Colors } from '@/constants/theme';
-import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useUpcomingBookings } from '@/hooks/use-upcoming-bookings';
 import { resolveTtdIcon } from '@/constants/ttd-service-icons';
 
@@ -40,11 +38,40 @@ function useCountdown(isoDate: string) {
   return cd;
 }
 
-function BookingListCard({ service }: { service: { id: string; title: string; icon: string; iconImage: string | null; bookingDate: string } }) {
+// 10 distinct gradient palettes: [dark, mid, light], shadow = mid, accent = light
+const CARD_PALETTES: { colors: [string, string, string]; shadow: string; accent: string }[] = [
+  { colors: ['#062233', '#0A7EA4', '#29baea'], shadow: '#0A7EA4', accent: '#29baea' },  // teal
+  { colors: ['#1a0533', '#7c3aed', '#a78bfa'], shadow: '#7c3aed', accent: '#a78bfa' },  // purple
+  { colors: ['#2d0a14', '#be123c', '#f43f5e'], shadow: '#be123c', accent: '#f87171' },  // rose
+  { colors: ['#0d1a2d', '#0369a1', '#38bdf8'], shadow: '#0369a1', accent: '#38bdf8' },  // sky-blue
+  { colors: ['#022c1a', '#065f46', '#10b981'], shadow: '#065f46', accent: '#34d399' },  // emerald
+  { colors: ['#2d1a00', '#b45309', '#f59e0b'], shadow: '#b45309', accent: '#fbbf24' },  // amber
+  { colors: ['#2d0929', '#9d174d', '#ec4899'], shadow: '#9d174d', accent: '#f472b6' },  // pink
+  { colors: ['#0d1033', '#3730a3', '#6366f1'], shadow: '#3730a3', accent: '#818cf8' },  // indigo
+  { colors: ['#1a0533', '#7e22ce', '#d946ef'], shadow: '#7e22ce', accent: '#e879f9' },  // fuchsia
+  { colors: ['#2d0e00', '#c2410c', '#fb923c'], shadow: '#c2410c', accent: '#fb923c' },  // orange
+];
+
+// Fisher-Yates shuffle of palette indices — evaluated once at module load
+// so the order is random but stable for the lifetime of the screen.
+const SHUFFLED_ORDER: number[] = (() => {
+  const arr = Array.from({ length: CARD_PALETTES.length }, (_, i) => i);
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+})();
+
+// No palette repeats until all 10 have been shown
+function pickPaletteIndex(cardIndex: number): number {
+  return SHUFFLED_ORDER[cardIndex % CARD_PALETTES.length];
+}
+
+function BookingListCard({ service, cardIndex }: { service: { id: string; title: string; icon: string; iconImage: string | null; bookingDate: string }; cardIndex: number }) {
+  const palette = CARD_PALETTES[pickPaletteIndex(cardIndex)];
   const cd = useCountdown(service.bookingDate);
   const router = useRouter();
-  const colorScheme = useColorScheme();
-  const tintColor = Colors[colorScheme ?? 'light'].tint;
 
   const blocks: { value: number; label: string }[] = [
     { value: cd.days,    label: 'Days' },
@@ -55,10 +82,10 @@ function BookingListCard({ service }: { service: { id: string; title: string; ic
 
   return (
     <LinearGradient
-      colors={['#0f172a', '#1e1b4b', '#4c1d95']}
+      colors={palette.colors}
       start={{ x: 0, y: 0 }}
       end={{ x: 1, y: 1 }}
-      style={styles.card}>
+      style={[styles.card, { shadowColor: palette.shadow }]}>
       {/* decorative bubbles */}
       <View style={{ position: 'absolute', width: 110, height: 110, borderRadius: 55, backgroundColor: '#fff', opacity: 0.04, top: -30, right: -24 }} />
       <View style={{ position: 'absolute', width: 60, height: 60, borderRadius: 30, backgroundColor: '#fff', opacity: 0.05, bottom: -18, left: 16 }} />
@@ -125,8 +152,8 @@ function BookingListCard({ service }: { service: { id: string; title: string; ic
         </View>
       ) : (
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-          <MaterialCommunityIcons name="rocket-launch-outline" size={16} color="#a78bfa" />
-          <ThemedText style={{ color: '#a78bfa', fontSize: 13, fontWeight: '700' }}>Booking is now open!</ThemedText>
+          <MaterialCommunityIcons name="rocket-launch-outline" size={16} color={palette.accent} />
+          <ThemedText style={{ color: palette.accent, fontSize: 13, fontWeight: '700' }}>Booking is now open!</ThemedText>
         </View>
       )}
 
@@ -156,7 +183,7 @@ export default function UpcomingBookingsScreen() {
 
         <View style={styles.pageHeader}>
           <View style={styles.pageIconWrap}>
-            <MaterialCommunityIcons name="clock-fast" size={20} color="#7c3aed" />
+            <MaterialCommunityIcons name="clock-fast" size={20} color="#0A7EA4" />
           </View>
           <View>
             <ThemedText style={styles.pageTitle}>Upcoming Bookings</ThemedText>
@@ -168,12 +195,12 @@ export default function UpcomingBookingsScreen() {
           <ThemedText style={styles.metaText}>Loading...</ThemedText>
         ) : services.length === 0 ? (
           <View style={styles.emptyWrap}>
-            <MaterialCommunityIcons name="calendar-remove-outline" size={48} color="#7c3aed55" />
+            <MaterialCommunityIcons name="calendar-remove-outline" size={48} color="#0A7EA455" />
             <ThemedText style={styles.emptyText}>No upcoming bookings scheduled.</ThemedText>
           </View>
         ) : (
-          services.map((svc) => (
-            <BookingListCard key={svc.id} service={svc} />
+          services.map((svc, idx) => (
+            <BookingListCard key={svc.id} service={svc} cardIndex={idx} />
           ))
         )}
       </ScrollView>
@@ -196,16 +223,16 @@ const styles = StyleSheet.create({
     width: 42,
     height: 42,
     borderRadius: 21,
-    backgroundColor: '#7c3aed18',
+    backgroundColor: '#0A7EA418',
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: '#7c3aed33',
+    borderColor: '#0A7EA433',
   },
   pageTitle: {
     fontSize: 18,
     fontWeight: '800',
-    color: '#7c3aed',
+    color: '#0A7EA4',
   },
   pageSubtitle: {
     fontSize: 12,
@@ -218,7 +245,6 @@ const styles = StyleSheet.create({
     padding: 16,
     overflow: 'hidden',
     gap: 0,
-    shadowColor: '#4c1d95',
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.35,
     shadowRadius: 14,
