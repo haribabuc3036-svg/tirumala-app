@@ -609,6 +609,33 @@ export default function HomeScreen() {
           </Animated.View>
 
           <ThemedView style={[styles.contentCard, styles.overviewServicesCard, { borderColor: activeAccent, backgroundColor: activeAccent + '10' }]}> 
+            {/* ── Opening Soon carousel ── */}
+            {upcomingBookings.length > 0 ? (
+              <>
+                <View style={styles.newsHeaderTitleWrap}>
+                  <View style={[styles.newsHeaderIconWrap, { backgroundColor: '#7c3aed22' }]}>
+                    <MaterialCommunityIcons name="clock-fast" size={14} color="#7c3aed" />
+                  </View>
+                  <View>
+                    <ThemedText type="defaultSemiBold" style={[styles.latestNewsTitle, { color: '#7c3aed' }]}>Opening Soon</ThemedText>
+                    <ThemedText style={styles.latestNewsSubtitle}>Booking opens within 3 days</ThemedText>
+                  </View>
+                </View>
+                <ScrollView
+                  horizontal
+                  pagingEnabled={false}
+                  showsHorizontalScrollIndicator={false}
+                  snapToInterval={bookingCardWidth + 10}
+                  decelerationRate="fast"
+                  contentContainerStyle={{ gap: 10, paddingRight: 4 }}>
+                  {upcomingBookings.map((svc) => (
+                    <BookingCountdownCard key={svc.id} service={svc} cardWidth={bookingCardWidth} />
+                  ))}
+                </ScrollView>
+                <View style={[styles.bookingCarouselDivider, { backgroundColor: activeAccent + '25' }]} />
+              </>
+            ) : null}
+
             <View style={styles.overviewServicesHeader}>
               <View style={styles.newsHeaderTitleWrap}>
                 <View style={[styles.newsHeaderIconWrap, { backgroundColor: activeAccent + '20' }]}>
@@ -679,33 +706,6 @@ export default function HomeScreen() {
                   );
                 })}
               </View>
-            ) : null}
-
-            {/* ── Opening Soon carousel ── */}
-            {upcomingBookings.length > 0 ? (
-              <>
-                <View style={[styles.bookingCarouselDivider, { backgroundColor: activeAccent + '25' }]} />
-                <View style={styles.newsHeaderTitleWrap}>
-                  <View style={[styles.newsHeaderIconWrap, { backgroundColor: '#7c3aed22' }]}>
-                    <MaterialCommunityIcons name="clock-fast" size={14} color="#7c3aed" />
-                  </View>
-                  <View>
-                    <ThemedText type="defaultSemiBold" style={[styles.latestNewsTitle, { color: '#7c3aed' }]}>Opening Soon</ThemedText>
-                    <ThemedText style={styles.latestNewsSubtitle}>Booking opens within 3 days</ThemedText>
-                  </View>
-                </View>
-                <ScrollView
-                  horizontal
-                  pagingEnabled={false}
-                  showsHorizontalScrollIndicator={false}
-                  snapToInterval={bookingCardWidth + 10}
-                  decelerationRate="fast"
-                  contentContainerStyle={{ gap: 10, paddingRight: 4 }}>
-                  {upcomingBookings.map((svc) => (
-                    <BookingCountdownCard key={svc.id} service={svc} cardWidth={bookingCardWidth} />
-                  ))}
-                </ScrollView>
-              </>
             ) : null}
           </ThemedView>
 
