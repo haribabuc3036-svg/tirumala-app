@@ -192,9 +192,9 @@ export default function PlaceDetailScreen() {
                             colors={['transparent', 'rgba(0,0,0,0.55)']}
                             style={styles.photoOverlay}
                           >
-                            <View style={[styles.photoCoverBadge, { backgroundColor: tintColor }]}>
-                              <ThemedText style={styles.photoCoverText}>Cover</ThemedText>
-                            </View>
+                            {/* <View style={[styles.photoCoverBadge, { backgroundColor: tintColor }]}> */}
+                              {/* <ThemedText style={styles.photoCoverText}>Cover</ThemedText> */}
+                            {/* </View> */}
                           </LinearGradient>
                         )}
                       </View>
