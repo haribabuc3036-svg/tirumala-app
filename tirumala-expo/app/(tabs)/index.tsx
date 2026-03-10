@@ -802,72 +802,88 @@ export default function HomeScreen() {
               </>
             ) : null}
 
-            <View style={styles.overviewServicesHeader}>
-              <View style={styles.newsHeaderTitleWrap}>
-                <View style={[styles.newsHeaderIconWrap, { backgroundColor: activeAccent + '20' }]}>
-                  <MaterialCommunityIcons name="apps" size={14} color={activeAccent} />
+            {/* ── Quick Services Header ── */}
+            <View style={qsHeaderWrap}>
+              <LinearGradient
+                colors={[activeAccent + '28', activeAccent + '08']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={qsHeaderGradient}>
+                <View style={[qsHeaderIconCircle, { backgroundColor: activeAccent + '35' }]}>
+                  <MaterialCommunityIcons name="apps" size={18} color={activeAccent} />
                 </View>
-                <View>
-                  <ThemedText type="defaultSemiBold" style={[styles.latestNewsTitle, { color: activeAccent }]}>Quick Services</ThemedText>
-                  <ThemedText style={styles.latestNewsSubtitle}>From live services catalog</ThemedText>
+                <View style={{ flex: 1 }}>
+                  <ThemedText style={[qsHeaderTitle, { color: activeAccent }]}>Quick Services</ThemedText>
+                  <ThemedText style={qsHeaderSubtitle}>Tap any service to get started</ThemedText>
                 </View>
-              </View>
-
-              <Pressable
-                onPress={() => router.push('/(tabs)/services')}
-                style={({ pressed }) => [
-                  styles.viewMoreBtn,
-                  { borderColor: activeAccent, backgroundColor: activeAccent + '14', opacity: pressed ? 0.78 : 1 },
-                ]}>
-                <ThemedText style={[styles.viewMoreText, { color: activeAccent }]}>View All</ThemedText>
-              </Pressable>
+                <Pressable
+                  onPress={() => router.push('/(tabs)/services')}
+                  style={({ pressed }) => [qsViewAllBtn, { borderColor: activeAccent, backgroundColor: activeAccent + '1A', opacity: pressed ? 0.75 : 1 }]}>
+                  <ThemedText style={[qsViewAllText, { color: activeAccent }]}>All</ThemedText>
+                  <MaterialCommunityIcons name="chevron-right" size={13} color={activeAccent} />
+                </Pressable>
+              </LinearGradient>
             </View>
 
-            {servicesLoading ? <ThemedText style={styles.newsDate}>Loading services...</ThemedText> : null}
+            {servicesLoading ? <ThemedText style={styles.newsDate}>Loading services…</ThemedText> : null}
             {!servicesLoading && servicesError ? <ThemedText style={styles.newsDate}>Unable to load services.</ThemedText> : null}
             {!servicesLoading && !servicesError && overviewServiceItems.length === 0 ? (
               <ThemedText style={styles.newsDate}>No services available.</ThemedText>
             ) : null}
 
             {!servicesLoading && !servicesError && overviewServiceItems.length > 0 ? (
-              <View style={styles.overviewServicesGrid}>
-                {overviewServiceItems.map((service, index) => {
-                  const isLastInRow = (index + 1) % 2 === 0;
-
+              <View style={qsGrid}>
+                {overviewServiceItems.map((service) => {
+                  const cardWidth = (screenWidth - 24 - 28 - 10) / 2;
                   return (
                     <Pressable
                       key={service.id}
-                      style={({ pressed }) => [
-                        styles.overviewServiceItem,
-                        {
-                          marginRight: isLastInRow ? 0 : '4%',
-                          borderColor: activeAccent + '2A',
-                          backgroundColor: activeAccent + '14',
-                          opacity: pressed ? 0.78 : 1,
-                        },
-                      ]}
+                      style={({ pressed }) => [qsCard, { opacity: pressed ? 0.82 : 1, width: cardWidth, borderColor: activeAccent + '55' }]}
                       onPress={() => router.push({ pathname: '/service/[id]', params: { id: service.id } })}>
-                      <View style={[styles.overviewServiceIconWrap, { backgroundColor: activeAccent + '20' }]}>
-                        {service.iconImage ? (
-                          <Image source={{ uri: service.iconImage }} style={styles.overviewServiceImage} contentFit="contain" />
-                        ) : (
-                          <MaterialCommunityIcons
-                            name={resolveTtdIcon(service.title, service.icon)}
-                            size={16}
-                            color={activeAccent}
-                          />
-                        )}
-                      </View>
+                      <LinearGradient
+                        colors={[activeAccent + '42', activeAccent + '18']}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 1 }}
+                        style={qsCardGradient}>
+                        {/* Decorative blobs */}
+                        <View style={{ position: 'absolute', top: -18, right: -18, width: 72, height: 72, borderRadius: 36, backgroundColor: activeAccent, opacity: 0.1 }} />
+                        <View style={{ position: 'absolute', bottom: -12, left: -14, width: 52, height: 52, borderRadius: 26, backgroundColor: activeAccent, opacity: 0.07 }} />
 
-                      <ThemedText style={styles.overviewServiceTitle} numberOfLines={2}>{service.title}</ThemedText>
-                      <ThemedText style={styles.overviewServiceCategory} numberOfLines={1}>{service.categoryHeading}</ThemedText>
-                      {service.tag ? (
-                        <View style={[styles.overviewServiceTagPill, { backgroundColor: (service.tagColor ?? activeAccent) + '22' }]}>
-                          <ThemedText style={[styles.overviewServiceTagText, { color: service.tagColor ?? activeAccent }]}>
-                            {service.tag}
-                          </ThemedText>
+                        {/* Top-right link icon */}
+                        <MaterialCommunityIcons
+                          name="open-in-new"
+                          size={14}
+                          color={activeAccent + 'AA'}
+                          style={{ position: 'absolute', top: 10, right: 10 }}
+                        />
+
+                        {/* Icon */}
+                        <View style={qsIconWrap}>
+                          {service.iconImage ? (
+                            <Image source={{ uri: service.iconImage }} style={qsIconImage} contentFit="contain" />
+                          ) : (
+                            <MaterialCommunityIcons
+                              name={resolveTtdIcon(service.title, service.icon)}
+                              size={28}
+                              color={activeAccent}
+                            />
+                          )}
                         </View>
-                      ) : null}
+
+                        {/* Title */}
+                        <ThemedText style={qsCardTitle} numberOfLines={2}>{service.title}</ThemedText>
+
+                        {/* Category + tag row */}
+                        <View style={qsCategoryRow}>
+                          <View style={[qsCategoryDot, { backgroundColor: activeAccent + '80' }]} />
+                          <ThemedText style={[qsCardCategory, { color: activeAccent + 'CC' }]} numberOfLines={1}>{service.categoryHeading}</ThemedText>
+                          {service.tag ? (
+                            <View style={[qsTagBadge, { backgroundColor: (service.tagColor ?? activeAccent) + '28', borderWidth: 1, borderColor: (service.tagColor ?? activeAccent) + '66' }]}>
+                              <ThemedText style={[qsTagBadgeText, { color: service.tagColor ?? activeAccent }]}>{service.tag}</ThemedText>
+                            </View>
+                          ) : null}
+                        </View>
+                      </LinearGradient>
                     </Pressable>
                   );
                 })}
@@ -939,7 +955,7 @@ export default function HomeScreen() {
             <View style={styles.sectionCard}>
               <View style={styles.sectionBannerWrap}>
                 <Image
-                  source={require('../../assets/images/banner-image.png')}
+                  // source={require('../../assets/images/free-tickets.png')}
                   style={StyleSheet.absoluteFillObject}
                   contentFit="cover"
                   contentPosition="center"
@@ -960,7 +976,7 @@ export default function HomeScreen() {
               </View>
               {/* TODO: replace with your own free-tickets section image */}
               <Image
-                source={require('../../assets/images/banner-image.png')}
+                source={require('../../assets/images/free-tickets.png')}
                 style={styles.sectionInnerImage}
                 contentFit="cover"
                 contentPosition="center"
@@ -975,7 +991,7 @@ export default function HomeScreen() {
             <View style={styles.sectionCard}>
               <View style={styles.sectionBannerWrap}>
                 <Image
-                  source={require('../../assets/images/explore-hero-image.png')}
+                  // source={require('../../assets/images/explore-hero-image.png')}
                   style={StyleSheet.absoluteFillObject}
                   contentFit="cover"
                   contentPosition="center"
@@ -996,7 +1012,7 @@ export default function HomeScreen() {
               </View>
               {/* TODO: replace with your own pilgrim-updates section image */}
               <Image
-                source={require('../../assets/images/explore-hero-image.png')}
+                source={require('../../assets/images/pilgrim-updates.png')}
                 style={styles.sectionInnerImage}
                 contentFit="cover"
                 contentPosition="center"
@@ -1010,7 +1026,7 @@ export default function HomeScreen() {
             <View style={styles.sectionCard}>
               <View style={styles.sectionBannerWrap}>
                 <Image
-                  source={require('../../assets/images/support-hero-image.png')}
+                  // source={require('../../assets/images/support-hero-image.png')}
                   style={StyleSheet.absoluteFillObject}
                   contentFit="cover"
                   contentPosition="center"
@@ -1031,7 +1047,7 @@ export default function HomeScreen() {
               </View>
               {/* TODO: replace with your own schedules section image */}
               <Image
-                source={require('../../assets/images/support-hero-image.png')}
+                source={require('../../assets/images/todays-sevas.png')}
                 style={styles.sectionInnerImage}
                 contentFit="cover"
                 contentPosition="center"
@@ -1045,7 +1061,7 @@ export default function HomeScreen() {
             <View style={styles.sectionCard}>
               <View style={styles.sectionBannerWrap}>
                 <Image
-                  source={require('../../assets/images/explore-hero-image.png')}
+                  // source={require('../../assets/images/explore-hero-image.png')}
                   style={StyleSheet.absoluteFillObject}
                   contentFit="cover"
                   contentPosition="center"
@@ -1065,7 +1081,7 @@ export default function HomeScreen() {
                 </LinearGradient>
               </View>
               <Image
-                source={require('../../assets/images/explore-hero-image.png')}
+                source={require('../../assets/images/news.png')}
                 style={styles.sectionInnerImage}
                 contentFit="cover"
                 contentPosition="center"
@@ -1079,7 +1095,7 @@ export default function HomeScreen() {
             <View style={styles.sectionCard}>
               <View style={styles.sectionBannerWrap}>
                 <Image
-                  source={require('../../assets/images/support-hero-image.png')}
+                  // source={require('../../assets/images/support-hero-image.png')}
                   style={StyleSheet.absoluteFillObject}
                   contentFit="cover"
                   contentPosition="center"
@@ -1099,7 +1115,7 @@ export default function HomeScreen() {
                 </LinearGradient>
               </View>
               <Image
-                source={require('../../assets/images/support-hero-image.png')}
+                source={require('../../assets/images/help-guide.png')}
                 style={styles.sectionInnerImage}
                 contentFit="cover"
                 contentPosition="center"
@@ -1221,36 +1237,6 @@ export default function HomeScreen() {
               </View>
             ) : null}
           </ThemedView>
-
-          {/* ── Darshan News section card ── */}
-          <View style={styles.overviewQuickLinksWrap}>
-            <View style={styles.sectionCard}>
-              <View style={styles.sectionBannerWrap}>
-                <Image
-                  source={require('../../assets/images/banner-image.png')}
-                  style={StyleSheet.absoluteFillObject}
-                  contentFit="cover"
-                  contentPosition="center"
-                />
-                <LinearGradient
-                  colors={['rgba(123,104,238,0.82)', 'rgba(100,80,220,0.90)', 'rgba(72,52,180,0.96)']}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 0 }}
-                  style={styles.sectionBanner}>
-                  <View style={styles.sectionBannerIconWrap}>
-                    <MaterialCommunityIcons name="newspaper-variant-outline" size={20} color="#fff" />
-                  </View>
-                  <View>
-                    <ThemedText style={styles.sectionBannerTitle}>Darshan News</ThemedText>
-                    <ThemedText style={styles.sectionBannerSubtitle}>SSD, pilgrims, schedules & the latest</ThemedText>
-                  </View>
-                </LinearGradient>
-              </View>
-              <View style={styles.sectionBtnsWrap}>
-                <DarshanNewsButton onPress={() => router.push('/(tabs)/news')} />
-              </View>
-            </View>
-          </View>
         </View>
       );
     }
@@ -1562,6 +1548,26 @@ const styles = StyleSheet.create({
   supportLinkLabel: { fontSize: 13, fontWeight: '600' },
   supportLinkSub: { fontSize: 11, opacity: 0.62, marginTop: 1 },
 });
+
+// ── Quick Services card styles ────────────────────────────────────────────────
+const qsHeaderWrap: import('react-native').ViewStyle = {};
+const qsHeaderGradient: import('react-native').ViewStyle = { flexDirection: 'row', alignItems: 'center', gap: 10, borderRadius: 14, paddingVertical: 11, paddingHorizontal: 12 };
+const qsHeaderIconCircle: import('react-native').ViewStyle = { width: 38, height: 38, borderRadius: 19, alignItems: 'center', justifyContent: 'center' };
+const qsHeaderTitle: import('react-native').TextStyle = { fontSize: 14.5, fontWeight: '800', letterSpacing: 0.1 };
+const qsHeaderSubtitle: import('react-native').TextStyle = { fontSize: 10.5, opacity: 0.58, marginTop: 2 };
+const qsViewAllBtn: import('react-native').ViewStyle = { flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderRadius: 20, paddingHorizontal: 10, paddingVertical: 5, gap: 2 };
+const qsViewAllText: import('react-native').TextStyle = { fontSize: 11.5, fontWeight: '700' };
+const qsGrid: import('react-native').ViewStyle = { flexDirection: 'row', flexWrap: 'wrap', gap: 10 };
+const qsCard: import('react-native').ViewStyle = { borderRadius: 18, borderWidth: 1, overflow: 'hidden' };
+const qsCardGradient: import('react-native').ViewStyle = { height: 158, padding: 12, overflow: 'hidden', justifyContent: 'flex-end' };
+const qsTagBadge: import('react-native').ViewStyle = { borderRadius: 20, paddingHorizontal: 6, paddingVertical: 2 };
+const qsTagBadgeText: import('react-native').TextStyle = { fontSize: 8.5, fontWeight: '700', letterSpacing: 0.3 };
+const qsIconWrap: import('react-native').ViewStyle = { width: 44, height: 44, alignItems: 'center', justifyContent: 'center', marginBottom: 8 };
+const qsIconImage: import('react-native').ImageStyle = { width: 26, height: 26 };
+const qsCardTitle: import('react-native').TextStyle = { fontSize: 12.5, fontWeight: '800', lineHeight: 16.5 };
+const qsCategoryRow: import('react-native').ViewStyle = { flexDirection: 'row', alignItems: 'center', gap: 5, marginTop: 5 };
+const qsCategoryDot: import('react-native').ViewStyle = { width: 5, height: 5, borderRadius: 3 };
+const qsCardCategory: import('react-native').TextStyle = { fontSize: 10, fontWeight: '500', flex: 1 };
 
 // ── Dress Code flat styles ────────────────────────────────────────────────────
 const dressSectionWrap: import('react-native').ViewStyle = { borderWidth: 1, borderRadius: 10, overflow: 'hidden', marginTop: 4 };
