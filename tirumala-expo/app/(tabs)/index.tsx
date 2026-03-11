@@ -670,15 +670,29 @@ function BookingCountdownCard({
   cardWidth: number;
 }) {
   const [cd, setCd] = useState<BookingCd>(() => getBookingCountdown(service.bookingDate));
-  const arrowAnim = useRef(new RNAnimated.Value(0)).current;
+  const arrowAnim  = useRef(new RNAnimated.Value(0)).current;
+  const scaleAnim  = useRef(new RNAnimated.Value(1)).current;
+  const spinAnim   = useRef(new RNAnimated.Value(0)).current;
 
   useEffect(() => {
+    // arrow bounce
     RNAnimated.loop(
       RNAnimated.sequence([
         RNAnimated.timing(arrowAnim, { toValue: 6, duration: 420, useNativeDriver: true }),
         RNAnimated.timing(arrowAnim, { toValue: 0, duration: 320, useNativeDriver: true }),
         RNAnimated.delay(800),
       ])
+    ).start();
+    // button scale pulse
+    RNAnimated.loop(
+      RNAnimated.sequence([
+        RNAnimated.timing(scaleAnim, { toValue: 1.035, duration: 700, useNativeDriver: true }),
+        RNAnimated.timing(scaleAnim, { toValue: 1,     duration: 700, useNativeDriver: true }),
+      ])
+    ).start();
+    // border rotation (full 360 every 2 s)
+    RNAnimated.loop(
+      RNAnimated.timing(spinAnim, { toValue: 1, duration: 2000, useNativeDriver: true })
     ).start();
   }, []);
 
@@ -698,9 +712,13 @@ function BookingCountdownCard({
     { value: cd.seconds, label: 'Secs' },
   ];
 
+  const gradientColors: [string, string, string] = cd.expired
+    ? ['#052e16', '#14532d', '#16a34a']
+    : ['#0f172a', '#1e1b4b', '#4c1d95'];
+
   return (
     <LinearGradient
-      colors={['#0f172a', '#1e1b4b', '#4c1d95']}
+      colors={gradientColors}
       start={{ x: 0, y: 0 }}
       end={{ x: 1, y: 1 }}
       style={[bookingCardBaseStyle, { width: cardWidth }]}>
@@ -709,71 +727,168 @@ function BookingCountdownCard({
       <View style={{ position: 'absolute', width: 55, height: 55, borderRadius: 28, backgroundColor: '#fff', opacity: 0.05, bottom: -14, left: 12 }} />
       <View style={{ position: 'absolute', width: 22, height: 22, borderRadius: 11, backgroundColor: '#fff', opacity: 0.09, top: 14, right: 40 }} />
 
-      {/* title */}
-      <ThemedText style={{ color: '#fff', fontSize: 14, fontWeight: '800', lineHeight: 18 }} numberOfLines={2}>
-        {service.title}
-      </ThemedText>
+      {/* ── inner flex column so button always sits at bottom ── */}
+      <View style={{ flex: 1, flexDirection: 'column', justifyContent: 'space-between' }}>
 
-      {/* label */}
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5, marginTop: 6 }}>
-        <MaterialCommunityIcons name="alarm" size={12} color="rgba(255,255,255,0.55)" />
-        <ThemedText style={{ color: 'rgba(255,255,255,0.55)', fontSize: 10.5, fontWeight: '600', letterSpacing: 0.3 }}>
-          BOOKING OPENS IN
-        </ThemedText>
-      </View>
+        {/* top content */}
+        <View>
+          {/* title */}
+          <ThemedText style={{ color: '#fff', fontSize: 14, fontWeight: '800', lineHeight: 18 }} numberOfLines={2}>
+            {service.title}
+          </ThemedText>
 
-      {/* countdown blocks */}
-      <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 8 }}>
-        {blocks.map(({ value, label }, i) => (
-          <View key={label} style={{ flexDirection: 'row', alignItems: 'center' }}>
-            <View style={{ alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.13)', borderRadius: 8, paddingHorizontal: 7, paddingVertical: 6, minWidth: 40 }}>
-              <ThemedText style={{ color: '#fff', fontSize: 20, fontWeight: '800', lineHeight: 24 }}>
-                {String(value).padStart(2, '0')}
+          {cd.expired ? (
+            /* ── Booking Open banner ── */
+            <View style={{ marginTop: 14 }}>
+              {/* live badge row */}
+              <View style={{
+                flexDirection: 'row', alignItems: 'center', gap: 6,
+                backgroundColor: 'rgba(74,222,128,0.18)', alignSelf: 'flex-start',
+                borderRadius: 20, paddingHorizontal: 10, paddingVertical: 5,
+                borderWidth: 1, borderColor: 'rgba(74,222,128,0.35)',
+                marginBottom: 10,
+              }}>
+                <View style={{ width: 7, height: 7, borderRadius: 3.5, backgroundColor: '#4ade80',
+                  shadowColor: '#4ade80', shadowRadius: 4, shadowOpacity: 1 }} />
+                <ThemedText style={{ color: '#4ade80', fontSize: 11, fontWeight: '700', letterSpacing: 0.5 }}>
+                  LIVE · OPEN NOW
+                </ThemedText>
+              </View>
+              <ThemedText style={{ color: 'rgba(255,255,255,0.85)', fontSize: 13, fontWeight: '700', lineHeight: 18 }}>
+                Booking is Open!
               </ThemedText>
-              <ThemedText style={{ color: 'rgba(255,255,255,0.55)', fontSize: 9, fontWeight: '600', marginTop: 1 }}>
-                {label}
+              <ThemedText style={{ color: 'rgba(255,255,255,0.5)', fontSize: 11, marginTop: 4, lineHeight: 16 }}>
+                Closes in less than 24 hrs — secure your spot now.
               </ThemedText>
             </View>
-            {i < blocks.length - 1 && (
-              <ThemedText style={{ color: 'rgba(255,255,255,0.5)', fontSize: 18, fontWeight: '800', marginHorizontal: 3, marginBottom: 10 }}>:</ThemedText>
-            )}
-          </View>
-        ))}
-      </View>
+          ) : (
+            /* ── Countdown ── */
+            <>
+              {/* label */}
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5, marginTop: 6 }}>
+                <MaterialCommunityIcons name="alarm" size={12} color="rgba(255,255,255,0.55)" />
+                <ThemedText style={{ color: 'rgba(255,255,255,0.55)', fontSize: 10.5, fontWeight: '600', letterSpacing: 0.3 }}>
+                  BOOKING OPENS IN
+                </ThemedText>
+              </View>
 
-      {/* date */}
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5, marginTop: 8 }}>
-        <MaterialCommunityIcons name="calendar-clock" size={12} color="rgba(255,255,255,0.6)" />
-        <ThemedText style={{ color: 'rgba(255,255,255,0.6)', fontSize: 11 }}>
-          {new Date(service.bookingDate).toLocaleString('en-IN', {
-            day: 'numeric', month: 'short', year: 'numeric',
-            hour: '2-digit', minute: '2-digit', hour12: true,
-            timeZone: 'Asia/Kolkata',
-          })} IST
-        </ThemedText>
-      </View>
+              {/* countdown blocks */}
+              <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 8 }}>
+                {blocks.map(({ value, label }, i) => (
+                  <View key={label} style={{ flexDirection: 'row', alignItems: 'center' }}>
+                    <View style={{ alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.13)', borderRadius: 8, paddingHorizontal: 7, paddingVertical: 6, minWidth: 40 }}>
+                      <ThemedText style={{ color: '#fff', fontSize: 20, fontWeight: '800', lineHeight: 24 }}>
+                        {String(value).padStart(2, '0')}
+                      </ThemedText>
+                      <ThemedText style={{ color: 'rgba(255,255,255,0.55)', fontSize: 9, fontWeight: '600', marginTop: 1 }}>
+                        {label}
+                      </ThemedText>
+                    </View>
+                    {i < blocks.length - 1 && (
+                      <ThemedText style={{ color: 'rgba(255,255,255,0.5)', fontSize: 18, fontWeight: '800', marginHorizontal: 3, marginBottom: 10 }}>:</ThemedText>
+                    )}
+                  </View>
+                ))}
+              </View>
 
-      {/* view details */}
-      <Pressable
-        style={({ pressed }) => ({
-          marginTop: 14,
-          backgroundColor: 'rgba(255,255,255,0.14)',
-          borderRadius: 10,
-          paddingVertical: 9,
-          flexDirection: 'row' as const,
-          alignItems: 'center' as const,
-          justifyContent: 'center' as const,
-          gap: 6,
-          borderWidth: 1,
-          borderColor: 'rgba(255,255,255,0.22)',
-          opacity: pressed ? 0.72 : 1,
-        })}
-        onPress={() => router.push({ pathname: '/service/[id]', params: { id: service.id } })}>
-        <ThemedText style={{ color: '#fff', fontSize: 13, fontWeight: '700' }}>View Details</ThemedText>
-        <RNAnimated.View style={{ transform: [{ translateX: arrowAnim }] }}>
-          <MaterialCommunityIcons name="arrow-right" size={14} color="#fff" />
-        </RNAnimated.View>
-      </Pressable>
+              {/* date */}
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5, marginTop: 8 }}>
+                <MaterialCommunityIcons name="calendar-clock" size={12} color="rgba(255,255,255,0.6)" />
+                <ThemedText style={{ color: 'rgba(255,255,255,0.6)', fontSize: 11 }}>
+                  {new Date(service.bookingDate).toLocaleString('en-IN', {
+                    day: 'numeric', month: 'short', year: 'numeric',
+                    hour: '2-digit', minute: '2-digit', hour12: true,
+                    timeZone: 'Asia/Kolkata',
+                  })} IST
+                </ThemedText>
+              </View>
+            </>
+          )}
+        </View>
+
+        {/* ── CTA button pinned to bottom ── */}
+        {cd.expired ? (
+          /* ── Book Now: scale-pulse + rotating border light ── */
+          <RNAnimated.View style={{ marginTop: 18, transform: [{ scale: scaleAnim }] }}>
+            <Pressable
+              style={({ pressed }) => ({ opacity: pressed ? 0.82 : 1 })}
+              onPress={() => router.push({ pathname: '/service/[id]', params: { id: service.id } })}>
+              {/* rotating border shell – overflow:hidden clips the spinning beam to a 1.5px ring */}
+              <View style={{ borderRadius: 13, overflow: 'hidden' }}>
+                {/* spinning gradient beam */}
+                <RNAnimated.View
+                  style={{
+                    position: 'absolute',
+                    width: 600,
+                    height: 600,
+                    top: -270,
+                    left: -270,
+                    transform: [{
+                      rotate: spinAnim.interpolate({
+                        inputRange:  [0, 1],
+                        outputRange: ['0deg', '360deg'],
+                      }),
+                    }],
+                  }}>
+                  <LinearGradient
+                    colors={['transparent', 'transparent', 'rgba(134,239,172,0.9)', '#ffffff', 'rgba(134,239,172,0.9)', 'transparent', 'transparent']}
+                    locations={[0, 0.34, 0.47, 0.5, 0.53, 0.66, 1]}
+                    start={{ x: 0, y: 0.5 }}
+                    end={{ x: 1, y: 0.5 }}
+                    style={{ width: 600, height: 600 }}
+                  />
+                </RNAnimated.View>
+                {/* inner button – 1.5px inset so the beam shows as a border */}
+                <View style={{ margin: 1.5, borderRadius: 12, overflow: 'hidden' }}>
+                  <LinearGradient
+                    colors={['#22c55e', '#16a34a']}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 0 }}
+                    style={{
+                      paddingVertical: 11,
+                      flexDirection: 'row' as const,
+                      alignItems: 'center' as const,
+                      justifyContent: 'center' as const,
+                      gap: 8,
+                    }}>
+                    <MaterialCommunityIcons name="calendar-check" size={16} color="#fff" />
+                    <ThemedText style={{ color: '#fff', fontSize: 13, fontWeight: '800', letterSpacing: 0.3 }}>
+                      Book Now
+                    </ThemedText>
+                    <RNAnimated.View style={{ transform: [{ translateX: arrowAnim }] }}>
+                      <MaterialCommunityIcons name="arrow-right" size={15} color="#fff" />
+                    </RNAnimated.View>
+                  </LinearGradient>
+                </View>
+              </View>
+            </Pressable>
+          </RNAnimated.View>
+        ) : (
+          /* ghost "View Details" button for countdown state */
+          <Pressable
+            style={({ pressed }) => ({
+              marginTop: 14,
+              backgroundColor: 'rgba(255,255,255,0.10)',
+              borderRadius: 10,
+              paddingVertical: 10,
+              flexDirection: 'row' as const,
+              alignItems: 'center' as const,
+              justifyContent: 'center' as const,
+              gap: 6,
+              borderWidth: 1,
+              borderColor: 'rgba(255,255,255,0.20)',
+              opacity: pressed ? 0.72 : 1,
+            })}
+            onPress={() => router.push({ pathname: '/service/[id]', params: { id: service.id } })}>
+            <MaterialCommunityIcons name="information-outline" size={14} color="rgba(255,255,255,0.8)" />
+            <ThemedText style={{ color: 'rgba(255,255,255,0.9)', fontSize: 13, fontWeight: '700' }}>View Details</ThemedText>
+            <RNAnimated.View style={{ transform: [{ translateX: arrowAnim }] }}>
+              <MaterialCommunityIcons name="arrow-right" size={14} color="rgba(255,255,255,0.8)" />
+            </RNAnimated.View>
+          </Pressable>
+        )}
+
+      </View>
     </LinearGradient>
   );
 }

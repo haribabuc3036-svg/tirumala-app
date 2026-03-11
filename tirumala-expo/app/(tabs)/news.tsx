@@ -2,8 +2,8 @@ import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
-import { type ComponentProps, useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, FlatList, Pressable, ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
+import { type ComponentProps, useCallback, useEffect, useRef, useState } from 'react';
+import { ActivityIndicator, Animated as RNAnimated, FlatList, Pressable, ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
 import Animated, { FadeInDown, useSharedValue, withRepeat, withSequence, withTiming, useAnimatedStyle } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -475,18 +475,7 @@ export default function NewsScreen() {
                 </LinearGradient>
 
                 {/* ── View locations button ── */}
-                <Pressable
-                  onPress={() => router.push('/ssd-locations')}
-                  style={({ pressed }) => [styles.ssdLocationsBtn, { backgroundColor: pressed ? tintColor + 'DD' : tintColor + 'FF', borderRadius: 14 }]}>
-                  <View style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: 'rgba(255,255,255,0.22)', alignItems: 'center', justifyContent: 'center' }}>
-                    <MaterialCommunityIcons name="map-marker-radius-outline" size={18} color="#fff" />
-                  </View>
-                  <View style={{ flex: 1, gap: 1 }}>
-                    <ThemedText style={{ fontSize: 13, fontWeight: '800', color: '#fff' }}>View Counter Locations</ThemedText>
-                    <ThemedText style={{ fontSize: 10, color: 'rgba(255,255,255,0.75)' }}>Find physical SSD token counters</ThemedText>
-                  </View>
-                  <MaterialCommunityIcons name="chevron-right" size={20} color="rgba(255,255,255,0.8)" />
-                </Pressable>
+                <SsdLocationsButton tintColor={tintColor} />
 
                 {/* ── Divider ── */}
                 <View style={{ height: 1, backgroundColor: tintColor + '30' }} />
@@ -659,24 +648,35 @@ export default function NewsScreen() {
 
 function CurrentSevaCarousel({ schedules, tintColor }: { schedules: DayScheduleItem[]; tintColor: string }) {
   const { width } = useWindowDimensions();
-  const CARD_W = width - 12 * 2 - 32; // list padding minus a peek
+  const CARD_W = width - 12 * 2 - 32;
   const PEEK = 20;
 
-  // Collect current + upcoming (max 5)
   const relevant = schedules
     .map((s, i) => ({ ...s, _idx: i, status: getScheduleStatus(s.time) }))
     .filter(s => s.status === 'current' || s.status === 'upcoming')
+    .sort((a, b) => (a.status === 'current' ? -1 : 1) - (b.status === 'current' ? -1 : 1))
     .slice(0, 5);
 
   if (relevant.length === 0) return null;
 
   return (
-    <View style={{ marginTop: 2, marginBottom: 10 }}>
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 8, paddingHorizontal: 2 }}>
-        <View style={{ width: 3, height: 13, borderRadius: 2, backgroundColor: tintColor }} />
-        <ThemedText style={{ fontSize: 11, fontWeight: '700', color: tintColor, letterSpacing: 0.4 }}>Active & Upcoming</ThemedText>
-        <ThemedText style={{ fontSize: 10, opacity: 0.45 }}>swipe to see more</ThemedText>
+    <View style={{ marginTop: 4, marginBottom: 12 }}>
+      {/* Header row */}
+      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10, paddingHorizontal: 2 }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 7 }}>
+          <LinearGradient
+            colors={['#4CAF50', '#22c55e']}
+            start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
+            style={{ width: 4, height: 16, borderRadius: 2 }}
+          />
+          <ThemedText style={{ fontSize: 12, fontWeight: '800', letterSpacing: 0.3 }}>Active &amp; Upcoming</ThemedText>
+        </View>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: 'rgba(74,222,128,0.12)', borderRadius: 20, paddingHorizontal: 9, paddingVertical: 4, borderWidth: 1, borderColor: 'rgba(74,222,128,0.30)' }}>
+          <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: '#4ade80' }} />
+          <ThemedText style={{ fontSize: 9, fontWeight: '800', color: '#22c55e', letterSpacing: 0.5 }}>LIVE</ThemedText>
+        </View>
       </View>
+
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
@@ -686,33 +686,127 @@ function CurrentSevaCarousel({ schedules, tintColor }: { schedules: DayScheduleI
       >
         {relevant.map((item, i) => {
           const isCurrent = item.status === 'current';
-          const bg = isCurrent ? '#4CAF5018' : tintColor + '12';
-          const border = isCurrent ? '#4CAF5060' : tintColor + '45';
-          const accent = isCurrent ? '#4CAF50' : tintColor;
           const displayTime = formatScheduleTime12h(item.time);
+
+          if (isCurrent) {
+            return (
+              <LinearGradient
+                key={item._idx}
+                colors={['#052e16', '#14532d', '#166534']}
+                start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
+                style={{ width: CARD_W, borderRadius: 16, padding: 14, gap: 0, marginRight: 10, overflow: 'hidden' }}
+              >
+                {/* decorative bubbles */}
+                <View style={{ position: 'absolute', width: 80, height: 80, borderRadius: 40, backgroundColor: '#fff', opacity: 0.04, top: -20, right: -16 }} />
+                <View style={{ position: 'absolute', width: 44, height: 44, borderRadius: 22, backgroundColor: '#fff', opacity: 0.05, bottom: -10, left: 14 }} />
+
+                {/* pill */}
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, alignSelf: 'flex-start', backgroundColor: 'rgba(74,222,128,0.20)', borderRadius: 20, paddingHorizontal: 10, paddingVertical: 5, borderWidth: 1, borderColor: 'rgba(74,222,128,0.40)', marginBottom: 10 }}>
+                  <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: '#4ade80', shadowColor: '#4ade80', shadowRadius: 4, shadowOpacity: 1 }} />
+                  <MaterialCommunityIcons name="play-circle-outline" size={12} color="#4ade80" />
+                  <ThemedText style={{ fontSize: 9, fontWeight: '800', color: '#4ade80', letterSpacing: 0.7 }}>IN PROGRESS</ThemedText>
+                </View>
+
+                {/* event name */}
+                <ThemedText style={{ fontSize: 15, fontWeight: '900', color: '#fff', lineHeight: 20, marginBottom: 8 }} numberOfLines={2}>
+                  {item.event}
+                </ThemedText>
+
+                {/* time row */}
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: 'rgba(255,255,255,0.12)', borderRadius: 20, paddingHorizontal: 9, paddingVertical: 4 }}>
+                    <MaterialCommunityIcons name="clock-time-four-outline" size={13} color="rgba(255,255,255,0.8)" />
+                    <ThemedText style={{ fontSize: 11, fontWeight: '700', color: 'rgba(255,255,255,0.9)' }}>{displayTime}</ThemedText>
+                  </View>
+                  <ThemedText style={{ fontSize: 10, color: 'rgba(255,255,255,0.45)' }}>Happening now</ThemedText>
+                </View>
+              </LinearGradient>
+            );
+          }
+
+          // upcoming card
           return (
             <View
               key={item._idx}
-              style={{ width: CARD_W, borderWidth: 1, borderRadius: 14, backgroundColor: bg, borderColor: border, padding: 13, gap: 7, marginRight: 10 }}
+              style={{ width: CARD_W, borderRadius: 16, borderWidth: 1, borderColor: tintColor + '35', backgroundColor: tintColor + '0D', padding: 14, gap: 0, marginRight: 10, overflow: 'hidden' }}
             >
-              {/* Status pill */}
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5, alignSelf: 'flex-start', backgroundColor: accent + '20', borderRadius: 20, paddingHorizontal: 9, paddingVertical: 4, borderWidth: 1, borderColor: accent + '50' }}>
-                {isCurrent && <View style={{ width: 5, height: 5, borderRadius: 2.5, backgroundColor: accent }} />}
-                <MaterialCommunityIcons name={isCurrent ? 'play-circle-outline' : 'clock-outline'} size={11} color={accent} />
-                <ThemedText style={{ fontSize: 9, fontWeight: '800', color: accent, letterSpacing: 0.6 }}>{isCurrent ? 'IN PROGRESS' : 'UPCOMING'}</ThemedText>
+              {/* accent top bar */}
+              <View style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 3, backgroundColor: tintColor + '80', borderTopLeftRadius: 16, borderTopRightRadius: 16 }} />
+
+              {/* pill */}
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5, alignSelf: 'flex-start', backgroundColor: tintColor + '18', borderRadius: 20, paddingHorizontal: 9, paddingVertical: 4, borderWidth: 1, borderColor: tintColor + '40', marginBottom: 10, marginTop: 4 }}>
+                <MaterialCommunityIcons name="clock-outline" size={11} color={tintColor} />
+                <ThemedText style={{ fontSize: 9, fontWeight: '800', color: tintColor, letterSpacing: 0.7 }}>UPCOMING</ThemedText>
+                <ThemedText style={{ fontSize: 9, fontWeight: '600', color: tintColor, opacity: 0.65 }}>#{i}</ThemedText>
               </View>
-              {/* Event name */}
-              <ThemedText style={{ fontSize: 13, fontWeight: '800', lineHeight: 18 }}>{item.event}</ThemedText>
-              {/* Time */}
+
+              {/* event name */}
+              <ThemedText style={{ fontSize: 14, fontWeight: '800', lineHeight: 19, marginBottom: 8 }} numberOfLines={2}>
+                {item.event}
+              </ThemedText>
+
+              {/* time row */}
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
-                <MaterialCommunityIcons name="clock-time-four-outline" size={13} color={accent} />
-                <ThemedText style={{ fontSize: 11, fontWeight: '600', color: accent }}>{displayTime}</ThemedText>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: tintColor + '18', borderRadius: 20, paddingHorizontal: 8, paddingVertical: 4 }}>
+                  <MaterialCommunityIcons name="clock-time-four-outline" size={12} color={tintColor} />
+                  <ThemedText style={{ fontSize: 11, fontWeight: '700', color: tintColor }}>{displayTime}</ThemedText>
+                </View>
               </View>
             </View>
           );
         })}
       </ScrollView>
     </View>
+  );
+}
+
+function SsdLocationsButton({ tintColor }: { tintColor: string }) {
+  const scaleAnim = useRef(new RNAnimated.Value(1)).current;
+
+  useEffect(() => {
+    RNAnimated.loop(
+      RNAnimated.sequence([
+        RNAnimated.timing(scaleAnim, { toValue: 1.03, duration: 750, useNativeDriver: true }),
+        RNAnimated.timing(scaleAnim, { toValue: 1,    duration: 750, useNativeDriver: true }),
+      ])
+    ).start();
+  }, []);
+
+  return (
+    <RNAnimated.View style={{ transform: [{ scale: scaleAnim }] }}>
+      <Pressable
+        onPress={() => router.push('/ssd-locations')}
+        onPressIn={() => RNAnimated.spring(scaleAnim, { toValue: 0.96, useNativeDriver: true, speed: 50 }).start()}
+        onPressOut={() => RNAnimated.spring(scaleAnim, { toValue: 1, useNativeDriver: true, speed: 20, bounciness: 8 }).start()}
+        style={({ pressed }) => ({ opacity: pressed ? 0.88 : 1, borderRadius: 16, overflow: 'hidden' })}>
+        <LinearGradient
+          colors={[tintColor, tintColor + 'BB', tintColor + 'EE']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={{ borderRadius: 16, padding: 16, overflow: 'hidden' }}
+        >
+          {/* decorative blobs */}
+          <View style={{ position: 'absolute', width: 100, height: 100, borderRadius: 50, backgroundColor: '#fff', opacity: 0.05, top: -30, right: -20 }} />
+          <View style={{ position: 'absolute', width: 60, height: 60, borderRadius: 30, backgroundColor: '#fff', opacity: 0.07, bottom: -16, left: 10 }} />
+          <View style={{ position: 'absolute', width: 24, height: 24, borderRadius: 12, backgroundColor: '#fff', opacity: 0.10, top: 10, right: 52 }} />
+
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
+            <View style={{ width: 50, height: 50, borderRadius: 25, backgroundColor: 'rgba(255,255,255,0.22)', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: 'rgba(255,255,255,0.30)' }}>
+              <MaterialCommunityIcons name="map-marker-radius" size={26} color="#fff" />
+            </View>
+            <View style={{ flex: 1, gap: 3 }}>
+              <ThemedText style={{ fontSize: 15, fontWeight: '900', color: '#fff', letterSpacing: 0.2 }}>Counter Locations</ThemedText>
+              <ThemedText style={{ fontSize: 11, color: 'rgba(255,255,255,0.72)', lineHeight: 15 }}>
+                Find all physical SSD token counters near you
+              </ThemedText>
+            </View>
+            <View style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: 'rgba(255,255,255,0.18)', alignItems: 'center', justifyContent: 'center' }}>
+              <MaterialCommunityIcons name="arrow-right" size={18} color="#fff" />
+            </View>
+          </View>
+        </LinearGradient>
+      </Pressable>
+    </RNAnimated.View>
   );
 }
 
