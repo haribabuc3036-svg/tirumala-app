@@ -62,7 +62,9 @@ router.post(
     res.cookie(env.cookieName, token, {
       httpOnly: true,                              // not accessible via document.cookie
       secure: env.nodeEnv === 'production',        // HTTPS-only in production
-      sameSite: env.nodeEnv === 'production' ? 'strict' : 'lax',
+      // 'none' required for cross-origin (frontend on Vercel, backend on separate domain)
+      // 'lax' for local dev (same-origin / no HTTPS)
+      sameSite: env.nodeEnv === 'production' ? 'none' : 'lax',
       maxAge: expiresInToMs(env.jwtExpiresIn),     // keeps cookie alive as long as the JWT
       path: '/',
     });
@@ -84,7 +86,11 @@ router.post(
  * Clears the auth cookie.
  */
 router.post('/logout', (_req: Request, res: Response) => {
-  res.clearCookie(env.cookieName, { path: '/' });
+  res.clearCookie(env.cookieName, {
+    path: '/',
+    secure: env.nodeEnv === 'production',
+    sameSite: env.nodeEnv === 'production' ? 'none' : 'lax',
+  });
   res.json({ success: true, message: 'Logged out' });
 });
 
