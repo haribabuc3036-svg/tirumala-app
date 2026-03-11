@@ -11,24 +11,28 @@ let lastError: string | null = null;
 
 export async function runSchedulePoll(): Promise<void> {
   console.log('📅  Day-Schedule scraper: starting…');
+  try {
+    const result = await scrapeDaySchedule();
 
-  const result = await scrapeDaySchedule();
+    if (!result.success || !result.data) {
+      lastError = result.error ?? 'unknown error';
+      console.error(`❌  Day-Schedule scraper failed: ${lastError}`);
+      return;
+    }
 
-  if (!result.success || !result.data) {
-    lastError = result.error ?? 'unknown error';
-    console.error(`❌  Day-Schedule scraper failed: ${lastError}`);
-    return;
+    await updateLiveDaySchedule(result.data);
+
+    lastRunAt = new Date().toISOString();
+    lastError = null;
+
+    console.log(
+      `✅  Day-Schedule scraper: pushed to Firebase — ${result.data.date} (${result.data.day}), ` +
+      `${result.data.schedules.length} entries`
+    );
+  } catch (err: unknown) {
+    lastError = (err as Error).message;
+    console.error('❌  Day-Schedule scraper threw:', lastError);
   }
-
-  await updateLiveDaySchedule(result.data);
-
-  lastRunAt = new Date().toISOString();
-  lastError = null;
-
-  console.log(
-    `✅  Day-Schedule scraper: pushed to Firebase — ${result.data.date} (${result.data.day}), ` +
-    `${result.data.schedules.length} entries`
-  );
 }
 
 // ─── Scheduler ─────────────────────────────────────────────────────────────────

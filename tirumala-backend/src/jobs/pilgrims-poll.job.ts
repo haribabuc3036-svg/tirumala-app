@@ -17,6 +17,7 @@ let totalRuns = 0;
 export async function runPilgrimsPoll(): Promise<void> {
   console.log('🛕  Pilgrims scraper: starting…');
   totalRuns++;
+  try {
 
   const result = await scrapePilgrimsFromTirumala();
 
@@ -69,6 +70,10 @@ export async function runPilgrimsPoll(): Promise<void> {
     (supabaseErrors > 0 ? ` (${supabaseErrors} Supabase errors)` : ' + Supabase')
   );
   scraped.forEach((e) => console.log(`   ${e.date}  pilgrims=${e.pilgrims}  tonsures=${e.tonsures}  hundi=${e.hundi}  waiting=${e.waiting}  time=${e.darshan_time}`));
+  } catch (err: unknown) {
+    lastError = (err as Error).message;
+    console.error('❌  Pilgrims scraper threw:', lastError);
+  }
 }
 
 // ─── Scheduler ─────────────────────────────────────────────────────────────────

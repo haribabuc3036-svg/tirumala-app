@@ -13,6 +13,7 @@ let totalRuns = 0;
 export async function runLatestUpdatesPoll(): Promise<void> {
   console.log('📋  Latest-Updates scraper: starting…');
   totalRuns++;
+  try {
 
   const result = await scrapeLatestUpdates();
 
@@ -31,6 +32,10 @@ export async function runLatestUpdatesPoll(): Promise<void> {
     `✅  Latest-Updates scraper: ${result.data.length} entries pushed to Firebase ` +
     `[live_updates/latest_updates]`
   );
+  } catch (err: unknown) {
+    lastError = (err as Error).message;
+    console.error('❌  Latest-Updates scraper threw:', lastError);
+  }
 }
 
 // ─── Scheduler ─────────────────────────────────────────────────────────────────
