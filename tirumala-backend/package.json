@@ -5,7 +5,7 @@
   "main": "dist/index.js",
   "scripts": {
     "dev": "nodemon",
-    "build": "tsc && npx playwright install --with-deps chromium",
+    "build": "tsc && npx playwright install chromium",
     "start": "node dist/index.js",
     "lint": "eslint src --ext .ts",
     "sync:services": "ts-node src/scripts/sync-services.ts",
