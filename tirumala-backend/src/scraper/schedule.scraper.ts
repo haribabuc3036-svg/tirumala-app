@@ -1,4 +1,4 @@
-import { chromium } from 'playwright';
+import { getBrowser, USER_AGENT } from './browser';
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 
@@ -56,10 +56,11 @@ const DAYS = ['monday','tuesday','wednesday','thursday','friday','saturday','sun
  * Always resolves — never throws.
  */
 export async function scrapeDaySchedule(): Promise<DayScheduleScrapeResult> {
-  const browser = await chromium.launch({ headless: true, args: ['--no-sandbox', '--disable-setuid-sandbox'] });
+  const browser = await getBrowser();
+  const context = await browser.newContext({ userAgent: USER_AGENT });
 
   try {
-    const page = await browser.newPage();
+    const page = await context.newPage();
 
     await page.goto('https://www.tirumala.org/', {
       waitUntil: 'domcontentloaded',
@@ -148,6 +149,6 @@ export async function scrapeDaySchedule(): Promise<DayScheduleScrapeResult> {
   } catch (err: unknown) {
     return { success: false, data: null, error: (err as Error).message };
   } finally {
-    await browser.close();
+    await context.close();
   }
 }

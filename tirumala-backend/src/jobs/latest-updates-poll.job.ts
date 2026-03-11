@@ -48,8 +48,8 @@ export async function runLatestUpdatesPoll(): Promise<void> {
 export function startLatestUpdatesPoller(): void {
   console.log('\n📋  Latest-Updates Poller starting — runs every 6 hours (00:00 / 06:00 / 12:00 / 18:00 IST)');
 
-  // Run immediately on startup (4 second delay — staggers with other pollers)
-  setTimeout(() => runLatestUpdatesPoll(), 4_000);
+  // Run immediately on startup (90 second delay — staggers with other pollers)
+  setTimeout(() => runLatestUpdatesPoll(), 90_000);
 
   // 00:00, 06:00, 12:00, 18:00 IST
   cron.schedule('0 0,6,12,18 * * *', () => runLatestUpdatesPoll(), {
