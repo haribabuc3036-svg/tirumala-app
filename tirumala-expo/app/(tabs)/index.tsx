@@ -13,7 +13,7 @@ import { ThemedView } from '@/components/themed-view';
 import { resolveTtdIcon } from '@/constants/ttd-service-icons';
 import { Colors, MainTabAccent } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
-import { useLiveUpdates, type LiveLatestUpdateItem } from '@/hooks/use-live-updates';
+import { useLiveUpdates } from '@/hooks/use-live-updates';
 import { useServicesCatalog } from '@/hooks/use-services-catalog';
 import { useHelpContent } from '@/hooks/use-help-content';
 import { useUpcomingBookings, type UpcomingBookingService } from '@/hooks/use-upcoming-bookings';
@@ -22,105 +22,84 @@ import { type Service } from '@/types/services';
 type HomeTab = 'overview' | 'explore' | 'help';
 
 type LatestNewsItem = {
-  date: string;
-  image_url: string;
-  link: string;
-  title: string;
+  date?: string;
+  link?: string;
+  text: string;
 };
 
 type OverviewServiceItem = Service & {
   categoryHeading: string;
 };
 
-function UpdateSlideCard({
-  item,
-  index,
-  total,
-  activeAccent,
-  slideWidth,
+/** Gradient button with a left-to-right shimmer sweep animation. */
+function ShimmerButton({
+  label,
+  onPress,
+  accentColor,
+  alignEnd = false,
+  icon,
 }: {
-  item: LiveLatestUpdateItem;
-  index: number;
-  total: number;
-  activeAccent: string;
-  slideWidth: number;
+  label: string;
+  onPress: () => void;
+  accentColor: string;
+  alignEnd?: boolean;
+  icon?: string;
 }) {
-  const [expanded, setExpanded] = useState(false);
-  const [isTruncated, setIsTruncated] = useState(false);
+  const shimmerAnim = useRef(new RNAnimated.Value(0)).current;
 
-  // Extract URL: prefer item.link, fallback to first URL found in text
-  const urlRegex = /(https?:\/\/[^\s]+)/gi;
-  const extractedUrl = item.link || (item.text.match(urlRegex)?.[0] ?? null);
-  // Strip raw URLs from displayed text, then split around "click here"
-  const cleanText = item.text.replace(urlRegex, '').replace(/\s{2,}/g, ' ').trim();
-  const clickHereRegex = /(click\s+here)/i;
-  const textParts = cleanText.split(clickHereRegex);
-  const hasClickHere = textParts.length > 1;
+  useEffect(() => {
+    RNAnimated.loop(
+      RNAnimated.timing(shimmerAnim, {
+        toValue: 1,
+        duration: 1600,
+        useNativeDriver: true,
+      })
+    ).start();
+  }, [shimmerAnim]);
 
   return (
-    <View
-      style={[
-        updateSlideCardStyle,
-        {
-          width: slideWidth,
-          borderColor: activeAccent + '33',
-          backgroundColor: activeAccent + '0A',
-        },
-      ]}>
-      <View style={updateSlideHeaderStyle}>
-        <View style={[updateSlideBadgeStyle, { backgroundColor: activeAccent + '20' }]}>
-          <MaterialCommunityIcons name="bell-outline" size={12} color={activeAccent} />
-          <ThemedText style={[updateSlideBadgeTextStyle, { color: activeAccent }]}>
-            UPDATE {index + 1} / {total}
-          </ThemedText>
-        </View>
-      </View>
-      <ThemedText
-        style={updateSlideTextStyle}
-        numberOfLines={expanded ? undefined : 10}
-        onTextLayout={(e) => {
-          if (!expanded && e.nativeEvent.lines.length >= 10) setIsTruncated(true);
-        }}>
-        {hasClickHere
-          ? textParts.map((part, i) =>
-              clickHereRegex.test(part) ? (
-                <ThemedText
-                  key={i}
-                  onPress={extractedUrl ? () => Linking.openURL(extractedUrl) : undefined}
-                  style={[
-                    updateSlideTextStyle,
-                    {
-                      color: activeAccent,
-                      fontWeight: '700',
-                      textDecorationLine: 'underline',
-                    },
-                  ]}>
-                  {part}
-                </ThemedText>
-              ) : (
-                <ThemedText key={i} style={updateSlideTextStyle}>{part}</ThemedText>
-              )
-            )
-          : cleanText}
-      </ThemedText>
-      {!hasClickHere && extractedUrl && (
-        <Pressable
-          onPress={() => Linking.openURL(extractedUrl)}
-          style={[updateClickHereBtnStyle, { backgroundColor: activeAccent + '18', borderColor: activeAccent + '44' }]}>
-          <MaterialCommunityIcons name="open-in-new" size={11} color={activeAccent} />
-          <ThemedText style={[updateClickHereTextStyle, { color: activeAccent }]}>Click Here</ThemedText>
-        </Pressable>
-      )}
-      {(isTruncated || expanded) && (
-        <Pressable onPress={() => setExpanded((v) => !v)}>
-          <ThemedText style={[updateReadMoreStyle, { color: activeAccent }]}>
-            {expanded ? 'Read Less ↑' : 'Read More ↓'}
-          </ThemedText>
-        </Pressable>
-      )}
-    </View>
+    <Pressable
+      onPress={onPress}
+      style={({ pressed }) => [shimBtnWrap, alignEnd && { alignSelf: 'flex-end' }, { opacity: pressed ? 0.82 : 1 }]}>
+      <LinearGradient
+        colors={[accentColor + 'CC', accentColor, accentColor + 'EE']}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 0 }}
+        style={shimBtnGradient}>
+        {/* shimmer sweep overlay */}
+        <RNAnimated.View
+          style={[
+            shimBtnShimmer,
+            {
+              transform: [{
+                translateX: shimmerAnim.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [-60, 160],
+                }),
+              }],
+            },
+          ]}>
+          <LinearGradient
+            colors={['transparent', 'rgba(255,255,255,0.30)', 'transparent']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={{ width: 48, height: '100%' }}
+          />
+        </RNAnimated.View>
+        {icon ? (
+          <MaterialCommunityIcons name={icon as any} size={11} color="#fff" style={{ marginRight: 5 }} />
+        ) : null}
+        <ThemedText style={shimBtnText}>{label}</ThemedText>
+        <MaterialCommunityIcons name="chevron-right" size={12} color="rgba(255,255,255,0.85)" style={{ marginLeft: 2 }} />
+      </LinearGradient>
+    </Pressable>
   );
 }
+
+const shimBtnWrap: import('react-native').ViewStyle = { borderRadius: 10, overflow: 'hidden', alignSelf: 'flex-start' };
+const shimBtnGradient: import('react-native').ViewStyle = { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingVertical: 6, overflow: 'hidden' };
+const shimBtnShimmer: import('react-native').ViewStyle = { position: 'absolute', top: 0, bottom: 0, width: 48 };
+const shimBtnText: import('react-native').TextStyle = { fontSize: 11.5, fontWeight: '700', color: '#fff' };
 
 function SsdLiveButton({ onPress }: { onPress: () => void }) {
   const pulseAnim = useRef(new RNAnimated.Value(1)).current;
@@ -548,16 +527,6 @@ const collapsibleSubtitle: import('react-native').TextStyle = { fontSize: 11, op
 const collapsibleChevronWrap: import('react-native').ViewStyle = { width: 28, height: 28, borderRadius: 14, borderWidth: 1, alignItems: 'center', justifyContent: 'center' };
 const collapsibleBody: import('react-native').ViewStyle = { paddingHorizontal: 14, paddingBottom: 14, gap: 10 };
 
-// Flat style refs for UpdateSlideCard (defined outside main component to avoid re-creation)
-const updateSlideCardStyle: import('react-native').ViewStyle = { borderWidth: 1, borderRadius: 12, padding: 12, gap: 8 };
-const updateSlideHeaderStyle: import('react-native').ViewStyle = { flexDirection: 'row', alignItems: 'center' };
-const updateSlideBadgeStyle: import('react-native').ViewStyle = { flexDirection: 'row', alignItems: 'center', gap: 5, borderRadius: 999, paddingHorizontal: 8, paddingVertical: 4 };
-const updateSlideBadgeTextStyle: import('react-native').TextStyle = { fontSize: 9.5, fontWeight: '700', letterSpacing: 0.4 };
-const updateSlideTextStyle: import('react-native').TextStyle = { fontSize: 12, lineHeight: 18.5, opacity: 0.88 };
-const updateClickHereBtnStyle: import('react-native').ViewStyle = { flexDirection: 'row', alignItems: 'center', gap: 5, alignSelf: 'flex-start', borderWidth: 1, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 5 };
-const updateClickHereTextStyle: import('react-native').TextStyle = { fontSize: 11.5, fontWeight: '700' };
-const updateReadMoreStyle: import('react-native').TextStyle = { fontSize: 11.5, fontWeight: '700', marginTop: 2 };
-
 // ── Upcoming booking countdown helpers ────────────────────────────────────
 type BookingCd = { days: number; hours: number; minutes: number; seconds: number; expired: boolean };
 
@@ -703,8 +672,7 @@ export default function HomeScreen() {
   const insets = useSafeAreaInsets();
   const [activeTab, setActiveTab] = useState<HomeTab>('overview');
   const [activeNewsSlide, setActiveNewsSlide] = useState(0);
-  const [activeUpdateSlide, setActiveUpdateSlide] = useState(0);
-  const { latestNews, latestUpdates, loading: liveLoading } = useLiveUpdates();
+  const { latestUpdates, loading: liveLoading } = useLiveUpdates();
   const { overviewServices, loading: servicesLoading, error: servicesError } = useServicesCatalog();
   const { content: helpContent, loading: helpLoading } = useHelpContent();
   const overviewServiceItems: OverviewServiceItem[] = overviewServices;
@@ -717,37 +685,22 @@ export default function HomeScreen() {
     help: tintColor,
   };
   const activeAccent = accentByTab[activeTab];
-  const newsItems: LatestNewsItem[] = latestNews;
-  const previewNewsItems = newsItems.slice(0, 4);
+  const newsItems: LatestNewsItem[] = latestUpdates;
+  const previewNewsItems = newsItems;
   const newsSlideWidth = previewNewsItems.length > 1
     ? Math.max(240, screenWidth - 52 - 28)
     : Math.max(260, screenWidth - 52);
-  const updateSlideWidth = latestUpdates.length > 1
-    ? Math.max(240, screenWidth - 52 - 28)
-    : Math.max(260, screenWidth - 52);
-
   useEffect(() => {
     if (activeNewsSlide >= previewNewsItems.length) {
       setActiveNewsSlide(0);
     }
   }, [activeNewsSlide, previewNewsItems.length]);
 
-  const buildProxyUrl = (sourceUrl: string) => {
-    return `https://images.weserv.nl/?url=${encodeURIComponent(sourceUrl)}&w=1200&output=jpg`;
-  };
-
   const handleNewsScrollEnd = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
     const offsetX = event.nativeEvent.contentOffset.x;
     const rawIndex = Math.round(offsetX / (newsSlideWidth + 8));
     const clampedIndex = Math.max(0, Math.min(rawIndex, previewNewsItems.length - 1));
     setActiveNewsSlide(clampedIndex);
-  };
-
-  const handleUpdateScrollEnd = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
-    const offsetX = event.nativeEvent.contentOffset.x;
-    const rawIndex = Math.round(offsetX / (updateSlideWidth + 8));
-    const clampedIndex = Math.max(0, Math.min(rawIndex, latestUpdates.length - 1));
-    setActiveUpdateSlide(clampedIndex);
   };
 
   const renderTabContent = () => {
@@ -768,24 +721,21 @@ export default function HomeScreen() {
             {/* ── Opening Soon carousel ── */}
             {upcomingBookings.length > 0 ? (
               <>
-                <View style={styles.overviewServicesHeader}>
-                  <View style={styles.newsHeaderTitleWrap}>
-                    <View style={[styles.newsHeaderIconWrap, { backgroundColor: '#7c3aed22' }]}>
-                      <MaterialCommunityIcons name="clock-fast" size={14} color="#7c3aed" />
+                <View style={qsHeaderWrap}>
+                  <LinearGradient
+                    colors={['#7c3aed28', '#7c3aed08']}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 0 }}
+                    style={qsHeaderGradient}>
+                    <View style={[qsHeaderIconCircle, { backgroundColor: '#7c3aed35' }]}>
+                      <MaterialCommunityIcons name="clock-fast" size={18} color="#7c3aed" />
                     </View>
-                    <View>
-                      <ThemedText type="defaultSemiBold" style={[styles.latestNewsTitle, { color: '#7c3aed' }]}>Opening Soon</ThemedText>
-                      <ThemedText style={styles.latestNewsSubtitle}>Upcoming booking schedules</ThemedText>
+                    <View style={{ flex: 1 }}>
+                      <ThemedText style={[qsHeaderTitle, { color: '#7c3aed' }]}>Opening Soon</ThemedText>
+                      <ThemedText style={qsHeaderSubtitle}>Upcoming booking schedules</ThemedText>
                     </View>
-                  </View>
-                  <Pressable
-                    onPress={() => router.push('/upcoming-bookings' as any)}
-                    style={({ pressed }) => [
-                      styles.viewMoreBtn,
-                      { borderColor: '#7c3aed', backgroundColor: '#7c3aed14', opacity: pressed ? 0.78 : 1 },
-                    ]}>
-                    <ThemedText style={[styles.viewMoreText, { color: '#7c3aed' }]}>View All</ThemedText>
-                  </Pressable>
+                    <ShimmerButton label="View All" onPress={() => router.push('/upcoming-bookings' as any)} accentColor="#7c3aed" />
+                  </LinearGradient>
                 </View>
                 <ScrollView
                   horizontal
@@ -816,12 +766,7 @@ export default function HomeScreen() {
                   <ThemedText style={[qsHeaderTitle, { color: activeAccent }]}>Quick Services</ThemedText>
                   <ThemedText style={qsHeaderSubtitle}>Tap any service to get started</ThemedText>
                 </View>
-                <Pressable
-                  onPress={() => router.push('/(tabs)/services')}
-                  style={({ pressed }) => [qsViewAllBtn, { borderColor: activeAccent, backgroundColor: activeAccent + '1A', opacity: pressed ? 0.75 : 1 }]}>
-                  <ThemedText style={[qsViewAllText, { color: activeAccent }]}>All</ThemedText>
-                  <MaterialCommunityIcons name="chevron-right" size={13} color={activeAccent} />
-                </Pressable>
+                    <ShimmerButton label="All" onPress={() => router.push('/(tabs)/services')} accentColor={activeAccent} />
               </LinearGradient>
             </View>
 
@@ -887,64 +832,6 @@ export default function HomeScreen() {
                     </Pressable>
                   );
                 })}
-              </View>
-            ) : null}
-          </ThemedView>
-
-          <ThemedView style={[styles.contentCard, styles.overviewServicesCard, { borderColor: activeAccent, backgroundColor: activeAccent + '10' }]}>
-            <View style={styles.overviewServicesHeader}>
-              <View style={styles.newsHeaderTitleWrap}>
-                <View style={[styles.newsHeaderIconWrap, { backgroundColor: activeAccent + '20' }]}>
-                  <MaterialCommunityIcons name="bell-ring-outline" size={14} color={activeAccent} />
-                </View>
-                <View>
-                  <ThemedText type="defaultSemiBold" style={[styles.latestNewsTitle, { color: activeAccent }]}>Latest Darshan/Seva Updates</ThemedText>
-                  <ThemedText style={styles.latestNewsSubtitle}>
-                    {liveLoading ? 'Loading...' : latestUpdates.length > 0 ? `${latestUpdates.length} official update(s)` : 'No updates available'}
-                  </ThemedText>
-                </View>
-              </View>
-            </View>
-
-            {!liveLoading && latestUpdates.length > 0 ? (
-              <View style={styles.newsListWrap}>
-                <ScrollView
-                  horizontal
-                  showsHorizontalScrollIndicator={false}
-                  decelerationRate="fast"
-                  snapToInterval={updateSlideWidth + 8}
-                  onMomentumScrollEnd={handleUpdateScrollEnd}
-                  contentContainerStyle={styles.newsCarouselContent}>
-                  {latestUpdates.map((item, index) => (
-                    <UpdateSlideCard
-                      key={`update-${index}`}
-                      item={item}
-                      index={index}
-                      total={latestUpdates.length}
-                      activeAccent={activeAccent}
-                      slideWidth={updateSlideWidth}
-                    />
-                  ))}
-                </ScrollView>
-
-                {latestUpdates.length > 1 ? (
-                  <View style={styles.newsPaginationWrap}>
-                    {latestUpdates.map((_, index) => {
-                      const isActive = index === activeUpdateSlide;
-                      return (
-                        <View
-                          key={`update-dot-${index}`}
-                          style={[
-                            styles.newsPaginationDot,
-                            isActive
-                              ? { width: 18, backgroundColor: activeAccent, borderColor: activeAccent }
-                              : { backgroundColor: activeAccent + '22', borderColor: activeAccent + '55' },
-                          ]}
-                        />
-                      );
-                    })}
-                  </View>
-                ) : null}
               </View>
             ) : null}
           </ThemedView>
@@ -1144,26 +1031,24 @@ export default function HomeScreen() {
           </Animated.View>
 
           <ThemedView style={[styles.contentCard, styles.premiumNewsCard, { borderColor: activeAccent, backgroundColor: activeAccent + '10' }]}> 
-            <View style={styles.newsHeaderRow}>
-              <View style={styles.newsHeaderTitleWrap}>
-                <View style={[styles.newsHeaderIconWrap, { backgroundColor: activeAccent + '20' }]}>
-                  <MaterialCommunityIcons name="newspaper-variant-outline" size={14} color={activeAccent} />
+            {/* ── Latest News header ── */}
+            <View style={qsHeaderWrap}>
+              <LinearGradient
+                colors={[activeAccent + '28', activeAccent + '08']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={qsHeaderGradient}>
+                <View style={[qsHeaderIconCircle, { backgroundColor: activeAccent + '35' }]}>
+                  <MaterialCommunityIcons name="newspaper-variant-outline" size={18} color={activeAccent} />
                 </View>
-                <View>
-                  <ThemedText type="defaultSemiBold" style={[styles.latestNewsTitle, { color: activeAccent }]}>Latest News</ThemedText>
-                  <ThemedText style={styles.latestNewsSubtitle}>Swipe to explore recent updates</ThemedText>
+                <View style={{ flex: 1 }}>
+                  <ThemedText style={[qsHeaderTitle, { color: activeAccent }]}>Latest News</ThemedText>
+                  <ThemedText style={qsHeaderSubtitle}>Official TTD news &amp; updates</ThemedText>
                 </View>
-              </View>
-              {!liveLoading && newsItems.length > 0 ? (
-                <Pressable
-                  onPress={() => router.push('/latest-news')}
-                  style={({ pressed }) => [
-                    styles.viewMoreBtn,
-                    { borderColor: activeAccent, backgroundColor: activeAccent + '14', opacity: pressed ? 0.78 : 1 },
-                  ]}>
-                  <ThemedText style={[styles.viewMoreText, { color: activeAccent }]}>View More</ThemedText>
-                </Pressable>
-              ) : null}
+                {!liveLoading && newsItems.length > 0 ? (
+                  <ShimmerButton label="View More" onPress={() => router.push('/latest-news')} accentColor={activeAccent} />
+                ) : null}
+              </LinearGradient>
             </View>
 
             {liveLoading ? <ThemedText style={styles.newsDate}>Loading latest news...</ThemedText> : null}
@@ -1179,37 +1064,46 @@ export default function HomeScreen() {
                   contentContainerStyle={styles.newsCarouselContent}>
                   {previewNewsItems.map((item) => (
                     <View
-                      key={`${item.date}-${item.link}`}
+                      key={`${item.date ?? ''}-${item.text.slice(0, 20)}`}
                       style={[
                         styles.newsItem,
                         {
                           width: newsSlideWidth,
-                          borderColor: activeAccent + '33',
-                          backgroundColor: activeAccent + '0A',
+                          borderColor: activeAccent + '30',
+                          backgroundColor: activeAccent + '08',
+                          flexDirection: 'row',
+                          padding: 0,
+                          overflow: 'hidden',
                         },
-                      ]}> 
-                      <Image
-                        source={
-                          item.image_url?.trim()
-                            ? { uri: buildProxyUrl(item.image_url.trim()) }
-                            : require('../../assets/images/banner-image.png')
-                        }
-                        style={styles.newsImage}
-                        contentFit="cover"
-                        transition={180}
-                      />
+                      ]}>
+                      {/* Left accent bar */}
+                      <View style={{ width: 4, backgroundColor: activeAccent, borderTopLeftRadius: 12, borderBottomLeftRadius: 12 }} />
 
-                      <View style={styles.newsTextWrap}>
-                        <ThemedText style={styles.newsTitle} numberOfLines={3}>{item.title}</ThemedText>
+                      <View style={{ flex: 1, padding: 12, justifyContent: 'space-between', gap: 10 }}>
+                        {/* Top row: date badge + icon */}
+                        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: activeAccent + '18', borderRadius: 20, paddingHorizontal: 8, paddingVertical: 3 }}>
+                            <MaterialCommunityIcons name="calendar-outline" size={10} color={activeAccent} />
+                            <ThemedText style={{ fontSize: 10, fontWeight: '600', color: activeAccent }}>
+                              {item.date ? new Date(item.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : ''}
+                            </ThemedText>
+                          </View>
+                          <View style={{ width: 28, height: 28, borderRadius: 14, backgroundColor: activeAccent + '15', alignItems: 'center', justifyContent: 'center' }}>
+                            <MaterialCommunityIcons name="newspaper-variant-outline" size={13} color={activeAccent} />
+                          </View>
+                        </View>
 
-                        <Pressable
-                          onPress={() => void Linking.openURL(item.link)}
-                          style={({ pressed }) => [
-                            styles.viewDetailsBtn,
-                            { borderColor: activeAccent, backgroundColor: activeAccent + '14', opacity: pressed ? 0.78 : 1 },
-                          ]}>
-                          <ThemedText style={[styles.viewDetailsText, { color: activeAccent }]}>View Details</ThemedText>
-                        </Pressable>
+                        {/* Title */}
+                        <ThemedText style={[styles.newsTitle, { fontWeight: '600', lineHeight: 19 }]} numberOfLines={8}>{item.text}</ThemedText>
+
+                        {/* Footer */}
+                        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                            <View style={{ width: 5, height: 5, borderRadius: 3, backgroundColor: activeAccent }} />
+                            <ThemedText style={{ fontSize: 10, opacity: 0.55 }}>TTD Official</ThemedText>
+                          </View>
+                          <ShimmerButton label="Read" onPress={() => item.link ? void Linking.openURL(item.link) : undefined} accentColor={activeAccent} />
+                        </View>
                       </View>
                     </View>
                   ))}
@@ -1222,12 +1116,12 @@ export default function HomeScreen() {
 
                       return (
                         <View
-                          key={`${item.date}-${item.link}-dot`}
+                          key={`${item.date ?? ''}-${item.text.slice(0, 20)}-dot`}
                           style={[
                             styles.newsPaginationDot,
                             isActive
-                              ? { width: 18, backgroundColor: activeAccent, borderColor: activeAccent }
-                              : { backgroundColor: activeAccent + '22', borderColor: activeAccent + '55' },
+                              ? { backgroundColor: activeAccent, borderColor: activeAccent }
+                              : { backgroundColor: 'transparent', borderColor: activeAccent + '55' },
                           ]}
                         />
                       );
@@ -1467,15 +1361,6 @@ const styles = StyleSheet.create({
   exploreDropdownDivider: { height: 1 },
   explorePointsWrap: { gap: 4, marginTop: 2 },
   explorePoint: { fontSize: 12, lineHeight: 17, opacity: 0.82 },
-  latestUpdatesHeaderRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 2 },
-  latestUpdatesHeaderIconWrap: { width: 28, height: 28, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
-  latestUpdatesSubtext: { fontSize: 11, opacity: 0.72 },
-  latestUpdatesListWrap: { gap: 8 },
-  latestUpdateCard: { borderWidth: 1, borderRadius: 10, padding: 10, gap: 6 },
-  latestUpdateTopRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  latestUpdateBullet: { width: 6, height: 6, borderRadius: 3 },
-  latestUpdateTag: { fontSize: 10, fontWeight: '700', letterSpacing: 0.5 },
-  latestUpdateText: { fontSize: 12, lineHeight: 18, opacity: 0.88 },
   tabButton: { flex: 1, borderWidth: 1, borderRadius: 9, paddingVertical: 8, alignItems: 'center' },
   tabButtonText: { fontSize: 12 },
   contentCard: { borderWidth: 1, borderRadius: 14, padding: 14, gap: 6 },
@@ -1516,11 +1401,6 @@ const styles = StyleSheet.create({
   sectionBannerSubtitle: { fontSize: 11, color: 'rgba(255,255,255,0.78)', marginTop: 1 },
   sectionBtnsWrap: { padding: 12, gap: 10 },
   sectionInnerImage: { width: '100%', height: 160 },
-  updateSlideCard: {},
-  updateSlideHeader: {},
-  updateSlideBadge: {},
-  updateSlideBadgeText: {},
-  updateSlideText: {},
   premiumNewsCard: { borderRadius: 16, padding: 12, gap: 10 },
   cardText: { fontSize: 13, lineHeight: 18, opacity: 0.8 },
   latestNewsWrap: { borderWidth: 1, borderRadius: 12, padding: 10, marginTop: 6, gap: 8 },
@@ -1533,11 +1413,10 @@ const styles = StyleSheet.create({
   viewMoreText: { fontSize: 12, fontWeight: '700' },
   newsListWrap: { gap: 8 },
   newsCarouselContent: { gap: 8 },
-  newsItem: { width: '100%', borderWidth: 1, borderRadius: 12, padding: 8, gap: 8 },
+  newsItem: { width: '100%', borderWidth: 1, borderRadius: 12, padding: 12, minHeight: 160 },
   newsPaginationWrap: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, marginTop: 2 },
   newsPaginationDot: { width: 8, height: 8, borderRadius: 4, borderWidth: 1 },
-  newsImage: { width: '100%', height: 172, borderRadius: 10 },
-  newsTextWrap: { gap: 8 },
+  newsTextWrap: { flex: 1, justifyContent: 'space-between', gap: 8 },
   newsDate: { fontSize: 11, opacity: 0.65 },
   newsTitle: { fontSize: 12.5, lineHeight: 18 },
   viewDetailsBtn: { alignSelf: 'flex-end', borderWidth: 1, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 6 },

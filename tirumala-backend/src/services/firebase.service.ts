@@ -122,17 +122,17 @@ export async function updateLiveLatestUpdates(entries: LatestUpdateEntry[]): Pro
   await rtdbSet('live_updates/latest_updates', entries);
 }
 
-// ─── Latest News ───────────────────────────────────────────────────────────────
+// ─── Events ───────────────────────────────────────────────────────────────────
 
-import { NewsEntry } from '../scraper/news.scraper';
+import { EventEntry } from '../scraper/events.scraper';
 
-/** Read the current latest-news list from Firebase */
-export async function getLiveLatestNews(): Promise<NewsEntry[]> {
-  const data = await rtdbGet<NewsEntry[]>('live_updates/latest_news');
+/** Read the current events list from Firebase */
+export async function getLiveEvents(): Promise<EventEntry[]> {
+  const data = await rtdbGet<EventEntry[]>('live_updates/events');
   return data ?? [];
 }
 
-/** Overwrite the latest-news list in Firebase (up to 20 entries) */
-export async function updateLiveLatestNews(entries: NewsEntry[]): Promise<void> {
-  await rtdbSet('live_updates/latest_news', entries.slice(0, 20));
+/** Overwrite the events list in Firebase (up to 20 entries) */
+export async function updateLiveEvents(entries: EventEntry[]): Promise<void> {
+  await rtdbSet('live_updates/events', entries.slice(0, 20));
 }

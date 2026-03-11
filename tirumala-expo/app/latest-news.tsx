@@ -39,7 +39,8 @@ export default function LatestNewsScreen() {
         {!loading && items.length === 0 ? <ThemedText style={styles.metaText}>No latest news available.</ThemedText> : null}
 
         {items.map((item) => {
-          const imageUrl = item.image_url?.trim() ? buildProxyUrl(item.image_url.trim()) : '';
+          const rawUrl = item.image_url?.trim() ?? '';
+          const imageUrl = rawUrl && !rawUrl.startsWith('data:') ? buildProxyUrl(rawUrl) : '';
 
           return (
             <View key={`${item.date}-${item.link}`} style={[styles.newsItem, { borderColor: tintColor + '33', backgroundColor: tintColor + '0A' }]}> 
