@@ -29,14 +29,14 @@ export interface NewsScrapeResult {
  * Always resolves — never throws.
  */
 export async function scrapeLatestNews(): Promise<NewsScrapeResult> {
-  const browser = await chromium.launch({ headless: true });
+  const browser = await chromium.launch({ headless: true, args: ['--no-sandbox', '--disable-setuid-sandbox'] });
 
   try {
     const page = await browser.newPage();
 
     await page.goto('https://news.tirumala.org/', {
-      waitUntil: 'networkidle',
-      timeout: 30_000,
+      waitUntil: 'domcontentloaded',
+      timeout: 60_000,
     });
 
     const entries: NewsEntry[] = await page.evaluate(() => {

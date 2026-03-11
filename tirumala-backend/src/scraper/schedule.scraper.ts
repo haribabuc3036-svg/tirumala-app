@@ -56,14 +56,14 @@ const DAYS = ['monday','tuesday','wednesday','thursday','friday','saturday','sun
  * Always resolves — never throws.
  */
 export async function scrapeDaySchedule(): Promise<DayScheduleScrapeResult> {
-  const browser = await chromium.launch({ headless: true });
+  const browser = await chromium.launch({ headless: true, args: ['--no-sandbox', '--disable-setuid-sandbox'] });
 
   try {
     const page = await browser.newPage();
 
     await page.goto('https://www.tirumala.org/', {
-      waitUntil: 'networkidle',
-      timeout: 30_000,
+      waitUntil: 'domcontentloaded',
+      timeout: 60_000,
     });
 
     // Find the TD that contains "Day Schedules" and a date in DD-MM-YYYY format

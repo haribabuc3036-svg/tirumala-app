@@ -27,14 +27,14 @@ export interface LatestUpdatesScrapeResult {
  * Always resolves — never throws.
  */
 export async function scrapeLatestUpdates(): Promise<LatestUpdatesScrapeResult> {
-  const browser = await chromium.launch({ headless: true });
+  const browser = await chromium.launch({ headless: true, args: ['--no-sandbox', '--disable-setuid-sandbox'] });
 
   try {
     const page = await browser.newPage();
 
     await page.goto('https://ttdevasthanams.ap.gov.in/home/dashboard', {
-      waitUntil: 'networkidle',
-      timeout: 45_000,
+      waitUntil: 'domcontentloaded',
+      timeout: 60_000,
     });
 
     // Wait for at least one update item to appear (SPA may render after load)
