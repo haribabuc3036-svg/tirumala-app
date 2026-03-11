@@ -27,6 +27,15 @@ export const Colors = {
   },
 };
 
+export const MainTabAccent = {
+  index: '#0A7EA4',
+  news: '#7B68EE',
+  services: '#2196F3',
+  wallpapers: '#FF8C00',
+  places: '#4CAF50',
+  aiChat: '#9C27B0',
+} as const;
+
 export const Fonts = Platform.select({
   ios: {
     /** iOS `UIFontDescriptorSystemDesignDefault` */
@@ -51,3 +60,11 @@ export const Fonts = Platform.select({
     mono: "SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace",
   },
 });
+
+/** Nunito font families loaded via @expo-google-fonts/nunito */
+export const NunitoFonts = {
+  regular: 'Nunito_400Regular',
+  medium: 'Nunito_500Medium',
+  semiBold: 'Nunito_600SemiBold',
+  bold: 'Nunito_700Bold',
+} as const;

@@ -1,0 +1,554 @@
+{
+    "info": {
+        "_postman_id": "b7e2f1a0-c3d4-4e56-89ab-cd12ef345678",
+        "name": "Tirumala AI — SrivariAI Chat",
+        "description": "Tests for the Gemini-powered SrivariAI assistant.\n\n**Endpoint:** `POST /api/ai/chat`\n\nAll requests are **public** — no auth token needed.\n\n## Request shape\n```json\n{\n  \"message\": \"<user question>\",\n  \"history\": []   // optional — prior turns for multi-turn chat\n}\n```\n\n## Response shape\n```json\n{\n  \"success\": true,\n  \"reply\": \"<AI answer>\",\n  \"isOffTopic\": false\n}\n```\n`isOffTopic: true` means the question was outside the Tirumala scope and the AI politely declined.\n\n## History turn shape\nEach item in `history` must be:\n```json\n{ \"role\": \"user\" | \"model\", \"content\": \"<string>\" }\n```\n\nSet the `baseUrl` collection variable to your running server (default: `http://localhost:3000`).",
+        "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+    },
+    "variable": [
+        {
+            "key": "baseUrl",
+            "value": "http://localhost:3000",
+            "type": "string"
+        }
+    ],
+    "item": [
+        {
+            "name": "On-Topic Questions",
+            "description": "Questions that are within the Tirumala / TTD scope. `isOffTopic` should always be `false` in these responses.",
+            "item": [
+                {
+                    "name": "Darshan — How to book SED ticket",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"message\": \"How do I book a Special Entry Darshan (SED) ticket online? What is the cost?\",\n    \"history\": []\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/api/ai/chat",
+                            "host": ["{{baseUrl}}"],
+                            "path": ["api", "ai", "chat"]
+                        },
+                        "description": "Ask SrivariAI about SED (Special Entry Darshan) ticket booking process and cost."
+                    }
+                },
+                {
+                    "name": "Prasadam — Laddu price and quantity",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"message\": \"What is the price of the Tirumala laddu prasadam? How many laddus can a pilgrim get?\",\n    \"history\": []\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/api/ai/chat",
+                            "host": ["{{baseUrl}}"],
+                            "path": ["api", "ai", "chat"]
+                        },
+                        "description": "Ask about laddu prasadam pricing and the number of laddus allowed per pilgrim."
+                    }
+                },
+                {
+                    "name": "Dress Code — Men and Women",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"message\": \"What is the dress code for entering the Tirumala Venkateswara temple for men and women?\",\n    \"history\": []\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/api/ai/chat",
+                            "host": ["{{baseUrl}}"],
+                            "path": ["api", "ai", "chat"]
+                        },
+                        "description": "Ask about the dress code requirements for both men and women at the Tirumala temple."
+                    }
+                },
+                {
+                    "name": "Accommodation — TTD Guest House Booking",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"message\": \"How can I book a TTD guest house or cottage in Tirumala? What are the rates?\",\n    \"history\": []\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/api/ai/chat",
+                            "host": ["{{baseUrl}}"],
+                            "path": ["api", "ai", "chat"]
+                        },
+                        "description": "Ask about TTD accommodation options — guest houses, cottages, choultries."
+                    }
+                },
+                {
+                    "name": "Sevas — Available Arjitam Sevas",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"message\": \"What are the main Arjitam Sevas available at Tirumala and how can I book them?\",\n    \"history\": []\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/api/ai/chat",
+                            "host": ["{{baseUrl}}"],
+                            "path": ["api", "ai", "chat"]
+                        },
+                        "description": "Ask about the Arjitam Sevas (paid sevas) available at Tirumala and the booking process."
+                    }
+                },
+                {
+                    "name": "Festival — Brahmotsavam Details",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"message\": \"Tell me about the Brahmotsavam festival at Tirumala — when does it happen and what are the main events?\",\n    \"history\": []\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/api/ai/chat",
+                            "host": ["{{baseUrl}}"],
+                            "path": ["api", "ai", "chat"]
+                        },
+                        "description": "Ask about the annual Brahmotsavam festival — schedule, key events, and significance."
+                    }
+                },
+                {
+                    "name": "Transport — How to reach Tirumala",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"message\": \"What are the different ways to reach Tirumala from Tirupati? Can I take a helicopter?\",\n    \"history\": []\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/api/ai/chat",
+                            "host": ["{{baseUrl}}"],
+                            "path": ["api", "ai", "chat"]
+                        },
+                        "description": "Ask about transport options to Tirumala — bus, car (ghat road), and helicopter service."
+                    }
+                },
+                {
+                    "name": "History — Temple Significance",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"message\": \"What is the historical and spiritual significance of the Sri Venkateswara temple at Tirumala?\",\n    \"history\": []\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/api/ai/chat",
+                            "host": ["{{baseUrl}}"],
+                            "path": ["api", "ai", "chat"]
+                        },
+                        "description": "Ask about the history, legends, and spiritual significance of the Tirumala temple."
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Multi-Turn Conversations",
+            "description": "Tests that demonstrate context-aware multi-turn chat. Each request includes a `history` array with prior exchanges.",
+            "item": [
+                {
+                    "name": "Follow-up on Sevas",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"message\": \"How many sevas can I book in a single visit and what documents do I need?\",\n    \"history\": [\n        {\n            \"role\": \"user\",\n            \"content\": \"What sevas are available at Tirumala?\"\n        },\n        {\n            \"role\": \"model\",\n            \"content\": \"Tirumala offers many Arjitam Sevas (paid sevas) such as Suprabhatam, Thomala Seva, Archana, Astadala Pada Padmaradhana, Sahasra Deepalankara Seva, Unjal Seva, and Kalyanotsavam, among others. These can be booked through the TTD e-seva portal.\"\n        }\n    ]\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/api/ai/chat",
+                            "host": ["{{baseUrl}}"],
+                            "path": ["api", "ai", "chat"]
+                        },
+                        "description": "Multi-turn: Prior exchange was about available sevas. This follow-up asks about how many can be booked and required documents. The AI should answer in context."
+                    }
+                },
+                {
+                    "name": "Follow-up on Darshan types",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"message\": \"Which one of those is the fastest darshan type?\",\n    \"history\": [\n        {\n            \"role\": \"user\",\n            \"content\": \"What are the different types of darshan available at Tirumala?\"\n        },\n        {\n            \"role\": \"model\",\n            \"content\": \"Tirumala offers several darshan types: 1) Sarva Darshan (free, token-based, longest wait), 2) Special Entry Darshan (SED) at Rs.300 with a quota-based online booking, 3) Divya Darshan (free for pilgrims arriving on foot via Alipiri or Srivari Mettu), 4) VIP break darshan for dignitaries, and 5) NRI darshan for non-resident Indians.\"\n        }\n    ]\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/api/ai/chat",
+                            "host": ["{{baseUrl}}"],
+                            "path": ["api", "ai", "chat"]
+                        },
+                        "description": "Multi-turn: Prior exchange covered darshan types. This follow-up asks which is fastest. The AI should recall context and answer appropriately."
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Off-Topic Guard",
+            "description": "Questions outside the Tirumala / TTD scope. The AI should politely decline and redirect. `isOffTopic` will be `true`.",
+            "item": [
+                {
+                    "name": "Stock market question",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"message\": \"What is the current stock price of Apple Inc.?\",\n    \"history\": []\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/api/ai/chat",
+                            "host": ["{{baseUrl}}"],
+                            "path": ["api", "ai", "chat"]
+                        },
+                        "description": "Completely unrelated finance question. Expect `isOffTopic: true` and a polite redirect message."
+                    }
+                },
+                {
+                    "name": "Cricket match result",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"message\": \"Who won the IPL 2025 final match?\",\n    \"history\": []\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/api/ai/chat",
+                            "host": ["{{baseUrl}}"],
+                            "path": ["api", "ai", "chat"]
+                        },
+                        "description": "Sports question unrelated to Tirumala. Expect `isOffTopic: true`."
+                    }
+                },
+                {
+                    "name": "Generic technology question",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"message\": \"Explain how React hooks work in JavaScript.\",\n    \"history\": []\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/api/ai/chat",
+                            "host": ["{{baseUrl}}"],
+                            "path": ["api", "ai", "chat"]
+                        },
+                        "description": "Generic programming question. Expect `isOffTopic: true`."
+                    }
+                },
+                {
+                    "name": "Other religion question",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"message\": \"Tell me about pilgrimage rules at the Golden Temple in Amritsar.\",\n    \"history\": []\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/api/ai/chat",
+                            "host": ["{{baseUrl}}"],
+                            "path": ["api", "ai", "chat"]
+                        },
+                        "description": "Question about a different religious site. Expect `isOffTopic: true`."
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Validation Errors",
+            "description": "Requests with bad input that should return HTTP 400 without calling the AI.",
+            "item": [
+                {
+                    "name": "Empty message — 400",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"message\": \"\",\n    \"history\": []\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/api/ai/chat",
+                            "host": ["{{baseUrl}}"],
+                            "path": ["api", "ai", "chat"]
+                        },
+                        "description": "Sending an empty `message` string. Expected: HTTP 400 `{ success: false, error: '\\`message\\` is required.' }`"
+                    }
+                },
+                {
+                    "name": "Missing message field — 400",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"history\": []\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/api/ai/chat",
+                            "host": ["{{baseUrl}}"],
+                            "path": ["api", "ai", "chat"]
+                        },
+                        "description": "Omitting the `message` field entirely. Expected: HTTP 400."
+                    }
+                },
+                {
+                    "name": "Invalid history role — 400",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"message\": \"What is Vaikunta Ekadasi?\",\n    \"history\": [\n        {\n            \"role\": \"assistant\",\n            \"content\": \"Some prior reply\"\n        }\n    ]\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/api/ai/chat",
+                            "host": ["{{baseUrl}}"],
+                            "path": ["api", "ai", "chat"]
+                        },
+                        "description": "Uses `\"role\": \"assistant\"` instead of the valid `\"model\"`. Expected: HTTP 400 validation error."
+                    }
+                },
+                {
+                    "name": "History not an array — 400",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"message\": \"What is Vaikunta Ekadasi?\",\n    \"history\": \"previous conversation\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/api/ai/chat",
+                            "host": ["{{baseUrl}}"],
+                            "path": ["api", "ai", "chat"]
+                        },
+                        "description": "Sends `history` as a string instead of an array. Expected: HTTP 400."
+                    }
+                },
+                {
+                    "name": "Message too long — 400",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"message\": \"{{$randomLoremParagraph}}{{$randomLoremParagraph}}{{$randomLoremParagraph}}{{$randomLoremParagraph}}{{$randomLoremParagraph}}{{$randomLoremParagraph}}{{$randomLoremParagraph}}{{$randomLoremParagraph}}{{$randomLoremParagraph}}{{$randomLoremParagraph}}{{$randomLoremParagraph}}{{$randomLoremParagraph}}{{$randomLoremParagraph}}{{$randomLoremParagraph}}{{$randomLoremParagraph}}{{$randomLoremParagraph}}{{$randomLoremParagraph}}{{$randomLoremParagraph}}{{$randomLoremParagraph}}{{$randomLoremParagraph}}\",\n    \"history\": []\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/api/ai/chat",
+                            "host": ["{{baseUrl}}"],
+                            "path": ["api", "ai", "chat"]
+                        },
+                        "description": "Sends a message that exceeds the 2000 character limit using Postman lorem paragraph variables. Expected: HTTP 400 `{ success: false, error: 'Message is too long (max 2000 characters).' }`"
+                    }
+                }
+            ]
+        }
+    ]
+}

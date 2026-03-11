@@ -1,0 +1,58 @@
+{
+  "name": "tirumala-backend",
+  "version": "1.0.0",
+  "description": "Tirumala TTD backend service — Express + Supabase (PostgreSQL) + Firebase Realtime DB",
+  "main": "dist/index.js",
+  "scripts": {
+    "dev": "nodemon",
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "lint": "eslint src --ext .ts",
+    "sync:services": "ts-node src/scripts/sync-services.ts",
+    "sync:places": "ts-node src/scripts/sync-places.ts",
+    "migrate:place-photos": "ts-node src/scripts/migrate-place-photos-to-cloudinary.ts",
+    "hash-password": "ts-node src/scripts/hash-password.ts"
+  },
+  "keywords": [
+    "ttd",
+    "tirumala",
+    "express",
+    "supabase",
+    "firebase"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@google/generative-ai": "^0.24.1",
+    "@supabase/supabase-js": "^2.97.0",
+    "bcryptjs": "^3.0.3",
+    "cloudinary": "^2.9.0",
+    "cookie-parser": "^1.4.7",
+    "cors": "^2.8.6",
+    "dotenv": "^17.3.1",
+    "express": "^5.2.1",
+    "firebase-admin": "^13.6.1",
+    "helmet": "^8.1.0",
+    "jsonwebtoken": "^9.0.3",
+    "morgan": "^1.10.1",
+    "multer": "^2.0.2",
+    "node-cron": "^4.2.1",
+    "pg": "^8.19.0",
+    "playwright": "^1.58.2"
+  },
+  "devDependencies": {
+    "@types/bcryptjs": "^2.4.6",
+    "@types/cookie-parser": "^1.4.10",
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.6",
+    "@types/jsonwebtoken": "^9.0.10",
+    "@types/morgan": "^1.9.10",
+    "@types/multer": "^2.0.0",
+    "@types/node": "^25.3.0",
+    "@types/node-cron": "^3.0.11",
+    "@types/pg": "^8.16.0",
+    "nodemon": "^3.1.14",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.9.3"
+  }
+}
