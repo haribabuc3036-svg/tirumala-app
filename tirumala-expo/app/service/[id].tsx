@@ -145,9 +145,12 @@ export default function ServiceDetailScreen() {
   const instructions = (service?.instructions && service.instructions.length > 0) ? service.instructions : null;
 
   const bookButtonScale = useRef(new Animated.Value(1)).current;
-  const arrowAnim = useRef(new Animated.Value(0)).current;
+  const scalePulse       = useRef(new Animated.Value(1)).current;
+  const arrowAnim        = useRef(new Animated.Value(0)).current;
+  const spinAnim         = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
+    // arrow bounce
     Animated.loop(
       Animated.sequence([
         Animated.timing(arrowAnim, { toValue: 6, duration: 420, useNativeDriver: true }),
@@ -155,13 +158,25 @@ export default function ServiceDetailScreen() {
         Animated.delay(800),
       ])
     ).start();
+    // idle scale pulse
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(scalePulse, { toValue: 1.035, duration: 700, useNativeDriver: true }),
+        Animated.timing(scalePulse, { toValue: 1,     duration: 700, useNativeDriver: true }),
+      ])
+    ).start();
+    // rotating border
+    Animated.loop(
+      Animated.timing(spinAnim, { toValue: 1, duration: 2000, useNativeDriver: true })
+    ).start();
   }, []);
 
   const onBookNow = async () => {
     if (!service) return;
-    const canOpen = await Linking.canOpenURL(service.url);
+    const target = service.buttonUrl ?? service.url;
+    const canOpen = await Linking.canOpenURL(target);
     if (!canOpen) { Alert.alert('Unable to open link', 'Please try again later.'); return; }
-    await Linking.openURL(service.url);
+    await Linking.openURL(target);
   };
 
   if (loading) {
@@ -182,37 +197,69 @@ export default function ServiceDetailScreen() {
   }
 
   const bookButton = (
-    <Animated.View style={[styles.bookButtonWrapper, { transform: [{ scale: bookButtonScale }] }]}>
-      <Pressable
-        onPress={onBookNow}
-        onPressIn={() =>
-          Animated.spring(bookButtonScale, { toValue: 0.95, useNativeDriver: true, speed: 50 }).start()
-        }
-        onPressOut={() =>
-          Animated.spring(bookButtonScale, { toValue: 1, useNativeDriver: true, speed: 20, bounciness: 10 }).start()
-        }>
-        <LinearGradient
-          colors={['#29baea', buttonBackground, '#054d68']}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={styles.bookButton}>
-          {/* Decorative bubbles */}
-          <View style={[styles.bubble, { width: 80, height: 80, top: -36, right: 20, opacity: 0.11 }]} />
-          <View style={[styles.bubble, { width: 48, height: 48, bottom: -18, left: 24, opacity: 0.13 }]} />
-          <View style={[styles.bubble, { width: 22, height: 22, top: 8, left: 18, opacity: 0.22 }]} />
-          <View style={[styles.bubble, { width: 14, height: 14, bottom: 6, right: 64, opacity: 0.18 }]} />
-          <View style={[styles.bubble, { width: 100, height: 100, top: -52, left: -28, opacity: 0.07 }]} />
-          <View style={[styles.bubble, { width: 18, height: 18, top: 10, right: 42, opacity: 0.2 }]} />
-          {/* Top shine strip */}
-          <View style={styles.bookShine} />
-          {/* Content */}
-          <MaterialCommunityIcons name="calendar-check" size={20} color="#ffffff" />
-          <ThemedText style={styles.bookText}>Check Availability</ThemedText>
-          <Animated.View style={{ transform: [{ translateX: arrowAnim }] }}>
-            <MaterialCommunityIcons name="arrow-right-circle" size={18} color="rgba(255,255,255,0.7)" />
+    /* scale pulse wrapper */
+    <Animated.View style={{ transform: [{ scale: scalePulse }] }}>
+      {/* rotating border shell */}
+      <Animated.View style={[styles.bookButtonWrapper, { transform: [{ scale: bookButtonScale }] }]}>
+        <View style={{ borderRadius: 18, overflow: 'hidden' }}>
+          {/* spinning gradient beam */}
+          <Animated.View
+            style={{
+              position: 'absolute',
+              width: 700,
+              height: 700,
+              top: -326,
+              left: -326,
+              transform: [{
+                rotate: spinAnim.interpolate({
+                  inputRange:  [0, 1],
+                  outputRange: ['0deg', '360deg'],
+                }),
+              }],
+            }}>
+            <LinearGradient
+              colors={['transparent', 'transparent', 'rgba(41,186,234,0.85)', '#ffffff', 'rgba(41,186,234,0.85)', 'transparent', 'transparent']}
+              locations={[0, 0.34, 0.47, 0.5, 0.53, 0.66, 1]}
+              start={{ x: 0, y: 0.5 }}
+              end={{ x: 1, y: 0.5 }}
+              style={{ width: 700, height: 700 }}
+            />
           </Animated.View>
-        </LinearGradient>
-      </Pressable>
+          {/* inset 1.5 px — beam shows as moving border */}
+          <View style={{ margin: 1.5, borderRadius: 17, overflow: 'hidden' }}>
+            <Pressable
+              onPress={onBookNow}
+              onPressIn={() =>
+                Animated.spring(bookButtonScale, { toValue: 0.95, useNativeDriver: true, speed: 50 }).start()
+              }
+              onPressOut={() =>
+                Animated.spring(bookButtonScale, { toValue: 1, useNativeDriver: true, speed: 20, bounciness: 10 }).start()
+              }>
+              <LinearGradient
+                colors={['#29baea', buttonBackground, '#054d68']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.bookButton}>
+                {/* Decorative bubbles */}
+                <View style={[styles.bubble, { width: 80, height: 80, top: -36, right: 20, opacity: 0.11 }]} />
+                <View style={[styles.bubble, { width: 48, height: 48, bottom: -18, left: 24, opacity: 0.13 }]} />
+                <View style={[styles.bubble, { width: 22, height: 22, top: 8, left: 18, opacity: 0.22 }]} />
+                <View style={[styles.bubble, { width: 14, height: 14, bottom: 6, right: 64, opacity: 0.18 }]} />
+                <View style={[styles.bubble, { width: 100, height: 100, top: -52, left: -28, opacity: 0.07 }]} />
+                <View style={[styles.bubble, { width: 18, height: 18, top: 10, right: 42, opacity: 0.2 }]} />
+                {/* Top shine strip */}
+                <View style={styles.bookShine} />
+                {/* Content */}
+                <MaterialCommunityIcons name="calendar-check" size={20} color="#ffffff" />
+                <ThemedText style={styles.bookText}>{service.buttonText ?? 'Check Availability'}</ThemedText>
+                <Animated.View style={{ transform: [{ translateX: arrowAnim }] }}>
+                  <MaterialCommunityIcons name="arrow-right-circle" size={18} color="rgba(255,255,255,0.7)" />
+                </Animated.View>
+              </LinearGradient>
+            </Pressable>
+          </View>
+        </View>
+      </Animated.View>
     </Animated.View>
   );
 

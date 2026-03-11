@@ -23,7 +23,7 @@ export function useServiceDetail(id?: string) {
       try {
         const { data, error: queryError } = await supabase
           .from('services_catalog')
-          .select('id,title,description,icon,image,url,tag,tag_color,booking_dates,booking_date,instructions')
+          .select('id,title,description,icon,image,url,tag,tag_color,booking_dates,booking_date,instructions,button_text,button_url')
           .eq('id', id)
           .maybeSingle();
 
@@ -71,6 +71,8 @@ export function useServiceDetail(id?: string) {
               (data as any).booking_dates ?? ((data as any).booking_date ? [(data as any).booking_date] : null)
             ),
             instructions: (data as any).instructions ?? null,
+            buttonText: (data as any).button_text ?? null,
+            buttonUrl: (data as any).button_url ?? null,
           });
           setError(null);
         }

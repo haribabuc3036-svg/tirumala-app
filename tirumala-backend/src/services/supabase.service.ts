@@ -144,6 +144,8 @@ export type ServiceDetailResponse = {
   bookingDate?: string | null;
   bookingDates?: string[] | null;
   instructions?: string[] | null;
+  buttonText?: string | null;
+  buttonUrl?: string | null;
 };
 
 export type ServiceImageAdminResponse = {
@@ -268,6 +270,8 @@ export async function getServiceDetailById(serviceId: string): Promise<ServiceDe
     bookingDate: service.booking_date ?? null,
     bookingDates: (service as any).booking_dates ?? null,
     instructions: service.instructions ?? null,
+    buttonText: (service as any).button_text ?? null,
+    buttonUrl: (service as any).button_url ?? null,
   };
 }
 

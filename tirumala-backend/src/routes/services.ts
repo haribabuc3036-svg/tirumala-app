@@ -381,10 +381,10 @@ router.patch(
   '/:id/booking',
   asyncHandler(async (req: Request, res: Response) => {
     const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
-    const { booking_dates, instructions } = req.body ?? {};
+    const { booking_dates, instructions, button_text, button_url } = req.body ?? {};
 
-    if (booking_dates === undefined && instructions === undefined) {
-      res.status(400).json({ success: false, error: 'Provide at least one of: booking_dates (ISO string[] or null), instructions (string[] or null)' });
+    if (booking_dates === undefined && instructions === undefined && button_text === undefined && button_url === undefined) {
+      res.status(400).json({ success: false, error: 'Provide at least one of: booking_dates, instructions, button_text, button_url' });
       return;
     }
     if (
@@ -403,6 +403,8 @@ router.patch(
     const patch: Record<string, unknown> = {};
     if (booking_dates !== undefined) patch.booking_dates = booking_dates;
     if (instructions !== undefined) patch.instructions = instructions;
+    if (button_text !== undefined) patch.button_text = button_text ?? null;
+    if (button_url  !== undefined) patch.button_url  = button_url  ?? null;
 
     const data = await updateServiceCatalogItem(id, patch as any);
     if (!data) {
