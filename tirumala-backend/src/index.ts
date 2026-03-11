@@ -12,6 +12,7 @@ import { startSchedulePoller, getSchedulePollerStatus } from './jobs/schedule-po
 import { startPilgrimsPoller, getPilgrimsPollerStatus } from './jobs/pilgrims-poll.job';
 import { startLatestUpdatesPoller, getLatestUpdatesPollerStatus } from './jobs/latest-updates-poll.job';
 import { startEventsPoller, getEventsPollerStatus } from './jobs/events-poll.job';
+import { startBrahmotsavamsPoller, getBrahmotsavamsPollerStatus } from './jobs/brahmotsavams-poll.job';
 
 const app = express();
 
@@ -51,6 +52,7 @@ app.get('/health', (_req, res) => {
     pilgrimsPoller: getPilgrimsPollerStatus(),
     latestUpdatesPoller: getLatestUpdatesPollerStatus(),
     eventsPoller: getEventsPollerStatus(),
+    brahmotsavamsPoller: getBrahmotsavamsPollerStatus(),
   });
 });
 
@@ -85,6 +87,9 @@ app.listen(env.port, () => {
 
   // Start the 6-hourly Events poller (03:00 / 09:00 / 15:00 / 21:00 IST)
   startEventsPoller();
+
+  // Start the 6-hourly Brahmotsavams poller (01:00 / 07:00 / 13:00 / 19:00 IST)
+  startBrahmotsavamsPoller();
 });
 
 export default app;

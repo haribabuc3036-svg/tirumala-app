@@ -75,6 +75,12 @@ export type LiveEventItem = {
   date: string;
 };
 
+export type LiveBrahmotsavamItem = {
+  title: string;
+  link: string;
+  date: string;
+};
+
 export type LiveUpdates = {
   ssdToken: LiveSsdStatus | null;
   pilgrimsToday: LivePilgrimsToday | null;
@@ -83,6 +89,7 @@ export type LiveUpdates = {
   latestNews: LiveLatestNewsItem[];
   latestUpdates: LiveLatestUpdateItem[];
   events: LiveEventItem[];
+  brahmotsavams: LiveBrahmotsavamItem[];
   sarvaQueueTime: string | null;
   loading: boolean;
   error: string | null;
@@ -96,6 +103,7 @@ export function useLiveUpdates(): LiveUpdates {
   const [latestNews, setLatestNews] = useState<LiveLatestNewsItem[]>([]);
   const [latestUpdates, setLatestUpdates] = useState<LiveLatestUpdateItem[]>([]);
   const [events, setEvents] = useState<LiveEventItem[]>([]);
+  const [brahmotsavams, setBrahmotsavams] = useState<LiveBrahmotsavamItem[]>([]);
   const [sarvaQueueTime, setSarvaQueueTime] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -190,6 +198,17 @@ export function useLiveUpdates(): LiveUpdates {
                 .filter((item: LiveEventItem) => item.title.length > 0)
             );
           }
+          if (Array.isArray(data.brahmotsavams)) {
+            setBrahmotsavams(
+              data.brahmotsavams
+                .map((item: any) => ({
+                  title: String(item.title ?? '').trim(),
+                  link:  String(item.link ?? '').trim(),
+                  date:  String(item.date ?? '').trim(),
+                }))
+                .filter((item: LiveBrahmotsavamItem) => item.title.length > 0)
+            );
+          }
         }
         setLoading(false);
       },
@@ -202,5 +221,5 @@ export function useLiveUpdates(): LiveUpdates {
     return () => unsubscribe();
   }, []);
 
-  return { ssdToken, pilgrimsToday, pilgrimsRecent, daySchedule, latestNews, latestUpdates, events, sarvaQueueTime, loading, error };
+  return { ssdToken, pilgrimsToday, pilgrimsRecent, daySchedule, latestNews, latestUpdates, events, brahmotsavams, sarvaQueueTime, loading, error };
 }

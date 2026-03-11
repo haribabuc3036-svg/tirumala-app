@@ -136,3 +136,18 @@ export async function getLiveEvents(): Promise<EventEntry[]> {
 export async function updateLiveEvents(entries: EventEntry[]): Promise<void> {
   await rtdbSet('live_updates/events', entries.slice(0, 20));
 }
+
+// ─── Brahmotsavams ───────────────────────────────────────────────────────
+
+import { BrahmotsavamEntry } from '../scraper/brahmotsavams.scraper';
+
+/** Read the current brahmotsavams list from Firebase */
+export async function getLiveBrahmotsavams(): Promise<BrahmotsavamEntry[]> {
+  const data = await rtdbGet<BrahmotsavamEntry[]>('live_updates/brahmotsavams');
+  return data ?? [];
+}
+
+/** Overwrite the brahmotsavams list in Firebase (up to 20 entries) */
+export async function updateLiveBrahmotsavams(entries: BrahmotsavamEntry[]): Promise<void> {
+  await rtdbSet('live_updates/brahmotsavams', entries.slice(0, 20));
+}
