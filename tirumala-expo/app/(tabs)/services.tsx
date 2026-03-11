@@ -215,7 +215,7 @@ export default function ServicesScreen() {
           <View>
             {/* ── Beautiful gradient page header ── */}
             <LinearGradient
-              colors={[accent, hexAlpha(accent, 0.70), isDark ? '#111113' : '#F2F2F7']}
+              colors={[isDark ? '#111113' : '#F2F2F7', hexAlpha(accent, 0.70), accent]}
               start={{ x: 0, y: 0 }}
               end={{ x: 0.4, y: 1 }}
               style={[styles.pageHeader, { paddingTop: insets.top + 18 }]}>
@@ -464,7 +464,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'space-between',
-    paddingHorizontal: 10,
+    paddingHorizontal: 8,
     paddingTop: 14,
     paddingBottom: 10,
   },

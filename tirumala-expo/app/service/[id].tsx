@@ -334,15 +334,30 @@ export default function ServiceDetailScreen() {
           </View>
         )}
 
-        {hasCountdown && countdown && countdown.expired && (
-          <View style={[styles.countdownCard, { borderColor: '#22c55e44', backgroundColor: '#22c55e0D' }]}>
-            <View style={styles.countdownHeader}>
-              <View style={[styles.countdownIconWrap, { backgroundColor: '#22c55e25' }]}>
-                <MaterialCommunityIcons name="check-circle-outline" size={15} color="#16a34a" />
-              </View>
-              <ThemedText style={[styles.countdownLabel, { color: '#16a34a' }]}>Booking is Now Open</ThemedText>
+        {hasCountdown && countdown && countdown.expired &&
+          Date.now() - new Date(service.bookingDate!).getTime() < 86_400_000 && (
+          <LinearGradient
+            colors={['#16a34a22', '#22c55e18', '#4ade8010']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={[styles.bookingOpenBanner, { borderColor: '#22c55e40' }]}>
+            {/* Decorative circles */}
+            <View style={[styles.bookingOpenBlob1, { backgroundColor: '#22c55e12' }]} />
+            <View style={[styles.bookingOpenBlob2, { backgroundColor: '#16a34a0e' }]} />
+
+            <View style={[styles.bookingOpenIconWrap, { backgroundColor: '#22c55e22', borderColor: '#22c55e40' }]}>
+              <MaterialCommunityIcons name="check-circle" size={28} color="#16a34a" />
             </View>
-          </View>
+
+            <View style={{ flex: 1 }}>
+              <ThemedText style={[styles.bookingOpenTitle, { color: '#16a34a' }]}>Booking is Now Open</ThemedText>
+              <ThemedText style={[styles.bookingOpenSubtitle, { color: '#16a34a99' }]}>
+                Slots available — book early to secure your spot
+              </ThemedText>
+            </View>
+
+            <View style={[styles.bookingOpenLiveDot, { backgroundColor: '#22c55e' }]} />
+          </LinearGradient>
         )}
 
         {/* â”€â”€ Book Now (after countdown if present) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
@@ -439,6 +454,51 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   countdownIndicatorText: { fontSize: 12, fontWeight: '600' },
+
+  // Booking open banner
+  bookingOpenBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+    borderWidth: 1,
+    borderRadius: 16,
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+    overflow: 'hidden',
+  },
+  bookingOpenBlob1: {
+    position: 'absolute',
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    top: -40,
+    right: -20,
+  },
+  bookingOpenBlob2: {
+    position: 'absolute',
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    bottom: -30,
+    left: 10,
+  },
+  bookingOpenIconWrap: {
+    width: 52,
+    height: 52,
+    borderRadius: 16,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  bookingOpenTitle: { fontSize: 15, fontWeight: '800', letterSpacing: 0.1 },
+  bookingOpenSubtitle: { fontSize: 12, fontWeight: '500', marginTop: 3, lineHeight: 17 },
+  bookingOpenLiveDot: {
+    width: 9,
+    height: 9,
+    borderRadius: 5,
+    alignSelf: 'flex-start',
+    marginTop: 4,
+  },
 
   // Book button
   bookButtonWrapper: {

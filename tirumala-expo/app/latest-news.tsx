@@ -142,7 +142,7 @@ export default function LatestNewsScreen() {
 
         {/* â”€â”€ Hero header â”€â”€ */}
         <LinearGradient
-          colors={[accent + 'EE', accent + 'BB', accent + '44', 'transparent']}
+          colors={['transparent', accent + '44', accent + 'BB', accent + 'EE']}
           start={{ x: 0, y: 0 }}
           end={{ x: 0.6, y: 1 }}
           style={[styles.hero, { paddingTop: insets.top + 14 }]}>
