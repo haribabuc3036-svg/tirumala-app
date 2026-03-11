@@ -81,6 +81,30 @@ export type LiveBrahmotsavamItem = {
   date: string;
 };
 
+export type LiveUtsavamItem = {
+  title: string;
+  link: string;
+  date: string;
+};
+
+export type LiveTempleNewsItem = {
+  title: string;
+  link: string;
+  date: string;
+};
+
+export type LiveVipNewsItem = {
+  title: string;
+  link: string;
+  date: string;
+};
+
+export type LiveDarshanNewsItem = {
+  title: string;
+  link: string;
+  date: string;
+};
+
 export type LiveUpdates = {
   ssdToken: LiveSsdStatus | null;
   pilgrimsToday: LivePilgrimsToday | null;
@@ -90,6 +114,10 @@ export type LiveUpdates = {
   latestUpdates: LiveLatestUpdateItem[];
   events: LiveEventItem[];
   brahmotsavams: LiveBrahmotsavamItem[];
+  utsavams: LiveUtsavamItem[];
+  templeNews: LiveTempleNewsItem[];
+  vipNews: LiveVipNewsItem[];
+  darshanNews: LiveDarshanNewsItem[];
   sarvaQueueTime: string | null;
   loading: boolean;
   error: string | null;
@@ -104,6 +132,10 @@ export function useLiveUpdates(): LiveUpdates {
   const [latestUpdates, setLatestUpdates] = useState<LiveLatestUpdateItem[]>([]);
   const [events, setEvents] = useState<LiveEventItem[]>([]);
   const [brahmotsavams, setBrahmotsavams] = useState<LiveBrahmotsavamItem[]>([]);
+  const [utsavams, setUtsavams] = useState<LiveUtsavamItem[]>([]);
+  const [templeNews, setTempleNews] = useState<LiveTempleNewsItem[]>([]);
+  const [vipNews, setVipNews] = useState<LiveVipNewsItem[]>([]);
+  const [darshanNews, setDarshanNews] = useState<LiveDarshanNewsItem[]>([]);
   const [sarvaQueueTime, setSarvaQueueTime] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -209,6 +241,50 @@ export function useLiveUpdates(): LiveUpdates {
                 .filter((item: LiveBrahmotsavamItem) => item.title.length > 0)
             );
           }
+          if (Array.isArray(data.utsavams)) {
+            setUtsavams(
+              data.utsavams
+                .map((item: any) => ({
+                  title: String(item.title ?? '').trim(),
+                  link:  String(item.link ?? '').trim(),
+                  date:  String(item.date ?? '').trim(),
+                }))
+                .filter((item: LiveUtsavamItem) => item.title.length > 0)
+            );
+          }
+          if (Array.isArray(data.temple_news)) {
+            setTempleNews(
+              data.temple_news
+                .map((item: any) => ({
+                  title: String(item.title ?? '').trim(),
+                  link:  String(item.link ?? '').trim(),
+                  date:  String(item.date ?? '').trim(),
+                }))
+                .filter((item: LiveTempleNewsItem) => item.title.length > 0)
+            );
+          }
+          if (Array.isArray(data.vip_news)) {
+            setVipNews(
+              data.vip_news
+                .map((item: any) => ({
+                  title: String(item.title ?? '').trim(),
+                  link:  String(item.link ?? '').trim(),
+                  date:  String(item.date ?? '').trim(),
+                }))
+                .filter((item: LiveVipNewsItem) => item.title.length > 0)
+            );
+          }
+          if (Array.isArray(data.darshan_news)) {
+            setDarshanNews(
+              data.darshan_news
+                .map((item: any) => ({
+                  title: String(item.title ?? '').trim(),
+                  link:  String(item.link ?? '').trim(),
+                  date:  String(item.date ?? '').trim(),
+                }))
+                .filter((item: LiveDarshanNewsItem) => item.title.length > 0)
+            );
+          }
         }
         setLoading(false);
       },
@@ -221,5 +297,5 @@ export function useLiveUpdates(): LiveUpdates {
     return () => unsubscribe();
   }, []);
 
-  return { ssdToken, pilgrimsToday, pilgrimsRecent, daySchedule, latestNews, latestUpdates, events, brahmotsavams, sarvaQueueTime, loading, error };
+  return { ssdToken, pilgrimsToday, pilgrimsRecent, daySchedule, latestNews, latestUpdates, events, brahmotsavams, utsavams, templeNews, vipNews, darshanNews, sarvaQueueTime, loading, error };
 }

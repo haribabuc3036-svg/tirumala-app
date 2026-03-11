@@ -13,6 +13,10 @@ import { startPilgrimsPoller, getPilgrimsPollerStatus } from './jobs/pilgrims-po
 import { startLatestUpdatesPoller, getLatestUpdatesPollerStatus } from './jobs/latest-updates-poll.job';
 import { startEventsPoller, getEventsPollerStatus } from './jobs/events-poll.job';
 import { startBrahmotsavamsPoller, getBrahmotsavamsPollerStatus } from './jobs/brahmotsavams-poll.job';
+import { startUtsavamsPoller, getUtsavamsPollerStatus } from './jobs/utsavams-poll.job';
+import { startTempleNewsPoller, getTempleNewsPollerStatus } from './jobs/temple-news-poll.job';
+import { startVipNewsPoller, getVipNewsPollerStatus } from './jobs/vip-news-poll.job';
+import { startDarshanNewsPoller, getDarshanNewsPollerStatus } from './jobs/darshan-news-poll.job';
 
 const app = express();
 
@@ -53,6 +57,10 @@ app.get('/health', (_req, res) => {
     latestUpdatesPoller: getLatestUpdatesPollerStatus(),
     eventsPoller: getEventsPollerStatus(),
     brahmotsavamsPoller: getBrahmotsavamsPollerStatus(),
+    utsavamsPoller: getUtsavamsPollerStatus(),
+    templeNewsPoller: getTempleNewsPollerStatus(),
+    vipNewsPoller: getVipNewsPollerStatus(),
+    darshanNewsPoller: getDarshanNewsPollerStatus(),
   });
 });
 
@@ -90,6 +98,18 @@ app.listen(env.port, () => {
 
   // Start the 6-hourly Brahmotsavams poller (01:00 / 07:00 / 13:00 / 19:00 IST)
   startBrahmotsavamsPoller();
+
+  // Start the 6-hourly Utsavams poller (02:00 / 08:00 / 14:00 / 20:00 IST)
+  startUtsavamsPoller();
+
+  // Start the 6-hourly Temple-News poller (04:00 / 10:00 / 16:00 / 22:00 IST)
+  startTempleNewsPoller();
+
+  // Start the 6-hourly VIP-News poller (05:00 / 11:00 / 17:00 / 23:00 IST)
+  startVipNewsPoller();
+
+  // Start the 4-hourly Darshan-News poller (:30 past every 4 hours IST)
+  startDarshanNewsPoller();
 });
 
 export default app;

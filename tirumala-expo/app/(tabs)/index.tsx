@@ -101,6 +101,126 @@ const shimBtnGradient: import('react-native').ViewStyle = { flexDirection: 'row'
 const shimBtnShimmer: import('react-native').ViewStyle = { position: 'absolute', top: 0, bottom: 0, width: 48 };
 const shimBtnText: import('react-native').TextStyle = { fontSize: 11.5, fontWeight: '700', color: '#fff' };
 
+// ─── Reusable news-category carousel card ────────────────────────────────────
+type CategoryItem = { title: string; link?: string; date?: string };
+
+const CATEGORY_INITIAL_LIMIT = 6;
+
+function NewsCategoryCard({
+  title, subtitle, icon, items, accentColor, loading, categoryKey,
+}: {
+  title: string; subtitle: string; icon: string;
+  items: CategoryItem[]; accentColor: string; loading: boolean; categoryKey: string;
+}) {
+  const { width: screenWidth } = useWindowDimensions();
+  const [activeSlide, setActiveSlide] = useState(0);
+
+  const visibleItems = items.slice(0, CATEGORY_INITIAL_LIMIT);
+
+  const slideWidth = visibleItems.length > 1
+    ? Math.max(240, screenWidth - 52 - 28)
+    : Math.max(260, screenWidth - 52);
+
+  useEffect(() => {
+    if (activeSlide >= visibleItems.length) setActiveSlide(0);
+  }, [activeSlide, visibleItems.length]);
+
+  const handleScrollEnd = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+    const offsetX = event.nativeEvent.contentOffset.x;
+    const raw = Math.round(offsetX / (slideWidth + 8));
+    setActiveSlide(Math.max(0, Math.min(raw, visibleItems.length - 1)));
+  };
+
+  const hasMore = items.length > CATEGORY_INITIAL_LIMIT;
+
+  return (
+    <ThemedView style={[styles.contentCard, styles.premiumNewsCard, { borderColor: accentColor, backgroundColor: accentColor + '10' }]}>
+      <View style={qsHeaderWrap}>
+        <LinearGradient
+          colors={[accentColor + '28', accentColor + '08']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 0 }}
+          style={qsHeaderGradient}>
+          <View style={[qsHeaderIconCircle, { backgroundColor: accentColor + '35' }]}>
+            <MaterialCommunityIcons name={icon as any} size={18} color={accentColor} />
+          </View>
+          <View style={{ flex: 1 }}>
+            <ThemedText style={[qsHeaderTitle, { color: accentColor }]}>{title}</ThemedText>
+            <ThemedText style={qsHeaderSubtitle}>{subtitle}</ThemedText>
+          </View>
+          {!loading && hasMore ? (
+            <ShimmerButton
+              label="View More"
+              onPress={() => router.push({ pathname: '/news-category', params: { category: categoryKey, title, subtitle, icon } } as any)}
+              accentColor={accentColor}
+            />
+          ) : null}
+        </LinearGradient>
+      </View>
+
+      {loading ? <ThemedText style={styles.newsDate}>Loading…</ThemedText> : null}
+      {!loading && items.length === 0 ? <ThemedText style={styles.newsDate}>No updates available.</ThemedText> : null}
+      {!loading && visibleItems.length > 0 ? (
+        <View style={styles.newsListWrap}>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            decelerationRate="fast"
+            snapToInterval={slideWidth + 8}
+            onMomentumScrollEnd={handleScrollEnd}
+            contentContainerStyle={styles.newsCarouselContent}>
+            {visibleItems.map((item, idx) => (
+              <View
+                key={`${item.date ?? ''}-${idx}`}
+                style={[styles.newsItem, {
+                  width: slideWidth, borderColor: accentColor + '30',
+                  backgroundColor: accentColor + '08', flexDirection: 'row', padding: 0, overflow: 'hidden',
+                }]}>
+                <View style={{ width: 4, backgroundColor: accentColor, borderTopLeftRadius: 12, borderBottomLeftRadius: 12 }} />
+                <View style={{ flex: 1, padding: 12, justifyContent: 'space-between', gap: 10 }}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: accentColor + '18', borderRadius: 20, paddingHorizontal: 8, paddingVertical: 3 }}>
+                      <MaterialCommunityIcons name="calendar-outline" size={10} color={accentColor} />
+                      <ThemedText style={{ fontSize: 10, fontWeight: '600', color: accentColor }}>
+                        {item.date ? new Date(item.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : ''}
+                      </ThemedText>
+                    </View>
+                    <View style={{ width: 28, height: 28, borderRadius: 14, backgroundColor: accentColor + '15', alignItems: 'center', justifyContent: 'center' }}>
+                      <MaterialCommunityIcons name={icon as any} size={13} color={accentColor} />
+                    </View>
+                  </View>
+                  <ThemedText style={[styles.newsTitle, { fontWeight: '600', lineHeight: 19 }]} numberOfLines={8}>{item.title}</ThemedText>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                      <View style={{ width: 5, height: 5, borderRadius: 3, backgroundColor: accentColor }} />
+                      <ThemedText style={{ fontSize: 10, opacity: 0.55 }}>TTD Official</ThemedText>
+                    </View>
+                    <ShimmerButton label="Read" onPress={() => item.link ? void Linking.openURL(item.link) : undefined} accentColor={accentColor} />
+                  </View>
+                </View>
+              </View>
+            ))}
+          </ScrollView>
+          {visibleItems.length > 1 ? (
+            <View style={styles.newsPaginationWrap}>
+              {visibleItems.map((_item, index) => (
+                <View
+                  key={`cat-dot-${index}`}
+                  style={[styles.newsPaginationDot,
+                    index === activeSlide
+                      ? { backgroundColor: accentColor, borderColor: accentColor }
+                      : { backgroundColor: 'transparent', borderColor: accentColor + '55' },
+                  ]}
+                />
+              ))}
+            </View>
+          ) : null}
+        </View>
+      ) : null}
+    </ThemedView>
+  );
+}
+
 function SsdLiveButton({ onPress }: { onPress: () => void }) {
   const pulseAnim = useRef(new RNAnimated.Value(1)).current;
   const ringAnim = useRef(new RNAnimated.Value(0)).current;
@@ -672,7 +792,7 @@ export default function HomeScreen() {
   const insets = useSafeAreaInsets();
   const [activeTab, setActiveTab] = useState<HomeTab>('overview');
   const [activeNewsSlide, setActiveNewsSlide] = useState(0);
-  const { latestUpdates, loading: liveLoading } = useLiveUpdates();
+  const { latestUpdates, darshanNews, templeNews, events, brahmotsavams, utsavams, vipNews, loading: liveLoading } = useLiveUpdates();
   const { overviewServices, loading: servicesLoading, error: servicesError } = useServicesCatalog();
   const { content: helpContent, loading: helpLoading } = useHelpContent();
   const overviewServiceItems: OverviewServiceItem[] = overviewServices;
@@ -686,7 +806,7 @@ export default function HomeScreen() {
   };
   const activeAccent = accentByTab[activeTab];
   const newsItems: LatestNewsItem[] = latestUpdates;
-  const previewNewsItems = newsItems;
+  const previewNewsItems = newsItems.slice(0, CATEGORY_INITIAL_LIMIT);
   const newsSlideWidth = previewNewsItems.length > 1
     ? Math.max(240, screenWidth - 52 - 28)
     : Math.max(260, screenWidth - 52);
@@ -1131,6 +1251,66 @@ export default function HomeScreen() {
               </View>
             ) : null}
           </ThemedView>
+
+          <NewsCategoryCard
+            title="Darshan News"
+            subtitle="Daily darshan updates & counts"
+            icon="account-group-outline"
+            items={darshanNews}
+            accentColor={activeAccent}
+            loading={liveLoading}
+            categoryKey="darshan_news"
+          />
+
+          <NewsCategoryCard
+            title="Events"
+            subtitle="Upcoming & recent TTD events"
+            icon="calendar-star"
+            items={events}
+            accentColor={activeAccent}
+            loading={liveLoading}
+            categoryKey="events"
+          />
+
+          <NewsCategoryCard
+            title="Brahmotsavams"
+            subtitle="Brahmotsavam celebrations & news"
+            icon="star-circle-outline"
+            items={brahmotsavams}
+            accentColor={activeAccent}
+            loading={liveLoading}
+            categoryKey="brahmotsavams"
+          />
+
+          <NewsCategoryCard
+            title="Temple News"
+            subtitle="News from Tirumala & TTD temples"
+            icon="home-city-outline"
+            items={templeNews}
+            accentColor={activeAccent}
+            loading={liveLoading}
+            categoryKey="temple_news"
+          />
+
+          <NewsCategoryCard
+            title="Utsavams"
+            subtitle="Utsavam festivals & announcements"
+            icon="party-popper"
+            items={utsavams}
+            accentColor={activeAccent}
+            loading={liveLoading}
+            categoryKey="utsavams"
+          />
+
+          <NewsCategoryCard
+            title="VIP News"
+            subtitle="VIP visits & distinguished guests"
+            icon="crown-outline"
+            items={vipNews}
+            accentColor={activeAccent}
+            loading={liveLoading}
+            categoryKey="vip_news"
+          />
         </View>
       );
     }

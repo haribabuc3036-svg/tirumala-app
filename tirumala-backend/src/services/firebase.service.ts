@@ -151,3 +151,57 @@ export async function getLiveBrahmotsavams(): Promise<BrahmotsavamEntry[]> {
 export async function updateLiveBrahmotsavams(entries: BrahmotsavamEntry[]): Promise<void> {
   await rtdbSet('live_updates/brahmotsavams', entries.slice(0, 20));
 }
+
+// ─── Utsavams ──────────────────────────────────────────────────────────────
+
+import { UtsavamEntry } from '../scraper/utsavams.scraper';
+
+/** Read the current utsavams list from Firebase */
+export async function getLiveUtsavams(): Promise<UtsavamEntry[]> {
+  const data = await rtdbGet<UtsavamEntry[]>('live_updates/utsavams');
+  return data ?? [];
+}
+
+/** Overwrite the utsavams list in Firebase (up to 20 entries) */
+export async function updateLiveUtsavams(entries: UtsavamEntry[]): Promise<void> {
+  await rtdbSet('live_updates/utsavams', entries.slice(0, 20));
+}
+
+// ─── Temple News ─────────────────────────────────────────────────────────
+
+import { TempleNewsEntry } from '../scraper/temple-news.scraper';
+
+export async function getLiveTempleNews(): Promise<TempleNewsEntry[]> {
+  const data = await rtdbGet<TempleNewsEntry[]>('live_updates/temple_news');
+  return data ?? [];
+}
+
+export async function updateLiveTempleNews(entries: TempleNewsEntry[]): Promise<void> {
+  await rtdbSet('live_updates/temple_news', entries.slice(0, 20));
+}
+
+// ─── VIP News ──────────────────────────────────────────────────────────────
+
+import { VipNewsEntry } from '../scraper/vip-news.scraper';
+
+export async function getLiveVipNews(): Promise<VipNewsEntry[]> {
+  const data = await rtdbGet<VipNewsEntry[]>('live_updates/vip_news');
+  return data ?? [];
+}
+
+export async function updateLiveVipNews(entries: VipNewsEntry[]): Promise<void> {
+  await rtdbSet('live_updates/vip_news', entries.slice(0, 20));
+}
+
+// ─── Darshan News ───────────────────────────────────────────────────────
+
+import { DarshanNewsEntry } from '../scraper/darshan-news.scraper';
+
+export async function getLiveDarshanNews(): Promise<DarshanNewsEntry[]> {
+  const data = await rtdbGet<DarshanNewsEntry[]>('live_updates/darshan_news');
+  return data ?? [];
+}
+
+export async function updateLiveDarshanNews(entries: DarshanNewsEntry[]): Promise<void> {
+  await rtdbSet('live_updates/darshan_news', entries.slice(0, 20));
+}
