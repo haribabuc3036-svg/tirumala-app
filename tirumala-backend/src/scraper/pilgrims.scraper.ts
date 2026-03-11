@@ -1,4 +1,4 @@
-import { chromium } from 'playwright';
+import { getBrowser, USER_AGENT } from './browser';
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 
@@ -93,10 +93,11 @@ function parseArticle(text: string): PilgrimEntry | null {
  * Always resolves — never throws.
  */
 export async function scrapePilgrimsFromTirumala(): Promise<PilgrimsScrapeResult> {
-  const browser = await chromium.launch({ headless: true, args: ['--no-sandbox', '--disable-setuid-sandbox'] });
+  const browser = await getBrowser();
+  const context = await browser.newContext({ userAgent: USER_AGENT });
 
   try {
-    const page = await browser.newPage();
+    const page = await context.newPage();
 
     await page.goto('https://news.tirumala.org/category/darshan/', {
       waitUntil: 'domcontentloaded',
@@ -138,6 +139,6 @@ export async function scrapePilgrimsFromTirumala(): Promise<PilgrimsScrapeResult
   } catch (err: unknown) {
     return { success: false, data: [], error: (err as Error).message };
   } finally {
-    await browser.close();
+    await context.close();
   }
 }

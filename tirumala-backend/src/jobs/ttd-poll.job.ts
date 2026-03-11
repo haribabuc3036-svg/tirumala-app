@@ -73,7 +73,7 @@ export function startTtdPoller(schedule = '*/5 * * * *') {
   console.log(`\n⏰  TTD Poller starting — schedule: "${validSchedule}" (${getScheduleDescription(validSchedule)})`);
 
   // Run immediately on startup so we don't wait 5 min for first data
-  setTimeout(() => runOnce(), 2_000);
+  setTimeout(() => runOnce(), 5_000);
 
   // Then on the cron schedule
   cron.schedule(validSchedule, () => runOnce(), { timezone: 'Asia/Kolkata' });

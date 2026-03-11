@@ -1,4 +1,4 @@
-import { chromium } from 'playwright';
+import { getBrowser, USER_AGENT } from './browser';
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 
@@ -35,10 +35,11 @@ export interface SsdScrapeResult {
  * @returns SsdScrapeResult
  */
 export async function scrapeSsdFromTirumala(): Promise<SsdScrapeResult> {
-  const browser = await chromium.launch({ headless: true, args: ['--no-sandbox', '--disable-setuid-sandbox'] });
+  const browser = await getBrowser();
+  const context = await browser.newContext({ userAgent: USER_AGENT });
 
   try {
-    const page = await browser.newPage();
+    const page = await context.newPage();
 
     // 1. Load the TTD home page; wait for JS-rendered content to settle
     await page.goto('https://www.tirumala.org/', {
@@ -93,6 +94,6 @@ export async function scrapeSsdFromTirumala(): Promise<SsdScrapeResult> {
   } catch (err: unknown) {
     return { success: false, data: null, error: (err as Error).message };
   } finally {
-    await browser.close();
+    await context.close();
   }
 }

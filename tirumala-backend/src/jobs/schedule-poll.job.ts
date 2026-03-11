@@ -45,8 +45,8 @@ export async function runSchedulePoll(): Promise<void> {
 export function startSchedulePoller(): void {
   console.log('\n📅  Day-Schedule Poller starting — runs daily at 00:01 IST');
 
-  // Run immediately on startup (2 second delay to let the server settle)
-  setTimeout(() => runSchedulePoll(), 2_000);
+  // Run on startup after TTD poller finishes its first cycle (~45s gap)
+  setTimeout(() => runSchedulePoll(), 45_000);
 
   // Then every day at 00:01 IST
   cron.schedule('1 0 * * *', () => runSchedulePoll(), {

@@ -1,4 +1,4 @@
-import { chromium } from 'playwright';
+import { getBrowser, USER_AGENT } from './browser';
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 
@@ -29,10 +29,11 @@ export interface NewsScrapeResult {
  * Always resolves — never throws.
  */
 export async function scrapeLatestNews(): Promise<NewsScrapeResult> {
-  const browser = await chromium.launch({ headless: true, args: ['--no-sandbox', '--disable-setuid-sandbox'] });
+  const browser = await getBrowser();
+  const context = await browser.newContext({ userAgent: USER_AGENT });
 
   try {
-    const page = await browser.newPage();
+    const page = await context.newPage();
 
     await page.goto('https://news.tirumala.org/', {
       waitUntil: 'domcontentloaded',
@@ -97,6 +98,6 @@ export async function scrapeLatestNews(): Promise<NewsScrapeResult> {
   } catch (err: unknown) {
     return { success: false, data: [], error: (err as Error).message };
   } finally {
-    await browser.close();
+    await context.close();
   }
 }
