@@ -57,6 +57,16 @@ export default function TabLayout() {
           tabBarIcon: ({ color }) => <IconSymbol size={28} name="map.fill" color={color} />,
         }}
       />
+      <Tabs.Screen
+        name="ai-chat"
+        options={{
+          title: 'SrivariAI',
+          tabBarActiveTintColor: MainTabAccent.aiChat,
+          tabBarIcon: ({ color }) => (
+            <MaterialCommunityIcons size={28} name="robot-happy-outline" color={color} />
+          ),
+        }}
+      />
     </Tabs>
   );
 }

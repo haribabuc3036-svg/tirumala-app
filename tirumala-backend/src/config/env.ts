@@ -45,4 +45,7 @@ export const env = {
     servicesFolder: process.env.CLOUDINARY_SERVICES_FOLDER ?? 'tirumala/services',
     ssdLocationsFolder: process.env.CLOUDINARY_SSD_LOCATIONS_FOLDER ?? 'tirumala/ssd-locations',
   },
+
+  /** Google Gemini AI API key */
+  geminiApiKey: required('GEMINI_API_KEY'),
 };

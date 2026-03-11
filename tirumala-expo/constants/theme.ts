@@ -33,6 +33,7 @@ export const MainTabAccent = {
   services: '#2196F3',
   wallpapers: '#FF8C00',
   places: '#4CAF50',
+  aiChat: '#9C27B0',
 } as const;
 
 export const Fonts = Platform.select({

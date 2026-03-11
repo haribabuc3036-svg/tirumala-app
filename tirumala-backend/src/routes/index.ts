@@ -8,12 +8,16 @@ import placesRouter from './places';
 import helpRouter from './help';
 import ssdLocationsRouter from './ssd-locations';
 import authRouter from './auth';
+import aiRouter from './ai';
 import { requireAuth } from '../middleware/auth';
 
 const router = Router();
 
 // ─── Auth (public) ────────────────────────────────────────────────────────────
 router.use('/auth', authRouter);
+
+// ─── AI chat (public — no auth required) ─────────────────────────────────────
+router.use('/ai', aiRouter);
 
 // ─── Write-protection ─────────────────────────────────────────────────────────
 // All POST / PUT / PATCH / DELETE requests on every route below this point
