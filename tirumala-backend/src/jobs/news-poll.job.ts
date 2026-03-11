@@ -48,8 +48,8 @@ export async function runNewsPoll(): Promise<void> {
 export function startNewsPoller(): void {
   console.log('\n📰  Latest-News Poller starting — runs every 4 hours IST');
 
-  // Staggered startup (180s delay — last to run, after all other pollers)
-  setTimeout(() => runNewsPoll(), 180_000);
+  // Staggered 25s after server start
+  setTimeout(() => runNewsPoll(), 25_000);
 
   // Every 4 hours IST
   cron.schedule('0 */4 * * *', () => runNewsPoll(), {

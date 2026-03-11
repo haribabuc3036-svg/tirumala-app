@@ -1,4 +1,5 @@
-import { getBrowser, USER_AGENT } from './browser';
+import * as cheerio from 'cheerio';
+import { http } from './browser';
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 
@@ -56,25 +57,18 @@ const DAYS = ['monday','tuesday','wednesday','thursday','friday','saturday','sun
  * Always resolves — never throws.
  */
 export async function scrapeDaySchedule(): Promise<DayScheduleScrapeResult> {
-  const browser = await getBrowser();
-  const context = await browser.newContext({ userAgent: USER_AGENT });
-
   try {
-    const page = await context.newPage();
+    const { data: html } = await http.get<string>('https://www.tirumala.org/');
+    const $ = cheerio.load(html);
 
-    await page.goto('https://www.tirumala.org/', {
-      waitUntil: 'domcontentloaded',
-      timeout: 60_000,
-    });
-
-    // Find the TD that contains "Day Schedules" and a date in DD-MM-YYYY format
-    const rawText: string = await page.evaluate(() => {
-      const td = Array.from(document.querySelectorAll('td')).find(
-        (el) =>
-          /Day Schedules/i.test(el.textContent ?? '') &&
-          /\d{2}-\d{2}-\d{4}/.test(el.textContent ?? '')
-      );
-      return td ? (td.textContent ?? '').replace(/\s+/g, ' ').trim() : '';
+    // Find the <td> containing "Day Schedules" and a DD-MM-YYYY date
+    let rawText = '';
+    $('td').each((_, el) => {
+      const text = $(el).text();
+      if (/Day Schedules/i.test(text) && /\d{2}-\d{2}-\d{4}/.test(text)) {
+        rawText = text.replace(/\s+/g, ' ').trim();
+        return false; // break
+      }
     });
 
     if (!rawText) {
@@ -148,7 +142,5 @@ export async function scrapeDaySchedule(): Promise<DayScheduleScrapeResult> {
     };
   } catch (err: unknown) {
     return { success: false, data: null, error: (err as Error).message };
-  } finally {
-    await context.close();
   }
 }

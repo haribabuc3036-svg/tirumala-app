@@ -1,4 +1,5 @@
-import { getBrowser, USER_AGENT } from './browser';
+import * as cheerio from 'cheerio';
+import { http } from './browser';
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 
@@ -35,27 +36,18 @@ export interface SsdScrapeResult {
  * @returns SsdScrapeResult
  */
 export async function scrapeSsdFromTirumala(): Promise<SsdScrapeResult> {
-  const browser = await getBrowser();
-  const context = await browser.newContext({ userAgent: USER_AGENT });
-
   try {
-    const page = await context.newPage();
+    const { data: html } = await http.get<string>('https://www.tirumala.org/');
+    const $ = cheerio.load(html);
 
-    // 1. Load the TTD home page; wait for JS-rendered content to settle
-    await page.goto('https://www.tirumala.org/', {
-      waitUntil: 'domcontentloaded',
-      timeout: 60_000,
-    });
-
-    // 2. Find the TD that contains BOTH "Running Slot" and "Balance tickets" —
-    //    this is cell 8 in the TIRUMALA UPDATES section of the page.
-    const rawText: string = await page.evaluate(() => {
-      const td = Array.from(document.querySelectorAll('td')).find(
-        (el) =>
-          /Running Slot/i.test(el.textContent ?? '') &&
-          /Balance tickets/i.test(el.textContent ?? '')
-      );
-      return td ? (td.textContent ?? '').replace(/\s+/g, ' ').trim() : '';
+    // Find the <td> that contains both "Running Slot" and "Balance tickets"
+    let rawText = '';
+    $('td').each((_, el) => {
+      const text = $(el).text();
+      if (/Running Slot/i.test(text) && /Balance tickets/i.test(text)) {
+        rawText = text.replace(/\s+/g, ' ').trim();
+        return false; // break
+      }
     });
 
     if (!rawText) {
@@ -68,8 +60,6 @@ export async function scrapeSsdFromTirumala(): Promise<SsdScrapeResult> {
       };
     }
 
-    // 3. Parse:
-    //    "Running Slot: 1 on 27-Feb-2026 Balance tickets for 27-Feb-2026: 0 ..."
     const slotMatch    = rawText.match(/Running Slot[:\s]+(.+?)\s+on\s+(\d{1,2}-[A-Za-z]{3}-\d{4})/i);
     const balanceMatch = rawText.match(/Balance tickets for\s+(\d{1,2}-[A-Za-z]{3}-\d{4})\s*:\s*([\d,]+)/i);
 
@@ -93,7 +83,5 @@ export async function scrapeSsdFromTirumala(): Promise<SsdScrapeResult> {
     };
   } catch (err: unknown) {
     return { success: false, data: null, error: (err as Error).message };
-  } finally {
-    await context.close();
   }
 }
