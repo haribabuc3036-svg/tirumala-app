@@ -4,10 +4,12 @@ import { http } from './browser';
 // ─── Types ─────────────────────────────────────────────────────────────────────
 
 /**
- * One entry from the "Latest Updates" ticker on ttdevasthanams.ap.gov.in
+ * One latest update entry (sourced from TTD news feed).
  */
 export interface LatestUpdateEntry {
-  text: string;  // cleaned text content of the update item
+  text:  string;           // headline / update text
+  link?: string;           // URL to the full article
+  date?: string;           // ISO date string "2026-03-11T18:27:05"
 }
 
 export interface LatestUpdatesScrapeResult {
@@ -18,133 +20,84 @@ export interface LatestUpdatesScrapeResult {
 
 // ─── Helpers ───────────────────────────────────────────────────────────────────
 
-const BASE = 'https://ttdevasthanams.ap.gov.in';
+interface WpPost {
+  id:     number;
+  title:  { rendered: string };
+  date:   string;
+  link:   string;
+}
 
-/** Walk any JSON value and collect strings that look like update sentences. */
-function collectStrings(value: unknown, out: string[]): void {
-  if (typeof value === 'string') {
-    const t = value.replace(/\s+/g, ' ').trim();
-    if (t.length >= 15) out.push(t);
-  } else if (Array.isArray(value)) {
-    value.forEach((v) => collectStrings(v, out));
-  } else if (value && typeof value === 'object') {
-    Object.values(value as Record<string, unknown>).forEach((v) => collectStrings(v, out));
-  }
+function decodeHtmlEntities(str: string): string {
+  return str
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#8211;/g, '–')
+    .replace(/&#8212;/g, '—')
+    .replace(/&#8230;/g, '…')
+    .replace(/&#[0-9]+;/g, '')
+    .trim();
 }
 
 // ─── Scraper ───────────────────────────────────────────────────────────────────
 
+const WP_API = 'https://news.tirumala.org/wp-json/wp/v2/posts';
+const RSS_URL = 'https://news.tirumala.org/feed/';
+
 /**
- * Scrape the "Latest Updates" list from ttdevasthanams.ap.gov.in.
+ * Scrape latest TTD updates from news.tirumala.org.
  *
- * Strategies (attempted in order):
- *  1. CSS-module class selector in the SSR HTML
- *  2. Generic list/ticker selectors
- *  3. Next.js page-data endpoint  /_next/data/{buildId}/home/dashboard.json
- *  4. Walk all __NEXT_DATA__ props for strings ≥ 15 chars
- *  5. Scan inline <script> tags for JSON arrays of strings
+ * Strategy 1: WordPress REST API  (clean JSON, returns up to 20 posts)
+ * Strategy 2: RSS feed            (XML fallback)
  *
  * Always resolves — never throws.
  */
 export async function scrapeLatestUpdates(): Promise<LatestUpdatesScrapeResult> {
+  // ── Strategy 1: WP REST API ────────────────────────────────────────────────
   try {
-    const { data: html } = await http.get<string>(`${BASE}/home/dashboard`);
-    const $ = cheerio.load(html);
-    const items: string[] = [];
+    const { data } = await http.get<WpPost[]>(
+      `${WP_API}?per_page=20&_fields=id,title,date,link`,
+    );
 
-    // ── Strategy 1: CSS-module class pattern ──────────────────────────────────
-    $('[class*="latestUpdates"]').each((_, el) => {
-      $(el).find('li, p, span, a').addBack('li, p, span, a').each((__, child) => {
-        const text = $(child).text().replace(/\s+/g, ' ').trim();
-        if (text.length >= 15) items.push(text);
-      });
+    if (Array.isArray(data) && data.length > 0) {
+      const entries: LatestUpdateEntry[] = data.map((post) => ({
+        text: decodeHtmlEntities(post.title?.rendered ?? ''),
+        link: post.link,
+        date: post.date,
+      })).filter((e) => e.text.length > 0);
+
+      if (entries.length > 0) {
+        return { success: true, data: entries, error: null };
+      }
+    }
+  } catch {
+    // fall through to RSS
+  }
+
+  // ── Strategy 2: RSS feed ───────────────────────────────────────────────────
+  try {
+    const { data: xml } = await http.get<string>(RSS_URL);
+    const $ = cheerio.load(xml, { xmlMode: true });
+
+    const entries: LatestUpdateEntry[] = [];
+    $('item').each((_, el) => {
+      const title = $('title', el).first().text().replace(/\s+/g, ' ').trim();
+      const link  = ($('link', el).text() || $('guid', el).text()).trim();
+      const date  = $('pubDate', el).text().trim();
+
+      const isoDate = date ? new Date(date).toISOString() : undefined;
+
+      if (title.length > 0) {
+        entries.push({ text: title, link: link || undefined, date: isoDate });
+      }
     });
 
-    // ── Strategy 2: Generic ticker / marquee / announcement selectors ─────────
-    if (items.length === 0) {
-      const genericSelectors = [
-        '[class*="ticker"]',
-        '[class*="marquee"]',
-        '[class*="announcement"]',
-        '[class*="notice"]',
-        '[class*="update"]',
-        '.latest-updates li',
-        '#latestUpdates li',
-        'marquee',
-      ];
-      for (const sel of genericSelectors) {
-        $(sel).each((_, el) => {
-          const text = $(el).text().replace(/\s+/g, ' ').trim();
-          if (text.length >= 15) items.push(text);
-        });
-        if (items.length > 0) break;
-      }
+    if (entries.length > 0) {
+      return { success: true, data: entries, error: null };
     }
 
-    // ── Strategy 3: Next.js /_next/data/{buildId}/ page-data endpoint ─────────
-    if (items.length === 0) {
-      const nextDataRaw = $('#__NEXT_DATA__').html();
-      if (nextDataRaw) {
-        try {
-          const nextData = JSON.parse(nextDataRaw) as Record<string, unknown>;
-          const buildId = nextData['buildId'] as string | undefined;
-
-          if (buildId) {
-            try {
-              const pageDataUrl = `${BASE}/_next/data/${buildId}/home/dashboard.json`;
-              const { data: pageData } = await http.get<unknown>(pageDataUrl);
-              collectStrings((pageData as Record<string, unknown>)['pageProps'], items);
-            } catch {
-              // /_next/data endpoint not available — continue
-            }
-          }
-
-          // ── Strategy 4: Walk all __NEXT_DATA__ props ─────────────────────
-          if (items.length === 0) {
-            const props = (nextData['props'] as Record<string, unknown> | undefined)?.['pageProps'];
-            if (props) collectStrings(props, items);
-          }
-        } catch {
-          // JSON parse failed — continue
-        }
-      }
-    }
-
-    // ── Strategy 5: Scan inline <script> tags for JSON arrays ─────────────────
-    if (items.length === 0) {
-      $('script:not([src])').each((_, el) => {
-        const src = $(el).html() ?? '';
-        // Look for arrays of objects/strings embedded in JS assignments
-        const arrayMatches = src.matchAll(/=\s*(\[[\s\S]{20,2000}?\])\s*[;,)]/g);
-        for (const m of arrayMatches) {
-          try {
-            const parsed: unknown = JSON.parse(m[1]);
-            collectStrings(parsed, items);
-          } catch {
-            // not valid JSON — skip
-          }
-        }
-      });
-    }
-
-    // Deduplicate while preserving order
-    const unique = [...new Set(items)];
-
-    if (unique.length === 0) {
-      return {
-        success: false,
-        data: [],
-        error:
-          'No latest-update items found on ttdevasthanams.ap.gov.in — ' +
-          'the page appears to be fully client-side rendered.',
-      };
-    }
-
-    return {
-      success: true,
-      data: unique.map((text) => ({ text })),
-      error: null,
-    };
+    return { success: false, data: [], error: 'RSS feed returned no items.' };
   } catch (err: unknown) {
     return { success: false, data: [], error: (err as Error).message };
   }
