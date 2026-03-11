@@ -8,7 +8,6 @@ import {
   Dimensions,
   FlatList,
   Pressable,
-  ScrollView,
   StyleSheet,
   TextInput,
   useColorScheme,
@@ -24,17 +23,10 @@ import { useServicesCatalog } from '@/hooks/use-services-catalog';
 import { type ServiceCategory } from '@/types/services';
 
 const SCREEN_W   = Dimensions.get('window').width;
-// list h-padding 16, section h-padding 12×2, gap 10 — show 2 full + ~0.35 peek
-const CARD_W      = Math.floor((SCREEN_W - 32 - 24 - 10) / 2.35);
-// Icon zone scales with card width (60 %), title = 2 lines × lineHeight
-const CARD_ICON_H  = Math.round(CARD_W * 0.60);
-const CARD_LINE_H  = 16;
-const CARD_TITLE_LINES = 2;
-// cardContent height: paddingTop(8) + title + paddingBottom(6)
-const CARD_CONTENT_H = 8 + CARD_TITLE_LINES * CARD_LINE_H + 6;
-// cardBottom height: paddingTop(4) + arrow(24) + paddingBottom(10)
-const CARD_BOTTOM_H  = 4 + 24 + 10;
-const CARD_H         = CARD_ICON_H + CARD_CONTENT_H + CARD_BOTTOM_H;
+// 4-per-row: list pad 16×2, section pad 8×2
+const TILE_W    = Math.floor((SCREEN_W - 32 - 16) / 4);
+const ICON_SIZE = Math.round(TILE_W * 0.46);
+const ICON_IMG  = Math.round(TILE_W * 0.40);
 
 // hex → rgba helper
 function hexAlpha(hex: string, alpha: number) {
@@ -45,76 +37,48 @@ function hexAlpha(hex: string, alpha: number) {
   return `rgba(${r},${g},${b},${alpha})`;
 }
 
-// ─── Service card (vertical) ──────────────────────────────────────────────────
-function ServiceCard({
+// ─── Service tile ─────────────────────────────────────────────────────────────
+function ServiceTile({
   service,
   isDark,
-  accent,
 }: {
   service: ServiceCategory['services'][number];
   isDark: boolean;
   accent: string;
 }) {
-  const scale = useRef(new Animated.Value(1)).current;
+  const [titleExpanded, setTitleExpanded] = useState(false);
 
-  const onPressIn = useCallback(() => {
-    Animated.spring(scale, { toValue: 0.95, useNativeDriver: true, speed: 40, bounciness: 4 }).start();
-  }, [scale]);
-
-  const onPressOut = useCallback(() => {
-    Animated.spring(scale, { toValue: 1, useNativeDriver: true, speed: 20, bounciness: 6 }).start();
-  }, [scale]);
-
-  const cardBg     = isDark ? '#1C1C1E' : '#FFFFFF';
-  const cardBorder = isDark ? '#2C2C2E' : '#EBEBED';
-  const iconBg     = isDark ? '#2A2A2C' : '#F4F4F6';
-  const iconColor  = isDark ? '#E5E7EB' : '#1C1C1E';
+  const iconColor = isDark ? '#E5E7EB' : '#374151';
+  const textColor = isDark ? '#D1D5DB' : '#111827';
 
   return (
-    <Pressable
-      onPress={() => router.push({ pathname: '/service/[id]', params: { id: service.id } })}
-      onPressIn={onPressIn}
-      onPressOut={onPressOut}>
-      <Animated.View
-        style={[
-          styles.card,
-          { width: CARD_W, backgroundColor: cardBg, borderColor: cardBorder, transform: [{ scale }] },
-        ]}>
-        {/* Icon area */}
-        <View style={[styles.cardIconWrap, { backgroundColor: iconBg }]}>
-          {service.iconImage ? (
-            <Image source={{ uri: service.iconImage }} style={styles.cardIconImage} contentFit="contain" />
-          ) : (
-            <MaterialCommunityIcons
-              name={resolveTtdIcon(service.title, service.icon)}
-              size={Math.round(CARD_W * 0.20)}
-              color={iconColor}
-            />
-          )}
-        </View>
+    <View style={[styles.tile, { width: TILE_W }]}>
+      {/* Icon — tap to navigate */}
+      <Pressable
+        onPress={() => router.push({ pathname: '/service/[id]', params: { id: service.id } })}
+        style={({ pressed }) => [styles.tileIconWrap, pressed && { opacity: 0.55 }]}>
+        {service.iconImage ? (
+          <Image source={{ uri: service.iconImage }} style={styles.tileIconImage} contentFit="contain" />
+        ) : (
+          <MaterialCommunityIcons
+            name={resolveTtdIcon(service.title, service.icon)}
+            size={ICON_SIZE}
+            color={iconColor}
+          />
+        )}
+      </Pressable>
 
-        {/* Title */}
-        <View style={styles.cardContent}>
-          <ThemedText style={styles.cardTitle} numberOfLines={CARD_TITLE_LINES}>
-            {service.title}
-          </ThemedText>
-        </View>
-
-        {/* Bottom row: tag (or spacer) + arrow */}
-        <View style={styles.cardBottom}>
-          {service.tag ? (
-            <View style={[styles.cardTag, { backgroundColor: hexAlpha(service.tagColor ?? accent, 0.14) }]}>
-              <ThemedText style={[styles.cardTagText, { color: service.tagColor ?? accent }]} numberOfLines={1}>
-                {service.tag}
-              </ThemedText>
-            </View>
-          ) : <View />}
-          <View style={[styles.cardArrow, { backgroundColor: hexAlpha(accent, 0.1) }]}>
-            <MaterialCommunityIcons name="arrow-right" size={13} color={accent} />
-          </View>
-        </View>
-      </Animated.View>
-    </Pressable>
+      {/* Title — tap to expand */}
+      <Pressable
+        onPress={() => setTitleExpanded((v) => !v)}
+        hitSlop={6}>
+        <ThemedText
+          style={[styles.tileTitle, { color: textColor }]}
+          numberOfLines={titleExpanded ? undefined : 2}>
+          {service.title}
+        </ThemedText>
+      </Pressable>
+    </View>
   );
 }
 
@@ -140,13 +104,12 @@ function SkeletonSection({ isDark }: { isDark: boolean }) {
 
   return (
     <View style={[styles.sectionWrap, { backgroundColor: bg, borderColor: border }]}>
-      {/* Skeleton gradient header */}
       <Animated.View style={[styles.skeletonGradientHeader, { backgroundColor: shimmer, opacity }]} />
-      <View style={styles.skeletonCardRow}>
-        {[0, 1, 2].map((i) => (
+      <View style={styles.gridContainer}>
+        {[0, 1, 2, 3, 4, 5, 6, 7].map((i) => (
           <Animated.View
             key={i}
-            style={[styles.skeletonCard, { width: CARD_W, backgroundColor: shimmer, opacity }]}
+            style={[styles.skeletonTile, { width: TILE_W, backgroundColor: shimmer, opacity }]}
           />
         ))}
       </View>
@@ -229,18 +192,16 @@ export default function ServicesScreen() {
           <MaterialCommunityIcons name="chevron-right" size={18} color="rgba(255,255,255,0.6)" />
         </LinearGradient>
 
-        {/* ── Peek scroll row ── */}
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.peekScroll}
-          decelerationRate="fast"
-          snapToInterval={CARD_W + 10}
-          snapToAlignment="start">
+        {/* ── 4-per-row tile grid ── */}
+        <View style={styles.gridContainer}>
           {category.services.map((service) => (
-            <ServiceCard key={service.id} service={service} isDark={isDark} accent={accent} />
+            <ServiceTile key={service.id} service={service} isDark={isDark} accent={accent} />
           ))}
-        </ScrollView>
+          {/* Fill last row so space-between stays even */}
+          {Array.from({ length: (4 - (category.services.length % 4)) % 4 }).map((_, i) => (
+            <View key={`spacer-${i}`} style={{ width: TILE_W }} />
+          ))}
+        </View>
       </View>
     );
   }, [accent, isDark, sectionBg, sectionBorder]);
@@ -417,70 +378,40 @@ const styles = StyleSheet.create({
     marginTop: 1,
   },
 
-  // ── Peek scroll ──────────────────────────
-  peekScroll: {
-    paddingHorizontal: 12,
-    paddingVertical: 12,
-    gap: 10,
+  // ── 4-per-row tile grid ──────────────────────
+  gridContainer: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    paddingHorizontal: 8,
+    paddingTop: 12,
+    paddingBottom: 8,
   },
 
-  // ── Card ─────────────────────────────────
-  card: {
-    height: CARD_H,
-    borderWidth: 1,
+  // ── Tile ───────────────────────────────────────────
+  tile: {
+    alignItems: 'center',
+    marginBottom: 14,
+  },
+  tileIconWrap: {
+    width: TILE_W - 8,
+    height: TILE_W - 8,
+    justifyContent: 'center',
+    alignItems: 'center',
     borderRadius: 14,
-    overflow: 'hidden',
   },
-  cardIconWrap: {
-    height: CARD_ICON_H,
-    justifyContent: 'center',
-    alignItems: 'center',
+  tileIconImage: {
+    width: ICON_IMG,
+    height: ICON_IMG,
   },
-  cardIconImage: {
-    width: Math.round(CARD_W * 0.28),
-    height: Math.round(CARD_W * 0.28),
-  },
-  cardContent: {
-    height: CARD_CONTENT_H,
-    paddingHorizontal: 10,
-    paddingTop: 8,
-    overflow: 'hidden',
-  },
-  cardTitle: {
-    fontSize: Math.max(11, Math.min(13, CARD_W * 0.09)),
-    lineHeight: CARD_LINE_H,
-    fontWeight: '500',
-  },
-  cardBottom: {
-    height: CARD_BOTTOM_H,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 10,
-    paddingBottom: 10,
-    paddingTop: 4,
-  },
-  cardTag: {
-    borderRadius: 99,
-    paddingHorizontal: 7,
-    paddingVertical: 3,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  cardTagText: {
-    fontSize: 9,
-    lineHeight: 11,
+  tileTitleWrap: {},
+  tileTitle: {
+    fontSize: 10.5,
     fontWeight: '700',
-    includeFontPadding: false,
-    textAlignVertical: 'center',
-  },
-  cardArrow: {
-    width: 24,
-    height: 24,
-    borderRadius: 99,
-    justifyContent: 'center',
-    alignItems: 'center',
+    textAlign: 'center',
+    lineHeight: 14,
+    marginTop: 5,
+    paddingHorizontal: 2,
   },
 
   // ── Empty state ──────────────────────────
@@ -524,14 +455,10 @@ const styles = StyleSheet.create({
   skeletonGradientHeader: {
     height: 66,
   },
-  skeletonCardRow: {
-    flexDirection: 'row',
-    gap: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 12,
-  },
-  skeletonCard: {
-    height: CARD_H,
+
+  skeletonTile: {
+    height: TILE_W,
     borderRadius: 14,
+    marginBottom: 14,
   },
 });
