@@ -224,12 +224,14 @@ export default function ServicesScreen() {
               <View style={[styles.blobBottomLeft, { backgroundColor: hexAlpha('#FFFFFF', 0.05) }]} />
 
               <View style={styles.pageHeaderContent}>
-                <View style={styles.pageHeaderIcon}>
-                  <MaterialCommunityIcons name="hands-pray" size={28} color="#FFFFFF" />
+                <View style={[styles.pageHeaderIcon, {
+                  backgroundColor: isDark ? 'rgba(255,255,255,0.18)' : 'rgba(0,0,0,0.12)',
+                }]}>
+                  <MaterialCommunityIcons name="hands-pray" size={28} color={isDark ? '#fff' : '#000'} />
                 </View>
                 <View style={{ flex: 1 }}>
-                  <ThemedText style={styles.pageTitle}>TTD Services</ThemedText>
-                  <ThemedText style={styles.pageSubtitle}>Tirumala Tirupati Devasthanams</ThemedText>
+                  <ThemedText style={[styles.pageTitle, { color: isDark ? '#fff' : '#000' }]}>TTD Services</ThemedText>
+                  <ThemedText style={[styles.pageSubtitle, { color: isDark ? 'rgba(255,255,255,0.70)' : 'rgba(0,0,0,0.6)' }]}>Tirumala Tirupati Devasthanams</ThemedText>
                 </View>
               </View>
 
