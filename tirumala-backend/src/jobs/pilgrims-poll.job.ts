@@ -86,8 +86,8 @@ export async function runPilgrimsPoll(): Promise<void> {
 export function startPilgrimsPoller(): void {
   console.log('\n🛕  Pilgrims Poller starting — runs every 8 hours (00:00 / 08:00 / 16:00 IST)');
 
-  // Run immediately on startup (135 second delay — after other pollers)
-  setTimeout(() => runPilgrimsPoll(), 135_000);
+  // Staggered 20s after server start
+  setTimeout(() => runPilgrimsPoll(), 20_000);
 
   // 00:00, 08:00, 16:00 IST
   cron.schedule('0 0,8,16 * * *', () => runPilgrimsPoll(), {

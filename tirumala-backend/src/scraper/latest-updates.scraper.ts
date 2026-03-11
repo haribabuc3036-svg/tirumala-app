@@ -1,4 +1,5 @@
-import { getBrowser, USER_AGENT } from './browser';
+import * as cheerio from 'cheerio';
+import { http } from './browser';
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 
@@ -27,30 +28,35 @@ export interface LatestUpdatesScrapeResult {
  * Always resolves — never throws.
  */
 export async function scrapeLatestUpdates(): Promise<LatestUpdatesScrapeResult> {
-  const browser = await getBrowser();
-  const context = await browser.newContext({ userAgent: USER_AGENT });
-
   try {
-    const page = await context.newPage();
+    const { data: html } = await http.get<string>('https://ttdevasthanams.ap.gov.in/home/dashboard');
+    const $ = cheerio.load(html);
 
-    await page.goto('https://ttdevasthanams.ap.gov.in/home/dashboard', {
-      waitUntil: 'domcontentloaded',
-      timeout: 60_000,
+    // Strategy 1: CSS-module class pattern in SSR HTML
+    const items: string[] = [];
+    $('[class*="latestUpdates_update"]').each((_, el) => {
+      const text = $(el).text().replace(/\s+/g, ' ').trim();
+      if (text) items.push(text);
     });
 
-    // Wait for at least one update item to appear (SPA may render after load)
-    await page.waitForSelector('[class*="latestUpdates_update"]', {
-      timeout: 20_000,
-    }).catch(() => null); // don't throw if it times out — handled below
-
-    const items: string[] = await page.evaluate(() => {
-      const lis = Array.from(
-        document.querySelectorAll<HTMLElement>('[class*="latestUpdates_update"]')
-      );
-      return lis.map((li) =>
-        (li.textContent ?? '').replace(/\s+/g, ' ').trim()
-      ).filter(Boolean);
-    });
+    // Strategy 2: Parse __NEXT_DATA__ JSON (Next.js SSR embeds page props here)
+    if (items.length === 0) {
+      const nextDataRaw = $('#__NEXT_DATA__').html();
+      if (nextDataRaw) {
+        try {
+          const nextData = JSON.parse(nextDataRaw);
+          // Walk the props tree looking for arrays of update-like objects
+          const str = JSON.stringify(nextData);
+          const matches = [...str.matchAll(/"(?:text|title|message|update|content)":"([^"]{10,})"/g)];
+          for (const m of matches) {
+            const text = m[1].replace(/\\n/g, ' ').replace(/\s+/g, ' ').trim();
+            if (text) items.push(text);
+          }
+        } catch {
+          // JSON parse failed — ignore
+        }
+      }
+    }
 
     if (items.length === 0) {
       return {
@@ -58,7 +64,7 @@ export async function scrapeLatestUpdates(): Promise<LatestUpdatesScrapeResult> 
         data: [],
         error:
           'No latest-update items found on ttdevasthanams.ap.gov.in. ' +
-          'The page may still be loading or the selector has changed.',
+          'The page may be fully client-side rendered or the selector has changed.',
       };
     }
 
@@ -69,7 +75,5 @@ export async function scrapeLatestUpdates(): Promise<LatestUpdatesScrapeResult> 
     };
   } catch (err: unknown) {
     return { success: false, data: [], error: (err as Error).message };
-  } finally {
-    await context.close();
   }
 }

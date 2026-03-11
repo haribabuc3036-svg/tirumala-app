@@ -1,4 +1,5 @@
-import { getBrowser, USER_AGENT } from './browser';
+import * as cheerio from 'cheerio';
+import { http } from './browser';
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 
@@ -93,22 +94,13 @@ function parseArticle(text: string): PilgrimEntry | null {
  * Always resolves — never throws.
  */
 export async function scrapePilgrimsFromTirumala(): Promise<PilgrimsScrapeResult> {
-  const browser = await getBrowser();
-  const context = await browser.newContext({ userAgent: USER_AGENT });
-
   try {
-    const page = await context.newPage();
+    const { data: html } = await http.get<string>('https://news.tirumala.org/category/darshan/');
+    const $ = cheerio.load(html);
 
-    await page.goto('https://news.tirumala.org/category/darshan/', {
-      waitUntil: 'domcontentloaded',
-      timeout: 60_000,
-    });
-
-    // Each article is wrapped in an <article> element with class containing "post"
-    // We grab the text content of each one
-    const articleTexts: string[] = await page.evaluate(() => {
-      const articles = Array.from(document.querySelectorAll('article'));
-      return articles.map((a) => (a.textContent ?? '').replace(/\s+/g, ' ').trim());
+    const articleTexts: string[] = [];
+    $('article').each((_, el) => {
+      articleTexts.push($(el).text().replace(/\s+/g, ' ').trim());
     });
 
     if (articleTexts.length === 0) {
@@ -138,7 +130,5 @@ export async function scrapePilgrimsFromTirumala(): Promise<PilgrimsScrapeResult
     return { success: true, data: entries, error: null };
   } catch (err: unknown) {
     return { success: false, data: [], error: (err as Error).message };
-  } finally {
-    await context.close();
   }
 }
