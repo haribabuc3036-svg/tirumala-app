@@ -93,14 +93,14 @@ function parseArticle(text: string): PilgrimEntry | null {
  * Always resolves — never throws.
  */
 export async function scrapePilgrimsFromTirumala(): Promise<PilgrimsScrapeResult> {
-  const browser = await chromium.launch({ headless: true });
+  const browser = await chromium.launch({ headless: true, args: ['--no-sandbox', '--disable-setuid-sandbox'] });
 
   try {
     const page = await browser.newPage();
 
     await page.goto('https://news.tirumala.org/category/darshan/', {
-      waitUntil: 'networkidle',
-      timeout: 30_000,
+      waitUntil: 'domcontentloaded',
+      timeout: 60_000,
     });
 
     // Each article is wrapped in an <article> element with class containing "post"

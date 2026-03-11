@@ -35,15 +35,15 @@ export interface SsdScrapeResult {
  * @returns SsdScrapeResult
  */
 export async function scrapeSsdFromTirumala(): Promise<SsdScrapeResult> {
-  const browser = await chromium.launch({ headless: true });
+  const browser = await chromium.launch({ headless: true, args: ['--no-sandbox', '--disable-setuid-sandbox'] });
 
   try {
     const page = await browser.newPage();
 
     // 1. Load the TTD home page; wait for JS-rendered content to settle
     await page.goto('https://www.tirumala.org/', {
-      waitUntil: 'networkidle',
-      timeout: 30_000,
+      waitUntil: 'domcontentloaded',
+      timeout: 60_000,
     });
 
     // 2. Find the TD that contains BOTH "Running Slot" and "Balance tickets" —
