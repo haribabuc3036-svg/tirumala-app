@@ -13,7 +13,10 @@ export type Service = {
   tagColor?: string;
   showOnOverview?: boolean;
   overviewOrder?: number;
+  /** Resolved single active booking date (next upcoming or currently-open slot). */
   bookingDate?: string | null;
+  /** Full array of scheduled booking dates for the year, as ISO strings. */
+  bookingDates?: string[] | null;
   instructions?: string[] | null;
 };
 

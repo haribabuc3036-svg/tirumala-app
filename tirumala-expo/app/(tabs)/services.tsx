@@ -8,7 +8,6 @@ import {
   Dimensions,
   FlatList,
   Pressable,
-  ScrollView,
   StyleSheet,
   TextInput,
   useColorScheme,
@@ -24,17 +23,10 @@ import { useServicesCatalog } from '@/hooks/use-services-catalog';
 import { type ServiceCategory } from '@/types/services';
 
 const SCREEN_W   = Dimensions.get('window').width;
-// list h-padding 16, section h-padding 12×2, gap 10 — show 2 full + ~0.35 peek
-const CARD_W      = Math.floor((SCREEN_W - 32 - 24 - 10) / 2.35);
-// Icon zone scales with card width (60 %), title = 2 lines × lineHeight
-const CARD_ICON_H  = Math.round(CARD_W * 0.60);
-const CARD_LINE_H  = 16;
-const CARD_TITLE_LINES = 2;
-// cardContent height: paddingTop(8) + title + paddingBottom(6)
-const CARD_CONTENT_H = 8 + CARD_TITLE_LINES * CARD_LINE_H + 6;
-// cardBottom height: paddingTop(4) + arrow(24) + paddingBottom(10)
-const CARD_BOTTOM_H  = 4 + 24 + 10;
-const CARD_H         = CARD_ICON_H + CARD_CONTENT_H + CARD_BOTTOM_H;
+// 4-per-row: list pad 16×2, section pad 8×2
+const TILE_W    = Math.floor((SCREEN_W - 32 - 16) / 4);
+const ICON_SIZE = Math.round(TILE_W * 0.46);
+const ICON_IMG  = Math.round(TILE_W * 0.40);
 
 // hex → rgba helper
 function hexAlpha(hex: string, alpha: number) {
@@ -45,8 +37,8 @@ function hexAlpha(hex: string, alpha: number) {
   return `rgba(${r},${g},${b},${alpha})`;
 }
 
-// ─── Service card (vertical) ──────────────────────────────────────────────────
-function ServiceCard({
+// ─── Service tile ─────────────────────────────────────────────────────────────
+function ServiceTile({
   service,
   isDark,
   accent,
@@ -55,66 +47,38 @@ function ServiceCard({
   isDark: boolean;
   accent: string;
 }) {
-  const scale = useRef(new Animated.Value(1)).current;
+  const [titleExpanded, setTitleExpanded] = useState(false);
 
-  const onPressIn = useCallback(() => {
-    Animated.spring(scale, { toValue: 0.95, useNativeDriver: true, speed: 40, bounciness: 4 }).start();
-  }, [scale]);
-
-  const onPressOut = useCallback(() => {
-    Animated.spring(scale, { toValue: 1, useNativeDriver: true, speed: 20, bounciness: 6 }).start();
-  }, [scale]);
-
-  const cardBg     = isDark ? '#1C1C1E' : '#FFFFFF';
-  const cardBorder = isDark ? '#2C2C2E' : '#EBEBED';
-  const iconBg     = isDark ? '#2A2A2C' : '#F4F4F6';
-  const iconColor  = isDark ? '#E5E7EB' : '#1C1C1E';
+  const iconColor  = isDark ? '#E5E7EB' : '#374151';
+  const textColor  = isDark ? '#D1D5DB' : '#1F2937';
+  const iconBg     = isDark ? hexAlpha(accent, 0.18) : hexAlpha(accent, 0.10);
 
   return (
-    <Pressable
-      onPress={() => router.push({ pathname: '/service/[id]', params: { id: service.id } })}
-      onPressIn={onPressIn}
-      onPressOut={onPressOut}>
-      <Animated.View
-        style={[
-          styles.card,
-          { width: CARD_W, backgroundColor: cardBg, borderColor: cardBorder, transform: [{ scale }] },
-        ]}>
-        {/* Icon area */}
-        <View style={[styles.cardIconWrap, { backgroundColor: iconBg }]}>
-          {service.iconImage ? (
-            <Image source={{ uri: service.iconImage }} style={styles.cardIconImage} contentFit="contain" />
-          ) : (
-            <MaterialCommunityIcons
-              name={resolveTtdIcon(service.title, service.icon)}
-              size={Math.round(CARD_W * 0.20)}
-              color={iconColor}
-            />
-          )}
-        </View>
+    <View style={[styles.tile, { width: TILE_W }]}>
+      {/* Icon — tap to navigate */}
+      <Pressable
+        onPress={() => router.push({ pathname: '/service/[id]', params: { id: service.id } })}
+        style={({ pressed }) => [styles.tileIconWrap, { backgroundColor: iconBg }, pressed && { opacity: 0.55 }]}>
+        {service.iconImage ? (
+          <Image source={{ uri: service.iconImage }} style={styles.tileIconImage} contentFit="contain" />
+        ) : (
+          <MaterialCommunityIcons
+            name={resolveTtdIcon(service.title, service.icon)}
+            size={ICON_SIZE}
+            color={isDark ? hexAlpha(accent, 0.9) : accent}
+          />
+        )}
+      </Pressable>
 
-        {/* Title */}
-        <View style={styles.cardContent}>
-          <ThemedText style={styles.cardTitle} numberOfLines={CARD_TITLE_LINES}>
-            {service.title}
-          </ThemedText>
-        </View>
-
-        {/* Bottom row: tag (or spacer) + arrow */}
-        <View style={styles.cardBottom}>
-          {service.tag ? (
-            <View style={[styles.cardTag, { backgroundColor: hexAlpha(service.tagColor ?? accent, 0.14) }]}>
-              <ThemedText style={[styles.cardTagText, { color: service.tagColor ?? accent }]} numberOfLines={1}>
-                {service.tag}
-              </ThemedText>
-            </View>
-          ) : <View />}
-          <View style={[styles.cardArrow, { backgroundColor: hexAlpha(accent, 0.1) }]}>
-            <MaterialCommunityIcons name="arrow-right" size={13} color={accent} />
-          </View>
-        </View>
-      </Animated.View>
-    </Pressable>
+      {/* Title — tap to expand */}
+      <Pressable onPress={() => setTitleExpanded((v) => !v)} hitSlop={6}>
+        <ThemedText
+          style={[styles.tileTitle, { color: textColor }]}
+          numberOfLines={titleExpanded ? undefined : 2}>
+          {service.title}
+        </ThemedText>
+      </Pressable>
+    </View>
   );
 }
 
@@ -140,13 +104,12 @@ function SkeletonSection({ isDark }: { isDark: boolean }) {
 
   return (
     <View style={[styles.sectionWrap, { backgroundColor: bg, borderColor: border }]}>
-      {/* Skeleton gradient header */}
       <Animated.View style={[styles.skeletonGradientHeader, { backgroundColor: shimmer, opacity }]} />
-      <View style={styles.skeletonCardRow}>
-        {[0, 1, 2].map((i) => (
+      <View style={styles.gridContainer}>
+        {[0, 1, 2, 3, 4, 5, 6, 7].map((i) => (
           <Animated.View
             key={i}
-            style={[styles.skeletonCard, { width: CARD_W, backgroundColor: shimmer, opacity }]}
+            style={[styles.skeletonTile, { width: TILE_W, backgroundColor: shimmer, opacity }]}
           />
         ))}
       </View>
@@ -179,11 +142,6 @@ export default function ServicesScreen() {
       .filter((cat) => cat.services.length > 0 || cat.heading.toLowerCase().includes(q));
   }, [categories, query]);
 
-  const totalServices = useMemo(
-    () => categories.reduce((sum, c) => sum + c.services.length, 0),
-    [categories]
-  );
-
   // Theme tokens
   const pageBg      = isDark ? '#111113' : '#F2F2F7';
   const sectionBg   = isDark ? '#1C1C1E' : '#FFFFFF';
@@ -194,26 +152,30 @@ export default function ServicesScreen() {
   const placeholder = isDark ? '#6B7280' : '#9CA3AF';
 
   const renderCategory = useCallback(({ item: category }: { item: ServiceCategory }) => {
-    // Gradient colours for header
     const gradStart = accent;
-    const gradEnd   = isDark ? hexAlpha(accent, 0.55) : hexAlpha(accent, 0.72);
+    const gradMid   = isDark ? hexAlpha(accent, 0.75) : hexAlpha(accent, 0.85);
+    const gradEnd   = isDark ? hexAlpha(accent, 0.40) : hexAlpha(accent, 0.55);
 
     return (
       <View style={[styles.sectionWrap, { backgroundColor: sectionBg, borderColor: sectionBorder }]}>
 
         {/* ── Gradient header ── */}
         <LinearGradient
-          colors={[gradStart, gradEnd]}
+          colors={[gradStart, gradMid, gradEnd]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 0 }}
           style={styles.gradientHeader}>
+          {/* Decorative circles */}
+          <View style={styles.headerDecorCircle1} />
+          <View style={styles.headerDecorCircle2} />
+
           <View style={styles.gradientHeaderIcon}>
             {category.image ? (
               <Image source={{ uri: category.image }} style={styles.sectionHeaderImage} contentFit="contain" />
             ) : (
               <MaterialCommunityIcons
                 name={resolveTtdIcon(category.heading, category.icon)}
-                size={18}
+                size={20}
                 color="#FFFFFF"
               />
             )}
@@ -222,25 +184,21 @@ export default function ServicesScreen() {
             <ThemedText style={styles.gradientTitle} numberOfLines={1}>
               {category.heading}
             </ThemedText>
-            <ThemedText style={styles.gradientMeta}>
-              {category.services.length} service{category.services.length !== 1 ? 's' : ''}
-            </ThemedText>
           </View>
-          <MaterialCommunityIcons name="chevron-right" size={18} color="rgba(255,255,255,0.6)" />
+          <View style={styles.headerBadge}>
+            <ThemedText style={styles.headerBadgeText}>{category.services.length}</ThemedText>
+          </View>
         </LinearGradient>
 
-        {/* ── Peek scroll row ── */}
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.peekScroll}
-          decelerationRate="fast"
-          snapToInterval={CARD_W + 10}
-          snapToAlignment="start">
+        {/* ── 4-per-row tile grid ── */}
+        <View style={styles.gridContainer}>
           {category.services.map((service) => (
-            <ServiceCard key={service.id} service={service} isDark={isDark} accent={accent} />
+            <ServiceTile key={service.id} service={service} isDark={isDark} accent={accent} />
           ))}
-        </ScrollView>
+          {Array.from({ length: (4 - (category.services.length % 4)) % 4 }).map((_, i) => (
+            <View key={`spacer-${i}`} style={{ width: TILE_W }} />
+          ))}
+        </View>
       </View>
     );
   }, [accent, isDark, sectionBg, sectionBorder]);
@@ -251,43 +209,65 @@ export default function ServicesScreen() {
         data={filtered}
         keyExtractor={(item) => item.id}
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={[styles.listContent, { paddingTop: insets.top + 10 }]}
+        contentContainerStyle={styles.listContent}
         keyboardShouldPersistTaps="handled"
         ListHeaderComponent={
-          <View style={styles.header}>
-            <ThemedText type="title" style={styles.pageTitle}>Services</ThemedText>
-            {!loading && totalServices > 0 ? (
-              <ThemedText style={styles.pageMeta}>
-                {totalServices} services · {categories.length} categories
-              </ThemedText>
-            ) : null}
+          <View>
+            {/* ── Beautiful gradient page header ── */}
+            <LinearGradient
+              colors={[isDark ? '#111113' : '#F2F2F7', hexAlpha(accent, 0.70), accent]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 0.4, y: 1 }}
+              style={[styles.pageHeader, { paddingTop: insets.top + 18 }]}>
+              {/* Decorative blobs */}
+              <View style={[styles.blobTopRight, { backgroundColor: hexAlpha('#FFFFFF', 0.08) }]} />
+              <View style={[styles.blobBottomLeft, { backgroundColor: hexAlpha('#FFFFFF', 0.05) }]} />
 
-            {/* Search */}
-            <View style={[styles.searchBar, { backgroundColor: inputBg, borderColor: inputBorder }]}>
-              <MaterialCommunityIcons name="magnify" size={18} color={placeholder} style={{ marginRight: 8 }} />
-              <TextInput
-                style={[styles.searchInput, { color: inputText }]}
-                placeholder="Search services…"
-                placeholderTextColor={placeholder}
-                value={query}
-                onChangeText={setQuery}
-                returnKeyType="search"
-                clearButtonMode="while-editing"
-                autoCorrect={false}
-              />
-              {query.length > 0 ? (
-                <Pressable onPress={() => setQuery('')} hitSlop={10}>
-                  <MaterialCommunityIcons name="close-circle" size={16} color={placeholder} />
-                </Pressable>
-              ) : null}
-            </View>
+              <View style={styles.pageHeaderContent}>
+                <View style={[styles.pageHeaderIcon, {
+                  backgroundColor: isDark ? 'rgba(255,255,255,0.18)' : 'rgba(0,0,0,0.12)',
+                }]}>
+                  <MaterialCommunityIcons name="hands-pray" size={28} color={isDark ? '#fff' : '#000'} />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <ThemedText style={[styles.pageTitle, { color: isDark ? '#fff' : '#000' }]}>TTD Services</ThemedText>
+                  <ThemedText style={[styles.pageSubtitle, { color: isDark ? 'rgba(255,255,255,0.70)' : 'rgba(0,0,0,0.6)' }]}>Tirumala Tirupati Devasthanams</ThemedText>
+                </View>
+              </View>
+
+              {/* Search bar floats inside header */}
+              <View style={[styles.searchBar, {
+                backgroundColor: isDark ? 'rgba(255,255,255,0.10)' : 'rgba(255,255,255,0.90)',
+                borderColor: isDark ? 'rgba(255,255,255,0.15)' : 'rgba(255,255,255,0.6)',
+                marginTop: 18,
+              }]}>
+                <MaterialCommunityIcons name="magnify" size={18} color={isDark ? 'rgba(255,255,255,0.6)' : placeholder} style={{ marginRight: 8 }} />
+                <TextInput
+                  style={[styles.searchInput, { color: isDark ? '#FFFFFF' : inputText }]}
+                  placeholder="Search services…"
+                  placeholderTextColor={isDark ? 'rgba(255,255,255,0.45)' : placeholder}
+                  value={query}
+                  onChangeText={setQuery}
+                  returnKeyType="search"
+                  clearButtonMode="while-editing"
+                  autoCorrect={false}
+                />
+                {query.length > 0 ? (
+                  <Pressable onPress={() => setQuery('')} hitSlop={10}>
+                    <MaterialCommunityIcons name="close-circle" size={16} color={isDark ? 'rgba(255,255,255,0.5)' : placeholder} />
+                  </Pressable>
+                ) : null}
+              </View>
+            </LinearGradient>
 
             {error ? (
-              <View style={styles.errorBanner}>
+              <View style={[styles.errorBanner, { marginHorizontal: 16, marginTop: 12 }]}>
                 <MaterialCommunityIcons name="alert-circle-outline" size={15} color="#EF4444" />
                 <ThemedText style={styles.errorText}>{error}</ThemedText>
               </View>
             ) : null}
+
+            <View style={{ height: 16 }} />
           </View>
         }
         ListEmptyComponent={
@@ -324,23 +304,56 @@ const styles = StyleSheet.create({
   container: { flex: 1 },
   listContent: {
     paddingHorizontal: 16,
-    paddingBottom: 44,
+    paddingBottom: 48,
   },
 
-  // ── Header ──────────────────────────────
-  header: {
-    marginBottom: 20,
-    gap: 10,
+  // ── Page gradient header ─────────────────
+  pageHeader: {
+    marginHorizontal: -16,
+    paddingHorizontal: 20,
+    paddingBottom: 22,
+    overflow: 'hidden',
+  },
+  blobTopRight: {
+    position: 'absolute',
+    width: 180,
+    height: 180,
+    borderRadius: 90,
+    top: -50,
+    right: -50,
+  },
+  blobBottomLeft: {
+    position: 'absolute',
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    bottom: 10,
+    left: -30,
+  },
+  pageHeaderContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+  },
+  pageHeaderIcon: {
+    width: 52,
+    height: 52,
+    borderRadius: 16,
+    backgroundColor: 'rgba(255,255,255,0.18)',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   pageTitle: {
-    fontSize: 30,
-    fontWeight: '700',
-    letterSpacing: -0.5,
+    fontSize: 24,
+    fontWeight: '800',
+    color: '#FFFFFF',
+    letterSpacing: -0.3,
   },
-  pageMeta: {
-    fontSize: 13,
-    opacity: 0.4,
-    marginTop: -4,
+  pageSubtitle: {
+    fontSize: 12,
+    color: 'rgba(255,255,255,0.70)',
+    marginTop: 2,
+    fontWeight: '500',
   },
 
   // ── Search ──────────────────────────────
@@ -348,10 +361,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1,
-    borderRadius: 13,
+    borderRadius: 14,
     paddingHorizontal: 12,
-    height: 44,
-    marginTop: 2,
+    height: 46,
   },
   searchInput: {
     flex: 1,
@@ -379,10 +391,15 @@ const styles = StyleSheet.create({
 
   // ── Section ─────────────────────────────
   sectionWrap: {
-    marginBottom: 14,
+    marginBottom: 16,
     borderWidth: 1,
-    borderRadius: 18,
+    borderRadius: 20,
     overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 2,
   },
 
   // ── Gradient header ──────────────────────
@@ -392,12 +409,31 @@ const styles = StyleSheet.create({
     gap: 12,
     paddingHorizontal: 16,
     paddingVertical: 14,
+    overflow: 'hidden',
+  },
+  headerDecorCircle1: {
+    position: 'absolute',
+    width: 90,
+    height: 90,
+    borderRadius: 45,
+    backgroundColor: 'rgba(255,255,255,0.10)',
+    right: 20,
+    top: -30,
+  },
+  headerDecorCircle2: {
+    position: 'absolute',
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: 'rgba(255,255,255,0.07)',
+    right: -10,
+    bottom: -20,
   },
   gradientHeaderIcon: {
-    width: 38,
-    height: 38,
-    borderRadius: 11,
-    backgroundColor: 'rgba(255,255,255,0.2)',
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    backgroundColor: 'rgba(255,255,255,0.22)',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -406,81 +442,57 @@ const styles = StyleSheet.create({
     height: 22,
   },
   gradientTitle: {
-    fontSize: 15.5,
+    fontSize: 15,
     fontWeight: '700',
     color: '#FFFFFF',
     letterSpacing: 0.1,
   },
-  gradientMeta: {
-    fontSize: 11.5,
-    color: 'rgba(255,255,255,0.7)',
-    marginTop: 1,
-  },
-
-  // ── Peek scroll ──────────────────────────
-  peekScroll: {
-    paddingHorizontal: 12,
-    paddingVertical: 12,
-    gap: 10,
-    flexDirection: 'row',
-  },
-
-  // ── Card ─────────────────────────────────
-  card: {
-    height: CARD_H,
-    borderWidth: 1,
-    borderRadius: 14,
-    overflow: 'hidden',
-  },
-  cardIconWrap: {
-    height: CARD_ICON_H,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  cardIconImage: {
-    width: Math.round(CARD_W * 0.28),
-    height: Math.round(CARD_W * 0.28),
-  },
-  cardContent: {
-    height: CARD_CONTENT_H,
-    paddingHorizontal: 10,
-    paddingTop: 8,
-    overflow: 'hidden',
-  },
-  cardTitle: {
-    fontSize: Math.max(11, Math.min(13, CARD_W * 0.09)),
-    lineHeight: CARD_LINE_H,
-    fontWeight: '500',
-  },
-  cardBottom: {
-    height: CARD_BOTTOM_H,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 10,
-    paddingBottom: 10,
-    paddingTop: 4,
-  },
-  cardTag: {
+  headerBadge: {
+    backgroundColor: 'rgba(255,255,255,0.22)',
     borderRadius: 99,
-    paddingHorizontal: 7,
+    paddingHorizontal: 9,
     paddingVertical: 3,
-    justifyContent: 'center',
-    alignItems: 'center',
   },
-  cardTagText: {
-    fontSize: 9,
-    lineHeight: 11,
+  headerBadgeText: {
+    fontSize: 11,
     fontWeight: '700',
-    includeFontPadding: false,
-    textAlignVertical: 'center',
+    color: '#FFFFFF',
   },
-  cardArrow: {
-    width: 24,
-    height: 24,
-    borderRadius: 99,
+
+  // ── 4-per-row tile grid ──────────────────────
+  gridContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    paddingHorizontal: 8,
+    paddingTop: 14,
+    paddingBottom: 10,
+  },
+
+  // ── Tile ───────────────────────────────────────────
+  tile: {
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  tileIconWrap: {
+    width: TILE_W - 6,
+    height: TILE_W - 6,
     justifyContent: 'center',
     alignItems: 'center',
+    borderRadius: 16,
+  },
+  tileIconImage: {
+    width: ICON_IMG,
+    height: ICON_IMG,
+  },
+  tileTitleWrap: {},
+  tileTitle: {
+    fontSize: 10.5,
+    fontWeight: '700',
+    textAlign: 'center',
+    lineHeight: 14,
+    marginTop: 6,
+    paddingHorizontal: 2,
   },
 
   // ── Empty state ──────────────────────────
@@ -524,14 +536,10 @@ const styles = StyleSheet.create({
   skeletonGradientHeader: {
     height: 66,
   },
-  skeletonCardRow: {
-    flexDirection: 'row',
-    gap: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 12,
-  },
-  skeletonCard: {
-    height: CARD_H,
+
+  skeletonTile: {
+    height: TILE_W,
     borderRadius: 14,
+    marginBottom: 14,
   },
 });

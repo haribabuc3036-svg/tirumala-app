@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 
 import { supabase } from '@/config/supabase';
+import { resolveActiveBookingDate } from '@/utils/booking-utils';
 import { type Service } from '@/types/services';
 
 export function useServiceDetail(id?: string) {
@@ -22,7 +23,7 @@ export function useServiceDetail(id?: string) {
       try {
         const { data, error: queryError } = await supabase
           .from('services_catalog')
-          .select('id,title,description,icon,image,url,tag,tag_color,booking_date,instructions')
+          .select('id,title,description,icon,image,url,tag,tag_color,booking_dates,booking_date,instructions')
           .eq('id', id)
           .maybeSingle();
 
@@ -63,7 +64,12 @@ export function useServiceDetail(id?: string) {
             url: data.url,
             ...(data.tag ? { tag: data.tag } : {}),
             ...(data.tag_color ? { tagColor: data.tag_color } : {}),
-            bookingDate: (data as any).booking_date ?? null,
+            bookingDates: (data as any).booking_dates ?? null,
+            // Resolve the currently-active slot from the year's array;
+            // fall back to legacy single booking_date if no array present.
+            bookingDate: resolveActiveBookingDate(
+              (data as any).booking_dates ?? ((data as any).booking_date ? [(data as any).booking_date] : null)
+            ),
             instructions: (data as any).instructions ?? null,
           });
           setError(null);
