@@ -13,6 +13,7 @@ let totalRuns = 0;
 export async function runNewsPoll(): Promise<void> {
   console.log('📰  Latest-News scraper: starting…');
   totalRuns++;
+  try {
 
   const result = await scrapeLatestNews();
 
@@ -31,6 +32,10 @@ export async function runNewsPoll(): Promise<void> {
     `✅  Latest-News scraper: ${result.data.length} articles pushed to Firebase ` +
     `[live_updates/latest_news]`
   );
+  } catch (err: unknown) {
+    lastError = (err as Error).message;
+    console.error('❌  Latest-News scraper threw:', lastError);
+  }
 }
 
 // ─── Scheduler ─────────────────────────────────────────────────────────────────
