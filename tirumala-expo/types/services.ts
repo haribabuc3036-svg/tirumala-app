@@ -18,6 +18,10 @@ export type Service = {
   /** Full array of scheduled booking dates for the year, as ISO strings. */
   bookingDates?: string[] | null;
   instructions?: string[] | null;
+  /** Custom CTA button label shown on the service detail page (default: "Check Availability"). */
+  buttonText?: string | null;
+  /** Custom CTA URL (overrides `url` when set). */
+  buttonUrl?: string | null;
 };
 
 export type ServiceCategory = {

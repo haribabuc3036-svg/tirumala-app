@@ -173,9 +173,10 @@ export default function ServiceDetailScreen() {
 
   const onBookNow = async () => {
     if (!service) return;
-    const canOpen = await Linking.canOpenURL(service.url);
+    const target = service.buttonUrl ?? service.url;
+    const canOpen = await Linking.canOpenURL(target);
     if (!canOpen) { Alert.alert('Unable to open link', 'Please try again later.'); return; }
-    await Linking.openURL(service.url);
+    await Linking.openURL(target);
   };
 
   if (loading) {
@@ -250,7 +251,7 @@ export default function ServiceDetailScreen() {
                 <View style={styles.bookShine} />
                 {/* Content */}
                 <MaterialCommunityIcons name="calendar-check" size={20} color="#ffffff" />
-                <ThemedText style={styles.bookText}>Check Availability</ThemedText>
+                <ThemedText style={styles.bookText}>{service.buttonText ?? 'Check Availability'}</ThemedText>
                 <Animated.View style={{ transform: [{ translateX: arrowAnim }] }}>
                   <MaterialCommunityIcons name="arrow-right-circle" size={18} color="rgba(255,255,255,0.7)" />
                 </Animated.View>
