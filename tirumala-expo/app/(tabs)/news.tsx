@@ -7,6 +7,7 @@ import { ActivityIndicator, Animated as RNAnimated, FlatList, Pressable, ScrollV
 import Animated, { FadeInDown, useSharedValue, withRepeat, withSequence, withTiming, useAnimatedStyle } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { AppSidebar } from '@/components/app-sidebar';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Colors, MainTabAccent } from '@/constants/theme';
@@ -235,6 +236,7 @@ export default function NewsScreen() {
   const insets = useSafeAreaInsets();
   const { tab: tabParam } = useLocalSearchParams<{ tab?: string }>();
   const [activeTab, setActiveTab] = useState<NewsSubTab>('pilgrims');
+  const [sidebarVisible, setSidebarVisible] = useState(false);
 
   useFocusEffect(
     useCallback(() => {
@@ -265,6 +267,7 @@ export default function NewsScreen() {
 
   return (
     <ThemedView style={styles.container}>
+      <AppSidebar visible={sidebarVisible} onClose={() => setSidebarVisible(false)} />
       <LinearGradient
         colors={colorScheme === 'dark' ? [tintColor + 'CC', tintColor + '66', 'transparent'] : [tintColor + 'DD', tintColor + '88', 'transparent']}
         start={{ x: 0, y: 0 }}
@@ -283,14 +286,20 @@ export default function NewsScreen() {
             <ThemedText style={{ fontSize: 20, fontWeight: '900', letterSpacing: -0.3, color: colorScheme === 'dark' ? '#fff' : '#1a1a1a' }}>Darshan</ThemedText>
             <ThemedText style={{ fontSize: 11, color: colorScheme === 'dark' ? 'rgba(255,255,255,0.65)' : 'rgba(0,0,0,0.50)', marginTop: 1 }}>Live pilgrim & temple updates</ThemedText>
           </View>
-          {liveLoading ? (
-            <ActivityIndicator size="small" color={colorScheme === 'dark' ? '#fff' : tintColor} />
-          ) : isLive ? (
-            <View style={[styles.liveBadge, { backgroundColor: '#4CAF5022', borderColor: '#4CAF5060' }]}>
-              <View style={[styles.liveDot, { backgroundColor: '#4CAF50' }]} />
-              <ThemedText style={styles.liveText}>LIVE</ThemedText>
-            </View>
-          ) : null}
+          <Pressable
+            onPress={() => setSidebarVisible(true)}
+            style={({ pressed }) => ({
+              width: 40, height: 40, borderRadius: 20,
+              backgroundColor: colorScheme === 'dark' ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.10)',
+              alignItems: 'center', justifyContent: 'center',
+              borderWidth: 1,
+              borderColor: colorScheme === 'dark' ? 'rgba(255,255,255,0.22)' : 'rgba(0,0,0,0.15)',
+              opacity: pressed ? 0.7 : 1,
+            })}
+            hitSlop={8}
+          >
+            <MaterialCommunityIcons name="menu" size={22} color={colorScheme === 'dark' ? '#fff' : '#1a1a1a'} />
+          </Pressable>
         </View>
 
         <View style={[styles.subTabsWrap, { borderColor: colorScheme === 'dark' ? 'rgba(255,255,255,0.25)' : '#000000' }]}>
@@ -867,10 +876,14 @@ function SubTabButton({
       onPress={onPress}
       style={({ pressed }) => [
         styles.subTabButton,
-        active ? { backgroundColor: tintColor + '20', borderColor: tintColor } : { borderColor: 'transparent' },
+        active
+          ? { borderColor: colorScheme === 'dark' ? '#ffffff' : '#000000', backgroundColor: colorScheme === 'dark' ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.08)' }
+          : { borderColor: 'transparent' },
         { opacity: pressed ? 0.75 : 1 },
       ]}>
-      <ThemedText style={[styles.subTabText, active ? { color: colorScheme === 'dark' ? '#fff' : '#000000', fontWeight: '700' } : { color: colorScheme === 'dark' ? 'rgba(255,255,255,0.65)' : '#000000', opacity: 1 }]}>
+      <ThemedText style={[styles.subTabText, active
+        ? { color: colorScheme === 'dark' ? '#ffffff' : '#000000', fontWeight: '800' }
+        : { color: colorScheme === 'dark' ? 'rgba(255,255,255,0.55)' : '#000000', fontWeight: '400' }]}>
         {label}
       </ThemedText>
     </Pressable>

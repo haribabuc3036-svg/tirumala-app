@@ -2,9 +2,11 @@ import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
+import { useState } from 'react';
 import { FlatList, Pressable, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { AppSidebar } from '@/components/app-sidebar';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Colors, MainTabAccent } from '@/constants/theme';
@@ -28,9 +30,11 @@ export default function PlacesScreen() {
   const backgroundColor = Colors[colorScheme].background;
   const isDark = colorScheme === 'dark';
   const { regions, loading, error } = usePlacesRegions();
+  const [sidebarVisible, setSidebarVisible] = useState(false);
 
   return (
     <ThemedView style={styles.container}>
+      <AppSidebar visible={sidebarVisible} onClose={() => setSidebarVisible(false)} />
       {/* ── Fixed gradient header ── */}
       <LinearGradient
         colors={isDark ? [tintColor + 'CC', tintColor + '66', 'transparent'] : [tintColor + 'DD', tintColor + '88', 'transparent']}
@@ -49,6 +53,20 @@ export default function PlacesScreen() {
             <ThemedText style={{ fontSize: 22, fontWeight: '900', letterSpacing: -0.3, color: isDark ? '#fff' : '#1a1a1a' }}>Places</ThemedText>
             <ThemedText style={{ fontSize: 11, color: isDark ? 'rgba(255,255,255,0.65)' : 'rgba(0,0,0,0.50)', marginTop: 1 }}>Browse temples & pilgrim destinations</ThemedText>
           </View>
+          <Pressable
+            onPress={() => setSidebarVisible(true)}
+            style={({ pressed }) => ({
+              width: 40, height: 40, borderRadius: 20,
+              backgroundColor: isDark ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.10)',
+              alignItems: 'center', justifyContent: 'center',
+              borderWidth: 1,
+              borderColor: isDark ? 'rgba(255,255,255,0.22)' : 'rgba(0,0,0,0.15)',
+              opacity: pressed ? 0.7 : 1,
+            })}
+            hitSlop={8}
+          >
+            <MaterialCommunityIcons name="menu" size={22} color={isDark ? '#fff' : '#1a1a1a'} />
+          </Pressable>
         </View>
       </LinearGradient>
 

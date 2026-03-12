@@ -17,6 +17,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { AppSidebar } from '@/components/app-sidebar';
 import { resolveTtdIcon } from '@/constants/ttd-service-icons';
 import { MainTabAccent } from '@/constants/theme';
 import { useServicesCatalog } from '@/hooks/use-services-catalog';
@@ -128,6 +129,7 @@ export default function ServicesScreen() {
   const { categories, loading, error } = useServicesCatalog();
 
   const [query, setQuery] = useState('');
+  const [sidebarVisible, setSidebarVisible] = useState(false);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -204,71 +206,81 @@ export default function ServicesScreen() {
 
   return (
     <ThemedView style={[styles.container, { backgroundColor: pageBg }]}>
+      <AppSidebar visible={sidebarVisible} onClose={() => setSidebarVisible(false)} />
+
+      {/* ── Fixed gradient header ── */}
+      <LinearGradient
+        colors={[isDark ? '#111113' : '#F2F2F7', hexAlpha(accent, 0.70), accent]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 0.4, y: 1 }}
+        style={[styles.pageHeader, { paddingTop: insets.top + 18 }]}>
+        {/* Decorative blobs */}
+        <View style={[styles.blobTopRight, { backgroundColor: hexAlpha('#FFFFFF', 0.08) }]} />
+        <View style={[styles.blobBottomLeft, { backgroundColor: hexAlpha('#FFFFFF', 0.05) }]} />
+
+        <View style={styles.pageHeaderContent}>
+          <View style={[styles.pageHeaderIcon, {
+            backgroundColor: isDark ? 'rgba(255,255,255,0.18)' : 'rgba(0,0,0,0.12)',
+          }]}>
+            <MaterialCommunityIcons name="hands-pray" size={28} color={isDark ? '#fff' : '#000'} />
+          </View>
+          <View style={{ flex: 1 }}>
+            <ThemedText style={[styles.pageTitle, { color: isDark ? '#fff' : '#000' }]}>TTD Services</ThemedText>
+            <ThemedText style={[styles.pageSubtitle, { color: isDark ? 'rgba(255,255,255,0.70)' : 'rgba(0,0,0,0.6)' }]}>Tirumala Tirupati Devasthanams</ThemedText>
+          </View>
+          <Pressable
+            onPress={() => setSidebarVisible(true)}
+            style={({ pressed }) => ({
+              width: 40, height: 40, borderRadius: 20,
+              backgroundColor: isDark ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.10)',
+              alignItems: 'center', justifyContent: 'center',
+              borderWidth: 1,
+              borderColor: isDark ? 'rgba(255,255,255,0.22)' : 'rgba(0,0,0,0.15)',
+              opacity: pressed ? 0.7 : 1,
+            })}
+            hitSlop={8}
+          >
+            <MaterialCommunityIcons name="menu" size={22} color={isDark ? '#fff' : '#000'} />
+          </Pressable>
+        </View>
+
+        {/* Search bar floats inside header */}
+        <View style={[styles.searchBar, {
+          backgroundColor: isDark ? 'rgba(255,255,255,0.10)' : 'rgba(255,255,255,0.90)',
+          borderColor: isDark ? 'rgba(255,255,255,0.15)' : 'rgba(255,255,255,0.6)',
+          marginTop: 18,
+        }]}>
+          <MaterialCommunityIcons name="magnify" size={18} color={isDark ? 'rgba(255,255,255,0.6)' : placeholder} style={{ marginRight: 8 }} />
+          <TextInput
+            style={[styles.searchInput, { color: isDark ? '#FFFFFF' : inputText }]}
+            placeholder="Search services…"
+            placeholderTextColor={isDark ? 'rgba(255,255,255,0.45)' : placeholder}
+            value={query}
+            onChangeText={setQuery}
+            returnKeyType="search"
+            clearButtonMode="while-editing"
+            autoCorrect={false}
+          />
+          {query.length > 0 ? (
+            <Pressable onPress={() => setQuery('')} hitSlop={10}>
+              <MaterialCommunityIcons name="close-circle" size={16} color={isDark ? 'rgba(255,255,255,0.5)' : placeholder} />
+            </Pressable>
+          ) : null}
+        </View>
+      </LinearGradient>
+
       <FlatList
         data={filtered}
         keyExtractor={(item) => item.id}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.listContent}
         keyboardShouldPersistTaps="handled"
-        ListHeaderComponent={
-          <View>
-            {/* ── Beautiful gradient page header ── */}
-            <LinearGradient
-              colors={[isDark ? '#111113' : '#F2F2F7', hexAlpha(accent, 0.70), accent]}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 0.4, y: 1 }}
-              style={[styles.pageHeader, { paddingTop: insets.top + 18 }]}>
-              {/* Decorative blobs */}
-              <View style={[styles.blobTopRight, { backgroundColor: hexAlpha('#FFFFFF', 0.08) }]} />
-              <View style={[styles.blobBottomLeft, { backgroundColor: hexAlpha('#FFFFFF', 0.05) }]} />
-
-              <View style={styles.pageHeaderContent}>
-                <View style={[styles.pageHeaderIcon, {
-                  backgroundColor: isDark ? 'rgba(255,255,255,0.18)' : 'rgba(0,0,0,0.12)',
-                }]}>
-                  <MaterialCommunityIcons name="hands-pray" size={28} color={isDark ? '#fff' : '#000'} />
-                </View>
-                <View style={{ flex: 1 }}>
-                  <ThemedText style={[styles.pageTitle, { color: isDark ? '#fff' : '#000' }]}>TTD Services</ThemedText>
-                  <ThemedText style={[styles.pageSubtitle, { color: isDark ? 'rgba(255,255,255,0.70)' : 'rgba(0,0,0,0.6)' }]}>Tirumala Tirupati Devasthanams</ThemedText>
-                </View>
-              </View>
-
-              {/* Search bar floats inside header */}
-              <View style={[styles.searchBar, {
-                backgroundColor: isDark ? 'rgba(255,255,255,0.10)' : 'rgba(255,255,255,0.90)',
-                borderColor: isDark ? 'rgba(255,255,255,0.15)' : 'rgba(255,255,255,0.6)',
-                marginTop: 18,
-              }]}>
-                <MaterialCommunityIcons name="magnify" size={18} color={isDark ? 'rgba(255,255,255,0.6)' : placeholder} style={{ marginRight: 8 }} />
-                <TextInput
-                  style={[styles.searchInput, { color: isDark ? '#FFFFFF' : inputText }]}
-                  placeholder="Search services…"
-                  placeholderTextColor={isDark ? 'rgba(255,255,255,0.45)' : placeholder}
-                  value={query}
-                  onChangeText={setQuery}
-                  returnKeyType="search"
-                  clearButtonMode="while-editing"
-                  autoCorrect={false}
-                />
-                {query.length > 0 ? (
-                  <Pressable onPress={() => setQuery('')} hitSlop={10}>
-                    <MaterialCommunityIcons name="close-circle" size={16} color={isDark ? 'rgba(255,255,255,0.5)' : placeholder} />
-                  </Pressable>
-                ) : null}
-              </View>
-            </LinearGradient>
-
-            {error ? (
-              <View style={[styles.errorBanner, { marginHorizontal: 16, marginTop: 12 }]}>
-                <MaterialCommunityIcons name="alert-circle-outline" size={15} color="#EF4444" />
-                <ThemedText style={styles.errorText}>{error}</ThemedText>
-              </View>
-            ) : null}
-
-            <View style={{ height: 16 }} />
+        ListHeaderComponent={error ? (
+          <View style={[styles.errorBanner, { marginHorizontal: 16, marginTop: 12 }]}>
+            <MaterialCommunityIcons name="alert-circle-outline" size={15} color="#EF4444" />
+            <ThemedText style={styles.errorText}>{error}</ThemedText>
           </View>
-        }
+        ) : null}
         ListEmptyComponent={
           loading ? (
             <View style={{ gap: 12 }}>
@@ -303,12 +315,12 @@ const styles = StyleSheet.create({
   container: { flex: 1 },
   listContent: {
     paddingHorizontal: 16,
+    paddingTop: 16,
     paddingBottom: 48,
   },
 
   // ── Page gradient header ─────────────────
   pageHeader: {
-    marginHorizontal: -16,
     paddingHorizontal: 20,
     paddingBottom: 22,
     overflow: 'hidden',

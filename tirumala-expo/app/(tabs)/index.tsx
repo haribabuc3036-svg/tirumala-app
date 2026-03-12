@@ -2,12 +2,13 @@ import { Image } from 'expo-image';
 import * as WebBrowser from 'expo-web-browser';
 import { LinearGradient } from 'expo-linear-gradient';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
-import { router } from 'expo-router';
+import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Animated as RNAnimated, NativeScrollEvent, NativeSyntheticEvent, Pressable, ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
 import Animated, { FadeInDown, useSharedValue, withTiming, useAnimatedStyle } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { AppSidebar } from '@/components/app-sidebar';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { resolveTtdIcon } from '@/constants/ttd-service-icons';
@@ -907,6 +908,16 @@ export default function HomeScreen() {
   const insets = useSafeAreaInsets();
   const [activeTab, setActiveTab] = useState<HomeTab>('overview');
   const [activeNewsSlide, setActiveNewsSlide] = useState(0);
+  const [sidebarVisible, setSidebarVisible] = useState(false);
+  const { tab: tabParam } = useLocalSearchParams<{ tab?: string }>();
+
+  useFocusEffect(
+    useCallback(() => {
+      if (tabParam === 'overview' || tabParam === 'news' || tabParam === 'help') {
+        setActiveTab(tabParam);
+      }
+    }, [tabParam])
+  );
   const { latestUpdates, darshanNews, templeNews, events, brahmotsavams, utsavams, vipNews, loading: liveLoading } = useLiveUpdates();
   const { overviewServices, loading: servicesLoading, error: servicesError } = useServicesCatalog();
   const { content: helpContent, loading: helpLoading } = useHelpContent();
@@ -1552,10 +1563,11 @@ export default function HomeScreen() {
 
   return (
     <ThemedView style={styles.container}>
+      <AppSidebar visible={sidebarVisible} onClose={() => setSidebarVisible(false)} />
       <LinearGradient
         colors={colorScheme === 'dark' ? [tintColor + 'CC', tintColor + '66', 'transparent'] : [tintColor + 'DD', tintColor + '88', 'transparent']}
-        start={{ x: 1, y: 1 }}
-        end={{ x: 0, y: 0 }}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
         style={[styles.header, { paddingTop: insets.top + 14 }]}
       >
         {/* Decorative blobs */}
@@ -1565,16 +1577,33 @@ export default function HomeScreen() {
           <View style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: colorScheme === 'dark' ? 'rgba(255,255,255,0.18)' : 'rgba(0,0,0,0.12)', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: colorScheme === 'dark' ? 'rgba(255,255,255,0.25)' : 'rgba(0,0,0,0.15)' }}>
             <MaterialCommunityIcons name="home-variant-outline" size={22} color={colorScheme === 'dark' ? '#fff' : '#1a1a1a'} />
           </View>
-          <View style={{ alignItems: 'flex-start' }}>
+          <View style={{ alignItems: 'flex-start', flex: 1 }}>
             <ThemedText style={{ fontSize: 22, fontWeight: '900', letterSpacing: -0.3, color: colorScheme === 'dark' ? '#fff' : '#1a1a1a' }}>Home</ThemedText>
             <ThemedText style={{ fontSize: 11, color: colorScheme === 'dark' ? 'rgba(255,255,255,0.65)' : 'rgba(0,0,0,0.50)', marginTop: 1 }}>Tirumala Tirupati Devasthanams</ThemedText>
           </View>
+          <Pressable
+            onPress={() => setSidebarVisible(true)}
+            style={({ pressed }) => ({
+              width: 40,
+              height: 40,
+              borderRadius: 20,
+              backgroundColor: colorScheme === 'dark' ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.10)',
+              alignItems: 'center',
+              justifyContent: 'center',
+              borderWidth: 1,
+              borderColor: colorScheme === 'dark' ? 'rgba(255,255,255,0.22)' : 'rgba(0,0,0,0.15)',
+              opacity: pressed ? 0.7 : 1,
+            })}
+            hitSlop={8}
+          >
+            <MaterialCommunityIcons name="menu" size={22} color={colorScheme === 'dark' ? '#fff' : '#1a1a1a'} />
+          </Pressable>
         </View>
 
-        <View style={[styles.fixedTabsWrap, { borderColor: colorScheme === 'dark' ? 'rgba(255,255,255,0.25)' : 'rgba(0,0,0,0.55)', marginHorizontal: 0, marginTop: 12, marginBottom: 0 }]}>
-          <HomeTabButton label="Overview" active={activeTab === 'overview'} onPress={() => setActiveTab('overview')} tintColor={accentByTab.overview} colorScheme={colorScheme} />
-          <HomeTabButton label="News" active={activeTab === 'news'} onPress={() => setActiveTab('news')} tintColor={accentByTab.news} colorScheme={colorScheme} />
-          <HomeTabButton label="Help" active={activeTab === 'help'} onPress={() => setActiveTab('help')} tintColor={accentByTab.help} colorScheme={colorScheme} />
+        <View style={[styles.fixedTabsWrap, { borderColor: colorScheme === 'dark' ? 'rgba(255,255,255,0.35)' : '#000000', marginHorizontal: 0, marginTop: 12, marginBottom: 0 }]}>
+          <HomeTabButton label="Overview" active={activeTab === 'overview'} onPress={() => setActiveTab('overview')} tintColor={accentByTab.overview} />
+          <HomeTabButton label="News" active={activeTab === 'news'} onPress={() => setActiveTab('news')} tintColor={accentByTab.news} />
+          <HomeTabButton label="Help" active={activeTab === 'help'} onPress={() => setActiveTab('help')} tintColor={accentByTab.help} />
         </View>
       </LinearGradient>
 
@@ -1595,24 +1624,31 @@ function HomeTabButton({
   label,
   active,
   onPress,
-  tintColor,
-  colorScheme,
 }: {
   label: string;
   active: boolean;
   onPress: () => void;
   tintColor: string;
-  colorScheme: 'light' | 'dark';
 }) {
+  const scheme = useColorScheme();
+  const activeColor = scheme === 'dark' ? '#ffffff' : '#000000';
+  const inactiveColor = scheme === 'dark' ? 'rgba(255,255,255,0.55)' : '#000000';
   return (
     <Pressable
       onPress={onPress}
       style={({ pressed }) => [
         styles.tabButton,
-        active ? { borderColor: tintColor, backgroundColor: tintColor + '20' } : { borderColor: 'transparent' },
+        active
+          ? { borderColor: activeColor, backgroundColor: scheme === 'dark' ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.08)' }
+          : { borderColor: 'transparent' },
         { opacity: pressed ? 0.75 : 1 },
       ]}>
-      <ThemedText style={[styles.tabButtonText, active ? { color: colorScheme === 'dark' ? '#fff' : '#1a1a1a', fontWeight: '700' } : { color: colorScheme === 'dark' ? 'rgba(255,255,255,0.75)' : '#1a1a1a', fontWeight: '500' }]}>
+      <ThemedText style={[
+        styles.tabButtonText,
+        active
+          ? { color: activeColor, fontWeight: '800' }
+          : { color: inactiveColor, fontWeight: '400' },
+      ]}>
         {label}
       </ThemedText>
     </Pressable>

@@ -14,6 +14,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 
+import { AppSidebar } from '@/components/app-sidebar';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Colors, MainTabAccent } from '@/constants/theme';
@@ -114,6 +115,7 @@ export default function AiChatScreen() {
   const listRef = useRef<FlatList>(null);
 
   const { messages, isLoading, sendMessage, clearChat } = useAiChat();
+  const [sidebarVisible, setSidebarVisible] = useState(false);
 
   const handleSend = async () => {
     const text = inputText.trim();
@@ -134,6 +136,7 @@ export default function AiChatScreen() {
 
   return (
     <ThemedView style={[styles.container, { paddingTop: top }]}>
+      <AppSidebar visible={sidebarVisible} onClose={() => setSidebarVisible(false)} />
       {/* Header */}
       <View
         style={[
@@ -152,14 +155,49 @@ export default function AiChatScreen() {
             </ThemedText>
           </View>
         </View>
-        <Pressable onPress={clearChat} style={styles.clearBtn} hitSlop={8}>
-          <MaterialCommunityIcons
-            name="refresh"
-            size={20}
-            color={isDark ? '#9BA1A6' : '#687076'}
-          />
+        <Pressable
+          onPress={() => setSidebarVisible(true)}
+          style={({ pressed }) => ({
+            width: 40, height: 40, borderRadius: 20,
+            backgroundColor: isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.07)',
+            alignItems: 'center', justifyContent: 'center',
+            borderWidth: 1,
+            borderColor: isDark ? 'rgba(255,255,255,0.18)' : 'rgba(0,0,0,0.12)',
+            opacity: pressed ? 0.7 : 1,
+          })}
+          hitSlop={8}
+        >
+          <MaterialCommunityIcons name="menu" size={22} color={isDark ? '#fff' : '#1a1a1a'} />
         </Pressable>
       </View>
+
+      {/* Floating refresh button — top-right, just below header */}
+      <Pressable
+        onPress={clearChat}
+        hitSlop={8}
+        style={({ pressed }) => ({
+          position: 'absolute',
+          top: top + 84,
+          right: 14,
+          zIndex: 10,
+          width: 38,
+          height: 38,
+          borderRadius: 19,
+          backgroundColor: isDark ? '#1E1E1E' : '#FFFFFF',
+          alignItems: 'center',
+          justifyContent: 'center',
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: isDark ? 0.4 : 0.12,
+          shadowRadius: 6,
+          elevation: 4,
+          borderWidth: 1,
+          borderColor: isDark ? '#2A2A2A' : '#E8E8E8',
+          opacity: pressed ? 0.7 : 1,
+        })}
+      >
+        <MaterialCommunityIcons name="refresh" size={20} color={isDark ? '#9BA1A6' : '#687076'} />
+      </Pressable>
 
       {/* KeyboardAvoidingView wraps the list + input so everything shifts up together */}
       <KeyboardAvoidingView

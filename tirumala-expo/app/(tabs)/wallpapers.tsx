@@ -27,6 +27,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { AppSidebar } from '@/components/app-sidebar';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { supabase } from '@/config/supabase';
@@ -166,6 +167,7 @@ export default function WallpapersScreen() {
   const [settingId, setSettingId] = useState<string | null>(null);
   const [sharingId, setSharingId] = useState<string | null>(null);
   const [savingId, setSavingId] = useState<string | null>(null);
+  const [sidebarVisible, setSidebarVisible] = useState(false);
 
   const loadWallpapers = useCallback(async () => {
     setLoading(true);
@@ -252,6 +254,7 @@ export default function WallpapersScreen() {
 
   return (
     <ThemedView style={[styles.container, { backgroundColor: pageBg }]}>
+      <AppSidebar visible={sidebarVisible} onClose={() => setSidebarVisible(false)} />
       <LinearGradient
         colors={isDark ? [accent + 'CC', accent + '88', '#111113'] : [accent + 'EE', accent + '99', pageBg]}
         start={{ x: 0, y: 0 }}
@@ -270,6 +273,20 @@ export default function WallpapersScreen() {
             <ThemedText style={[styles.headerTitle, { color: isDark ? '#fff' : '#1a1a1a' }]}>Wallpapers</ThemedText>
             <ThemedText style={[styles.headerSub, { color: isDark ? 'rgba(255,255,255,0.72)' : 'rgba(0,0,0,0.55)' }]}>Tap any wallpaper to preview, share or set it</ThemedText>
           </View>
+          <Pressable
+            onPress={() => setSidebarVisible(true)}
+            style={({ pressed }) => ({
+              width: 40, height: 40, borderRadius: 20,
+              backgroundColor: isDark ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.10)',
+              alignItems: 'center', justifyContent: 'center',
+              borderWidth: 1,
+              borderColor: isDark ? 'rgba(255,255,255,0.22)' : 'rgba(0,0,0,0.15)',
+              opacity: pressed ? 0.7 : 1,
+            })}
+            hitSlop={8}
+          >
+            <MaterialCommunityIcons name="menu" size={22} color={isDark ? '#fff' : '#1a1a1a'} />
+          </Pressable>
         </View>
         {error ? <ThemedText style={[styles.errorText, { color: isDark ? '#FCA5A5' : '#DC2626' }]}>Unable to load: {error}</ThemedText> : null}
       </LinearGradient>
