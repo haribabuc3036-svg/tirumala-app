@@ -2,9 +2,9 @@
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Stack, useLocalSearchParams } from 'expo-router';
-import * as Linking from 'expo-linking';
+import * as WebBrowser from 'expo-web-browser';
 import { useEffect, useRef, useState } from 'react';
-import { Alert, Animated, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Animated, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
@@ -174,9 +174,11 @@ export default function ServiceDetailScreen() {
   const onBookNow = async () => {
     if (!service) return;
     const target = service.buttonUrl ?? service.url;
-    const canOpen = await Linking.canOpenURL(target);
-    if (!canOpen) { Alert.alert('Unable to open link', 'Please try again later.'); return; }
-    await Linking.openURL(target);
+    await WebBrowser.openBrowserAsync(target, {
+      presentationStyle: WebBrowser.WebBrowserPresentationStyle.PAGE_SHEET,
+      toolbarColor: '#0f172a',
+      controlsColor: '#22c55e',
+    });
   };
 
   if (loading) {

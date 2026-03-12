@@ -1,288 +1,302 @@
-import { Image } from 'expo-image';
+﻿import { Image } from 'expo-image';
 import * as FileSystem from 'expo-file-system/legacy';
 import * as IntentLauncher from 'expo-intent-launcher';
 import * as MediaLibrary from 'expo-media-library';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { LinearGradient } from 'expo-linear-gradient';
-import React, { memo, useCallback, useEffect, useMemo, useState } from 'react';
+import React, { memo, useCallback, useEffect, useState } from 'react';
 import {
   Alert,
+  Dimensions,
   FlatList,
+  Modal,
   Platform,
   Pressable,
+  Share,
+  StatusBar,
   StyleSheet,
   View,
   type ListRenderItemInfo,
 } from 'react-native';
 import Animated, {
+  FadeIn,
   FadeInDown,
   useAnimatedStyle,
   useSharedValue,
   withSpring,
 } from 'react-native-reanimated';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { supabase } from '@/config/supabase';
-import { Colors, MainTabAccent } from '@/constants/theme';
+import { MainTabAccent } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-type WallpaperItem = {
-  id: string;
-  title: string;
-  url: string;
-};
+const SCREEN_W = Dimensions.get('window').width;
+const COLS = 3;
+const TILE_GAP = 3;
+const TILE_W = Math.floor((SCREEN_W - TILE_GAP * (COLS + 1)) / COLS);
+const TILE_H = Math.round(TILE_W * 1.6);
 
-type WallpaperCardProps = {
-  item: WallpaperItem;
-  index: number;
-  isDownloading: boolean;
-  isSettingWallpaper: boolean;
-  onDownload: (item: WallpaperItem) => Promise<void>;
-  onSetWallpaper: (item: WallpaperItem) => Promise<void>;
-  borderColor: string;
-  tintColor: string;
-};
+type WallpaperItem = { id: string; title: string; url: string };
 
-const WallpaperCard = memo(function WallpaperCard({
+// ─── Thumbnail tile ───────────────────────────────────────────────────────────
+const WallpaperTile = memo(function WallpaperTile({
   item,
   index,
-  isDownloading,
-  isSettingWallpaper,
-  onDownload,
-  onSetWallpaper,
-  borderColor,
-  tintColor,
-}: WallpaperCardProps) {
-  const pressed = useSharedValue(1);
-
-  const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: pressed.value }],
-  }));
-
-  const handlePressIn = () => {
-    pressed.value = withSpring(0.96, { damping: 18, stiffness: 260 });
-  };
-  const handlePressOut = () => {
-    pressed.value = withSpring(1, { damping: 18, stiffness: 260 });
-  };
-
-  const busy = isDownloading || isSettingWallpaper;
+  onPress,
+}: {
+  item: WallpaperItem;
+  index: number;
+  onPress: (item: WallpaperItem) => void;
+}) {
+  const scale = useSharedValue(1);
+  const animStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
 
   return (
-    <Animated.View entering={FadeInDown.delay(index * 70).duration(420)} style={styles.cardWrapper}>
-      <Animated.View style={animatedStyle}>
-        <Pressable
-          onPress={() => void onSetWallpaper(item)}
-          onPressIn={handlePressIn}
-          onPressOut={handlePressOut}
-          disabled={busy}
-          style={[styles.card, { borderColor }]}>
-          {/* Image fills the card */}
-          <Image source={{ uri: item.url }} style={styles.image} contentFit="cover" transition={250} />
-
-          {/* Gradient overlay bottom */}
-          <LinearGradient
-            colors={['transparent', 'rgba(0,0,0,0.72)']}
-            style={styles.imageOverlay}
-          >
-            <ThemedText numberOfLines={2} style={styles.overlayTitle}>{item.title}</ThemedText>
-            <View style={styles.overlayActions}>
-              {/* Download button */}
-              <Pressable
-                onPress={() => void onDownload(item)}
-                disabled={busy}
-                style={[styles.overlayBtn, { backgroundColor: 'rgba(255,255,255,0.18)', borderColor: 'rgba(255,255,255,0.35)' }]}>
-                <MaterialCommunityIcons
-                  name={isDownloading ? 'loading' : 'download-outline'}
-                  size={15}
-                  color="#fff"
-                />
-                <ThemedText style={styles.overlayBtnText}>{isDownloading ? 'Saving…' : 'Save'}</ThemedText>
-              </Pressable>
-              {/* Set wallpaper hint */}
-              <View style={styles.overlayHint}>
-                <MaterialCommunityIcons name="cellphone" size={11} color="rgba(255,255,255,0.6)" />
-                <ThemedText style={styles.overlayHintText}>{isSettingWallpaper ? 'Opening…' : 'Tap to set'}</ThemedText>
-              </View>
-            </View>
-          </LinearGradient>
-
-        </Pressable>
-      </Animated.View>
+    <Animated.View entering={FadeInDown.delay(index * 40).duration(350)} style={animStyle}>
+      <Pressable
+        onPressIn={() => { scale.value = withSpring(0.94, { damping: 18, stiffness: 280 }); }}
+        onPressOut={() => { scale.value = withSpring(1, { damping: 18, stiffness: 280 }); }}
+        onPress={() => onPress(item)}
+        style={styles.tile}
+      >
+        <Image source={{ uri: item.url }} style={styles.tileImage} contentFit="cover" transition={200} />
+        <LinearGradient colors={['transparent', 'rgba(0,0,0,0.60)']} style={styles.tileFade}>
+          <ThemedText numberOfLines={2} style={styles.tileTitle}>{item.title}</ThemedText>
+        </LinearGradient>
+      </Pressable>
     </Animated.View>
   );
 });
 
+// ─── Full-screen viewer modal ─────────────────────────────────────────────────
+function WallpaperViewer({
+  item,
+  visible,
+  onClose,
+  onShare,
+  onSave,
+  onSetWallpaper,
+  isSetting,
+  isSharing,
+  isSaving,
+  accent,
+}: {
+  item: WallpaperItem | null;
+  visible: boolean;
+  onClose: () => void;
+  onShare: (item: WallpaperItem) => Promise<void>;
+  onSave: (item: WallpaperItem) => Promise<void>;
+  onSetWallpaper: (item: WallpaperItem) => Promise<void>;
+  isSetting: boolean;
+  isSharing: boolean;
+  isSaving: boolean;
+  accent: string;
+}) {
+  const insets = useSafeAreaInsets();
+  if (!item) return null;
+
+  return (
+    <Modal visible={visible} animationType="fade" statusBarTranslucent onRequestClose={onClose}>
+      <StatusBar translucent backgroundColor="transparent" barStyle="light-content" />
+      <View style={styles.viewerContainer}>
+        <Image source={{ uri: item.url }} style={StyleSheet.absoluteFill} contentFit="cover" transition={250} />
+
+        {/* Top bar */}
+        <Animated.View entering={FadeIn.duration(250)} style={[styles.viewerTopBar, { paddingTop: insets.top + 10 }]}>
+          <Pressable onPress={onClose} style={styles.closeBtn} hitSlop={10}>
+            <MaterialCommunityIcons name="close" size={22} color="#fff" />
+          </Pressable>
+          <ThemedText numberOfLines={1} style={styles.viewerTitle}>{item.title}</ThemedText>
+          <View style={{ width: 40 }} />
+        </Animated.View>
+
+        {/* Bottom actions */}
+        <Animated.View entering={FadeIn.duration(250)} style={[styles.viewerBottomBar, { paddingBottom: insets.bottom + 16 }]}>
+          {/* Row 1: Share + Save */}
+          <View style={styles.actionRow}>
+            <Pressable
+              onPress={() => void onShare(item)}
+              disabled={isSharing || isSetting || isSaving}
+              style={({ pressed }) => [styles.actionBtn, { borderColor: 'rgba(255,255,255,0.40)', backgroundColor: 'rgba(255,255,255,0.15)', opacity: pressed ? 0.7 : 1 }]}
+            >
+              <MaterialCommunityIcons name={isSharing ? 'loading' : 'share-variant-outline'} size={18} color="#fff" />
+              <ThemedText style={styles.actionText}>{isSharing ? 'Sharing…' : 'Share'}</ThemedText>
+            </Pressable>
+
+            <Pressable
+              onPress={() => void onSave(item)}
+              disabled={isSaving || isSetting || isSharing}
+              style={({ pressed }) => [styles.actionBtn, { borderColor: 'rgba(255,255,255,0.40)', backgroundColor: 'rgba(255,255,255,0.15)', opacity: pressed ? 0.7 : 1 }]}
+            >
+              <MaterialCommunityIcons name={isSaving ? 'loading' : 'download-outline'} size={18} color="#fff" />
+              <ThemedText style={styles.actionText}>{isSaving ? 'Saving…' : 'Save'}</ThemedText>
+            </Pressable>
+          </View>
+
+          {/* Row 2: Set Wallpaper — full width */}
+          <Pressable
+            onPress={() => void onSetWallpaper(item)}
+            disabled={isSetting || isSharing || isSaving}
+            style={({ pressed }) => [styles.actionBtn, styles.actionBtnFull, { backgroundColor: isSetting ? accent + 'aa' : accent, opacity: pressed ? 0.85 : 1, borderColor: 'transparent' }]}
+          >
+            <MaterialCommunityIcons name={isSetting ? 'loading' : 'cellphone-screenshot'} size={20} color="#fff" />
+            <ThemedText style={[styles.actionText, { fontWeight: '800' }]}>{isSetting ? 'Opening…' : 'Set as Wallpaper'}</ThemedText>
+          </Pressable>
+        </Animated.View>
+      </View>
+    </Modal>
+  );
+}
+
+// ─── Main screen ──────────────────────────────────────────────────────────────
 export default function WallpapersScreen() {
   const colorScheme = useColorScheme() ?? 'light';
-  const [downloadingId, setDownloadingId] = useState<string | null>(null);
-  const [settingWallpaperId, setSettingWallpaperId] = useState<string | null>(null);
+  const isDark = colorScheme === 'dark';
+  const accent = MainTabAccent.wallpapers;
+  const insets = useSafeAreaInsets();
+
   const [wallpapers, setWallpapers] = useState<WallpaperItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
-  const palette = useMemo(
-    () => ({
-      borderColor: Colors[colorScheme].icon,
-      tintColor: MainTabAccent.wallpapers,
-    }),
-    [colorScheme]
-  );
-
-  const ensureLocalImage = useCallback(async (item: WallpaperItem) => {
-    if (!FileSystem.cacheDirectory) {
-      throw new Error('Cache directory unavailable');
-    }
-
-    const localPath = `${FileSystem.cacheDirectory}wallpaper-${item.id}.jpg`;
-    const result = await FileSystem.downloadAsync(item.url, localPath);
-    return result.uri;
-  }, []);
-
-  const setAsWallpaper = useCallback(async (item: WallpaperItem) => {
-    if (Platform.OS !== 'android') {
-      Alert.alert('Android only', 'Set wallpaper is available on Android in this demo.');
-      return;
-    }
-
-    try {
-      setSettingWallpaperId(item.id);
-
-      const localUri = await ensureLocalImage(item);
-      const contentUri = await FileSystem.getContentUriAsync(localUri);
-
-      await IntentLauncher.startActivityAsync('android.intent.action.ATTACH_DATA', {
-        data: contentUri,
-        type: 'image/*',
-        flags: 1,
-      });
-    } catch {
-      Alert.alert('Not supported', 'Could not open wallpaper chooser on this device.');
-    } finally {
-      setSettingWallpaperId(null);
-    }
-  }, [ensureLocalImage]);
+  const [selected, setSelected] = useState<WallpaperItem | null>(null);
+  const [viewerOpen, setViewerOpen] = useState(false);
+  const [settingId, setSettingId] = useState<string | null>(null);
+  const [sharingId, setSharingId] = useState<string | null>(null);
+  const [savingId, setSavingId] = useState<string | null>(null);
 
   const loadWallpapers = useCallback(async () => {
     setLoading(true);
-    const { data, error: queryError } = await supabase
+    const { data, error: err } = await supabase
       .from('wallpapers')
       .select('id,title,image_url')
       .order('created_at', { ascending: false });
-
-    if (queryError) {
-      setError(queryError.message);
-      setWallpapers([]);
-      setLoading(false);
-      return;
-    }
-
-    const mapped: WallpaperItem[] = (data ?? []).map((row) => ({
-      id: row.id,
-      title: row.title,
-      url: row.image_url,
-    }));
-
-    setWallpapers(mapped);
-    setError(null);
+    if (err) { setError(err.message); setWallpapers([]); }
+    else { setWallpapers((data ?? []).map((r) => ({ id: r.id, title: r.title, url: r.image_url }))); setError(null); }
     setLoading(false);
   }, []);
 
-  useEffect(() => {
-    void loadWallpapers();
-  }, [loadWallpapers]);
+  useEffect(() => { void loadWallpapers(); }, [loadWallpapers]);
 
-  const downloadWallpaper = useCallback(async (item: WallpaperItem) => {
-    if (Platform.OS !== 'android') {
-      Alert.alert('Android only', 'Downloading to device gallery is available on Android in this demo.');
-      return;
-    }
+  const ensureLocalImage = useCallback(async (item: WallpaperItem) => {
+    if (!FileSystem.cacheDirectory) throw new Error('Cache unavailable');
+    const path = `${FileSystem.cacheDirectory}wallpaper-${item.id}.jpg`;
+    const res = await FileSystem.downloadAsync(item.url, path);
+    return res.uri;
+  }, []);
 
+  const handleShare = useCallback(async (item: WallpaperItem) => {
     try {
-      setDownloadingId(item.id);
+      setSharingId(item.id);
+      await Share.share({ message: `${item.title}\n${item.url}`, url: item.url, title: item.title });
+    } catch { /* dismissed */ } finally { setSharingId(null); }
+  }, []);
 
-      const permission = await MediaLibrary.requestPermissionsAsync();
-      if (!permission.granted) {
-        Alert.alert('Permission needed', 'Please allow media access to save wallpapers.');
+  const handleSave = useCallback(async (item: WallpaperItem) => {
+    try {
+      setSavingId(item.id);
+
+      // Android 33+ uses granular media permissions; writeOnly=false gets READ+WRITE
+      const permission = await MediaLibrary.requestPermissionsAsync(false);
+      if (!permission.granted && permission.accessPrivileges !== 'limited') {
+        Alert.alert('Permission needed', 'Please allow media access in Settings to save wallpapers.');
         return;
       }
 
       const localUri = await ensureLocalImage(item);
-
-      await MediaLibrary.saveToLibraryAsync(localUri);
-      Alert.alert('Saved', `${item.title} was saved to your gallery.`);
-    } catch {
-      Alert.alert('Download failed', 'Please try again.');
+      // saveToLibraryAsync needs a file:// URI on Android
+      const saveUri = localUri.startsWith('file://') ? localUri : `file://${localUri}`;
+      await MediaLibrary.saveToLibraryAsync(saveUri);
+      Alert.alert('Saved!', `"${item.title}" was saved to your gallery.`);
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      Alert.alert('Save failed', msg || 'Please try again.');
     } finally {
-      setDownloadingId(null);
+      setSavingId(null);
     }
   }, [ensureLocalImage]);
 
+  const handleSetWallpaper = useCallback(async (item: WallpaperItem) => {
+    if (Platform.OS !== 'android') {
+      Alert.alert('Android only', 'Set wallpaper is supported on Android devices.');
+      return;
+    }
+    try {
+      setSettingId(item.id);
+      const localUri = await ensureLocalImage(item);
+      const contentUri = await FileSystem.getContentUriAsync(localUri);
+      await IntentLauncher.startActivityAsync('android.intent.action.ATTACH_DATA', {
+        data: contentUri, type: 'image/*', flags: 1,
+      });
+    } catch { Alert.alert('Not supported', 'Could not open wallpaper chooser on this device.'); }
+    finally { setSettingId(null); }
+  }, [ensureLocalImage]);
+
+  const openViewer = useCallback((item: WallpaperItem) => {
+    setSelected(item);
+    setViewerOpen(true);
+  }, []);
+
   const renderItem = useCallback(
     ({ item, index }: ListRenderItemInfo<WallpaperItem>) => (
-      <WallpaperCard
-        item={item}
-        index={index}
-        isDownloading={downloadingId === item.id}
-        isSettingWallpaper={settingWallpaperId === item.id}
-        onDownload={downloadWallpaper}
-        onSetWallpaper={setAsWallpaper}
-        borderColor={palette.borderColor}
-        tintColor={palette.tintColor}
-      />
+      <WallpaperTile item={item} index={index} onPress={openViewer} />
     ),
-    [
-      downloadWallpaper,
-      downloadingId,
-      palette.borderColor,
-      palette.tintColor,
-      setAsWallpaper,
-      settingWallpaperId,
-    ]
+    [openViewer]
   );
 
-  const insets = useSafeAreaInsets();
+  const pageBg = isDark ? '#111113' : '#F2F2F7';
+  const headerBg = isDark ? '#1C1C1E' : '#FFFFFF';
+  const border = isDark ? '#2C2C2E' : '#E4E4E7';
 
   return (
-    <ThemedView style={styles.container}>
-      <View style={[styles.header, { paddingTop: insets.top + 12 }]}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-          <MaterialCommunityIcons name="image-multiple-outline" size={24} color={palette.tintColor} />
-          <ThemedText type="title">Wallpapers</ThemedText>
+    <ThemedView style={[styles.container, { backgroundColor: pageBg }]}>
+      <View style={[styles.header, { paddingTop: insets.top + 14, backgroundColor: headerBg, borderBottomColor: border }]}>
+        <View style={styles.headerRow}>
+          <MaterialCommunityIcons name="image-multiple-outline" size={22} color={accent} />
+          <ThemedText style={styles.headerTitle}>Wallpapers</ThemedText>
           {wallpapers.length > 0 && (
-            <View style={{ backgroundColor: palette.tintColor + '22', borderRadius: 12, paddingHorizontal: 9, paddingVertical: 3, borderWidth: 1, borderColor: palette.tintColor + '50' }}>
-              <ThemedText style={{ fontSize: 11, fontWeight: '700', color: palette.tintColor }}>{wallpapers.length}</ThemedText>
+            <View style={[styles.badge, { backgroundColor: accent + '22', borderColor: accent + '50' }]}>
+              <ThemedText style={[styles.badgeText, { color: accent }]}>{wallpapers.length}</ThemedText>
             </View>
           )}
         </View>
-        <ThemedText style={{ fontSize: 12, opacity: 0.55 }}>Tap a wallpaper to set it • Save to gallery</ThemedText>
+        <ThemedText style={styles.headerSub}>Tap any wallpaper to view, share or set it</ThemedText>
         {error ? <ThemedText style={styles.errorText}>Unable to load: {error}</ThemedText> : null}
       </View>
 
-      {loading ? (
+      {loading && <View style={styles.stateWrap}><ThemedText style={{ opacity: 0.5 }}>Loading wallpapers…</ThemedText></View>}
+      {!loading && wallpapers.length === 0 && (
         <View style={styles.stateWrap}>
-          <ThemedText>Loading wallpapers...</ThemedText>
+          <MaterialCommunityIcons name="image-off-outline" size={42} color={accent + '80'} />
+          <ThemedText style={{ opacity: 0.5, marginTop: 10 }}>No wallpapers available yet.</ThemedText>
         </View>
-      ) : null}
-
-      {!loading && wallpapers.length === 0 ? (
-        <View style={styles.stateWrap}>
-          <ThemedText>No wallpapers available yet.</ThemedText>
-        </View>
-      ) : null}
+      )}
 
       <FlatList
         data={wallpapers}
         keyExtractor={(item) => item.id}
         renderItem={renderItem}
-        numColumns={2}
-        columnWrapperStyle={styles.column}
+        numColumns={COLS}
         contentContainerStyle={styles.listContent}
+        columnWrapperStyle={styles.row}
         showsVerticalScrollIndicator={false}
         refreshing={loading}
         onRefresh={() => void loadWallpapers()}
+      />
+
+      <WallpaperViewer
+        item={selected}
+        visible={viewerOpen}
+        onClose={() => setViewerOpen(false)}
+        onShare={handleShare}
+        onSave={handleSave}
+        onSetWallpaper={handleSetWallpaper}
+        isSetting={!!(selected && settingId === selected.id)}
+        isSharing={!!(selected && sharingId === selected.id)}
+        isSaving={!!(selected && savingId === selected.id)}
+        accent={accent}
       />
     </ThemedView>
   );
@@ -290,22 +304,28 @@ export default function WallpapersScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  header: { paddingHorizontal: 16, paddingTop: 16, gap: 5, paddingBottom: 8 },
-  listContent: { paddingHorizontal: 10, paddingTop: 10, paddingBottom: 28, gap: 10 },
-  column: { gap: 10 },
-  cardWrapper: { flex: 1 },
-  card: { borderWidth: 1, borderRadius: 16, overflow: 'hidden' },
-  image: { width: '100%', height: 220 },
-  imageOverlay: {
-    position: 'absolute', bottom: 0, left: 0, right: 0,
-    paddingHorizontal: 10, paddingTop: 32, paddingBottom: 10, gap: 6,
-  },
-  overlayTitle: { color: '#fff', fontSize: 12, fontWeight: '700', lineHeight: 16 },
-  overlayActions: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  overlayBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, borderWidth: 1, borderRadius: 20, paddingHorizontal: 9, paddingVertical: 5 },
-  overlayBtnText: { color: '#fff', fontSize: 11, fontWeight: '700' },
-  overlayHint: { flexDirection: 'row', alignItems: 'center', gap: 3 },
-  overlayHintText: { color: 'rgba(255,255,255,0.6)', fontSize: 10 },
-  stateWrap: { alignItems: 'center', justifyContent: 'center', paddingHorizontal: 16, paddingVertical: 12 },
-  errorText: { fontSize: 12, opacity: 0.75 },
+  header: { paddingHorizontal: 16, paddingBottom: 12, borderBottomWidth: StyleSheet.hairlineWidth, gap: 4 },
+  headerRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  headerTitle: { fontSize: 20, fontWeight: '800', letterSpacing: -0.3 },
+  badge: { borderWidth: 1, borderRadius: 12, paddingHorizontal: 8, paddingVertical: 2 },
+  badgeText: { fontSize: 11, fontWeight: '700' },
+  headerSub: { fontSize: 12, opacity: 0.5 },
+  errorText: { fontSize: 12, color: '#EF4444', opacity: 0.8 },
+  listContent: { padding: TILE_GAP },
+  row: { gap: TILE_GAP, marginBottom: TILE_GAP },
+  tile: { width: TILE_W, height: TILE_H, borderRadius: 4, overflow: 'hidden', backgroundColor: '#1a1a1a' },
+  tileImage: { width: '100%', height: '100%' },
+  tileFade: { position: 'absolute', bottom: 0, left: 0, right: 0, paddingTop: 22, paddingBottom: 5, paddingHorizontal: 5 },
+  tileTitle: { color: '#fff', fontSize: 9, fontWeight: '600', lineHeight: 12, textShadowColor: 'rgba(0,0,0,0.8)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 2 },
+  stateWrap: { alignItems: 'center', justifyContent: 'center', paddingVertical: 48 },
+  // viewer
+  viewerContainer: { flex: 1, backgroundColor: '#000' },
+  viewerTopBar: { position: 'absolute', top: 0, left: 0, right: 0, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingBottom: 12, backgroundColor: 'rgba(0,0,0,0.45)', gap: 10 },
+  closeBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(255,255,255,0.18)', alignItems: 'center', justifyContent: 'center' },
+  viewerTitle: { flex: 1, color: '#fff', fontSize: 15, fontWeight: '700', textAlign: 'center', textShadowColor: 'rgba(0,0,0,0.6)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 3 },
+  viewerBottomBar: { position: 'absolute', bottom: 0, left: 0, right: 0, gap: 10, paddingHorizontal: 20, paddingTop: 20, backgroundColor: 'rgba(0,0,0,0.55)' },
+  actionRow: { flexDirection: 'row', gap: 10 },
+  actionBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 13, borderRadius: 16, borderWidth: 1 },
+  actionBtnFull: { flex: 0, alignSelf: 'stretch' },
+  actionText: { color: '#fff', fontSize: 14, fontWeight: '700' },
 });
