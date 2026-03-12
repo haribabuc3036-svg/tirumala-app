@@ -23,8 +23,10 @@ import { useServicesCatalog } from '@/hooks/use-services-catalog';
 import { type ServiceCategory } from '@/types/services';
 
 const SCREEN_W   = Dimensions.get('window').width;
-// 4-per-row: list pad 16×2, section pad 8×2
-const TILE_W    = Math.floor((SCREEN_W - 32 - 16) / 4);
+// 3-per-row: list pad 16×2, grid pad 8×2, section border 1×2, gap 8×2
+const COLS      = 3;
+const TILE_GAP  = 8;
+const TILE_W    = Math.floor((SCREEN_W - 32 - 16 - 2 - TILE_GAP * (COLS - 1)) / COLS);
 const ICON_SIZE = Math.round(TILE_W * 0.46);
 const ICON_IMG  = Math.round(TILE_W * 0.40);
 
@@ -106,7 +108,7 @@ function SkeletonSection({ isDark }: { isDark: boolean }) {
     <View style={[styles.sectionWrap, { backgroundColor: bg, borderColor: border }]}>
       <Animated.View style={[styles.skeletonGradientHeader, { backgroundColor: shimmer, opacity }]} />
       <View style={styles.gridContainer}>
-        {[0, 1, 2, 3, 4, 5, 6, 7].map((i) => (
+        {[0, 1, 2, 3, 4, 5].map((i) => (
           <Animated.View
             key={i}
             style={[styles.skeletonTile, { width: TILE_W, backgroundColor: shimmer, opacity }]}
@@ -190,13 +192,10 @@ export default function ServicesScreen() {
           </View>
         </LinearGradient>
 
-        {/* ── 4-per-row tile grid ── */}
+        {/* ── 3-per-row tile grid ── */}
         <View style={styles.gridContainer}>
           {category.services.map((service) => (
             <ServiceTile key={service.id} service={service} isDark={isDark} accent={accent} />
-          ))}
-          {Array.from({ length: (4 - (category.services.length % 4)) % 4 }).map((_, i) => (
-            <View key={`spacer-${i}`} style={{ width: TILE_W }} />
           ))}
         </View>
       </View>
@@ -459,11 +458,12 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
   },
 
-  // ── 4-per-row tile grid ──────────────────────
+  // ── 3-per-row tile grid ──────────────────────
   gridContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    justifyContent: 'space-between',
+    justifyContent: 'flex-start',
+    gap: TILE_GAP,
     paddingHorizontal: 8,
     paddingTop: 14,
     paddingBottom: 10,

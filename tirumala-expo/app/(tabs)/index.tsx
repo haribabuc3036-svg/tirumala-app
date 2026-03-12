@@ -1,5 +1,5 @@
 import { Image } from 'expo-image';
-import * as Linking from 'expo-linking';
+import * as WebBrowser from 'expo-web-browser';
 import { LinearGradient } from 'expo-linear-gradient';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { router } from 'expo-router';
@@ -195,7 +195,7 @@ function NewsCategoryCard({
                       <View style={{ width: 5, height: 5, borderRadius: 3, backgroundColor: accentColor }} />
                       <ThemedText style={{ fontSize: 10, opacity: 0.55 }}>TTD Official</ThemedText>
                     </View>
-                    <ShimmerButton label="Read" onPress={() => item.link ? void Linking.openURL(item.link) : undefined} accentColor={accentColor} />
+                    <ShimmerButton label="Read" onPress={() => item.link ? void WebBrowser.openBrowserAsync(item.link, { toolbarColor: '#0f172a', controlsColor: '#22c55e', presentationStyle: WebBrowser.WebBrowserPresentationStyle.PAGE_SHEET }) : undefined} accentColor={accentColor} />
                   </View>
                 </View>
               </View>
@@ -1337,7 +1337,7 @@ export default function HomeScreen() {
                             <View style={{ width: 5, height: 5, borderRadius: 3, backgroundColor: activeAccent }} />
                             <ThemedText style={{ fontSize: 10, opacity: 0.55 }}>TTD Official</ThemedText>
                           </View>
-                          <ShimmerButton label="Read" onPress={() => item.link ? void Linking.openURL(item.link) : undefined} accentColor={activeAccent} />
+                          <ShimmerButton label="Read" onPress={() => item.link ? void WebBrowser.openBrowserAsync(item.link, { toolbarColor: '#0f172a', controlsColor: '#22c55e', presentationStyle: WebBrowser.WebBrowserPresentationStyle.PAGE_SHEET }) : undefined} accentColor={activeAccent} />
                         </View>
                       </View>
                     </View>
@@ -1525,7 +1525,7 @@ export default function HomeScreen() {
               {helpContent.contactSupport.map((item) => (
                 <Pressable
                   key={item.id}
-                  onPress={() => Linking.openURL(item.url)}
+                  onPress={() => WebBrowser.openBrowserAsync(item.url, { toolbarColor: '#0f172a', controlsColor: '#22c55e', presentationStyle: WebBrowser.WebBrowserPresentationStyle.PAGE_SHEET })}
                   style={({ pressed }) => [
                     styles.supportLinkBtn,
                     { borderColor: activeAccent + '40', backgroundColor: activeAccent + '10', opacity: pressed ? 0.75 : 1 },

@@ -1,4 +1,4 @@
-﻿import * as Linking from 'expo-linking';
+﻿import * as WebBrowser from 'expo-web-browser';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import { useRef } from 'react';
@@ -59,7 +59,7 @@ function NewsCard({ item, idx, accent, icon }: {
     <Animated.View style={{ transform: [{ scale }] }}>
       <Pressable
         onPressIn={onPressIn} onPressOut={onPressOut}
-        onPress={() => item.link ? void Linking.openURL(item.link) : undefined}
+        onPress={() => item.link ? void WebBrowser.openBrowserAsync(item.link, { toolbarColor: '#0f172a', controlsColor: '#22c55e', presentationStyle: WebBrowser.WebBrowserPresentationStyle.PAGE_SHEET }) : undefined}
         style={[styles.card, { borderColor: accent + '30', backgroundColor: accent + '08' }]}>
         <View style={[styles.accentBar, { backgroundColor: accent }]} />
         <View style={styles.cardInner}>
