@@ -265,12 +265,26 @@ export default function NewsScreen() {
 
   return (
     <ThemedView style={styles.container}>
-      <View style={[styles.header, { paddingTop: insets.top + 10 }]}>
+      <LinearGradient
+        colors={colorScheme === 'dark' ? [tintColor + 'CC', tintColor + '66', 'transparent'] : [tintColor + 'DD', tintColor + '88', 'transparent']}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={[styles.header, { paddingTop: insets.top + 14 }]}
+      >
+        {/* Decorative blobs */}
+        <View style={{ position: 'absolute', width: 130, height: 130, borderRadius: 65, backgroundColor: '#fff', opacity: 0.05, top: -28, right: -24 }} />
+        <View style={{ position: 'absolute', width: 72, height: 72, borderRadius: 36, backgroundColor: '#fff', opacity: 0.04, bottom: -10, left: -12 }} />
+
         <View style={styles.titleRow}>
-          <MaterialCommunityIcons name="temple-hindu" size={24} color={tintColor} />
-          <ThemedText type="title">Darshan News</ThemedText>
+          <View style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: colorScheme === 'dark' ? 'rgba(255,255,255,0.18)' : 'rgba(0,0,0,0.12)', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: colorScheme === 'dark' ? 'rgba(255,255,255,0.25)' : 'rgba(0,0,0,0.15)' }}>
+            <MaterialCommunityIcons name="temple-hindu" size={22} color={colorScheme === 'dark' ? '#fff' : '#1a1a1a'} />
+          </View>
+          <View style={{ flex: 1 }}>
+            <ThemedText style={{ fontSize: 20, fontWeight: '900', letterSpacing: -0.3, color: colorScheme === 'dark' ? '#fff' : '#1a1a1a' }}>Darshan</ThemedText>
+            <ThemedText style={{ fontSize: 11, color: colorScheme === 'dark' ? 'rgba(255,255,255,0.65)' : 'rgba(0,0,0,0.50)', marginTop: 1 }}>Live pilgrim & temple updates</ThemedText>
+          </View>
           {liveLoading ? (
-            <ActivityIndicator size="small" color={tintColor} style={{ marginLeft: 4 }} />
+            <ActivityIndicator size="small" color={colorScheme === 'dark' ? '#fff' : tintColor} />
           ) : isLive ? (
             <View style={[styles.liveBadge, { backgroundColor: '#4CAF5022', borderColor: '#4CAF5060' }]}>
               <View style={[styles.liveDot, { backgroundColor: '#4CAF50' }]} />
@@ -279,12 +293,12 @@ export default function NewsScreen() {
           ) : null}
         </View>
 
-        <View style={[styles.subTabsWrap, { borderColor }]}>
-          <SubTabButton label="Pilgrim Updates" active={activeTab === 'pilgrims'} onPress={() => setActiveTab('pilgrims')} tintColor={tintColor} />
-          <SubTabButton label="Day Schedules" active={activeTab === 'schedule'} onPress={() => setActiveTab('schedule')} tintColor={tintColor} />
-          <SubTabButton label="SSD Token" active={activeTab === 'ssd'} onPress={() => setActiveTab('ssd')} tintColor={tintColor} />
-        </View> 
-      </View>
+        <View style={[styles.subTabsWrap, { borderColor: colorScheme === 'dark' ? 'rgba(255,255,255,0.25)' : '#000000' }]}>
+          <SubTabButton label="Pilgrim Updates" active={activeTab === 'pilgrims'} onPress={() => setActiveTab('pilgrims')} tintColor={tintColor} colorScheme={colorScheme} />
+          <SubTabButton label="Day Schedules" active={activeTab === 'schedule'} onPress={() => setActiveTab('schedule')} tintColor={tintColor} colorScheme={colorScheme} />
+          <SubTabButton label="SSD Token" active={activeTab === 'ssd'} onPress={() => setActiveTab('ssd')} tintColor={tintColor} colorScheme={colorScheme} />
+        </View>
+      </LinearGradient>
 
       {activeTab === 'pilgrims' ? (
         <FlatList
@@ -737,7 +751,6 @@ function CurrentSevaCarousel({ schedules, tintColor }: { schedules: DayScheduleI
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5, alignSelf: 'flex-start', backgroundColor: tintColor + '18', borderRadius: 20, paddingHorizontal: 9, paddingVertical: 4, borderWidth: 1, borderColor: tintColor + '40', marginBottom: 10, marginTop: 4 }}>
                 <MaterialCommunityIcons name="clock-outline" size={11} color={tintColor} />
                 <ThemedText style={{ fontSize: 9, fontWeight: '800', color: tintColor, letterSpacing: 0.7 }}>UPCOMING</ThemedText>
-                <ThemedText style={{ fontSize: 9, fontWeight: '600', color: tintColor, opacity: 0.65 }}>#{i}</ThemedText>
               </View>
 
               {/* event name */}
@@ -841,11 +854,13 @@ function SubTabButton({
   active,
   onPress,
   tintColor,
+  colorScheme,
 }: {
   label: string;
   active: boolean;
   onPress: () => void;
   tintColor: string;
+  colorScheme: 'light' | 'dark';
 }) {
   return (
     <Pressable
@@ -855,7 +870,7 @@ function SubTabButton({
         active ? { backgroundColor: tintColor + '20', borderColor: tintColor } : { borderColor: 'transparent' },
         { opacity: pressed ? 0.75 : 1 },
       ]}>
-      <ThemedText style={[styles.subTabText, active ? { color: tintColor, fontWeight: '700' } : { opacity: 0.6 }]}>
+      <ThemedText style={[styles.subTabText, active ? { color: colorScheme === 'dark' ? '#fff' : '#000000', fontWeight: '700' } : { color: colorScheme === 'dark' ? 'rgba(255,255,255,0.65)' : '#000000', opacity: 1 }]}>
         {label}
       </ThemedText>
     </Pressable>
@@ -929,8 +944,8 @@ const styles = StyleSheet.create({
   liveDot: { width: 6, height: 6, borderRadius: 3 },
   liveText: { fontSize: 10, fontWeight: '700', color: '#4CAF50', letterSpacing: 0.8 },
   container: { flex: 1 },
-  header: { paddingHorizontal: 16, paddingTop: 16, gap: 10, paddingBottom: 10 },
-  titleRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  header: { paddingHorizontal: 16, paddingBottom: 16, overflow: 'hidden', gap: 12 },
+  titleRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   banner: { borderWidth: 1, borderRadius: 14, overflow: 'hidden' },
   bannerWrap: { borderRadius: 14, overflow: 'hidden', marginBottom: 14, alignItems: 'center', justifyContent: 'center' },
   bannerImage: { width: '100%', height: 165 },

@@ -26,7 +26,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="news"
         options={{
-          title: 'Darshan News',
+          title: 'Darshan',
           tabBarActiveTintColor: MainTabAccent.news,
           tabBarIcon: ({ color }) => <IconSymbol size={28} name="newspaper.fill" color={color} />,
         }}

@@ -19,7 +19,7 @@ import { useHelpContent } from '@/hooks/use-help-content';
 import { useUpcomingBookings, type UpcomingBookingService } from '@/hooks/use-upcoming-bookings';
 import { type Service } from '@/types/services';
 
-type HomeTab = 'overview' | 'explore' | 'help';
+type HomeTab = 'overview' | 'news' | 'help';
 
 type LatestNewsItem = {
   date?: string;
@@ -916,7 +916,7 @@ export default function HomeScreen() {
 
   const accentByTab: Record<HomeTab, string> = {
     overview: tintColor,
-    explore: tintColor,
+    news: tintColor,
     help: tintColor,
   };
   const activeAccent = accentByTab[activeTab];
@@ -1209,7 +1209,7 @@ export default function HomeScreen() {
                 contentPosition="center"
               />
               <View style={styles.sectionBtnsWrap}>
-                <ExploreNewsButton onPress={() => setActiveTab('explore')} />
+                <ExploreNewsButton onPress={() => setActiveTab('news')} />
               </View>
             </View>
 
@@ -1252,7 +1252,7 @@ export default function HomeScreen() {
       );
     }
 
-    if (activeTab === 'explore') {
+    if (activeTab === 'news') {
       return (
         <View style={styles.overviewWrap}>
           <Animated.View entering={FadeInDown.duration(320)} style={styles.bannerWrap}>
@@ -1552,32 +1552,31 @@ export default function HomeScreen() {
 
   return (
     <ThemedView style={styles.container}>
-      <View style={[styles.header, { paddingTop: insets.top + 10 }]}> 
+      <LinearGradient
+        colors={colorScheme === 'dark' ? [tintColor + 'CC', tintColor + '66', 'transparent'] : [tintColor + 'DD', tintColor + '88', 'transparent']}
+        start={{ x: 1, y: 1 }}
+        end={{ x: 0, y: 0 }}
+        style={[styles.header, { paddingTop: insets.top + 14 }]}
+      >
+        {/* Decorative blobs */}
+        <View style={{ position: 'absolute', width: 140, height: 140, borderRadius: 70, backgroundColor: '#fff', opacity: 0.05, top: -30, right: -30 }} />
+        <View style={{ position: 'absolute', width: 80, height: 80, borderRadius: 40, backgroundColor: '#fff', opacity: 0.04, bottom: -10, left: -16 }} />
         <View style={styles.titleRow}>
-          <ThemedText type="title">Home</ThemedText>
+          <View style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: colorScheme === 'dark' ? 'rgba(255,255,255,0.18)' : 'rgba(0,0,0,0.12)', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: colorScheme === 'dark' ? 'rgba(255,255,255,0.25)' : 'rgba(0,0,0,0.15)' }}>
+            <MaterialCommunityIcons name="home-variant-outline" size={22} color={colorScheme === 'dark' ? '#fff' : '#1a1a1a'} />
+          </View>
+          <View style={{ alignItems: 'flex-start' }}>
+            <ThemedText style={{ fontSize: 22, fontWeight: '900', letterSpacing: -0.3, color: colorScheme === 'dark' ? '#fff' : '#1a1a1a' }}>Home</ThemedText>
+            <ThemedText style={{ fontSize: 11, color: colorScheme === 'dark' ? 'rgba(255,255,255,0.65)' : 'rgba(0,0,0,0.50)', marginTop: 1 }}>Tirumala Tirupati Devasthanams</ThemedText>
+          </View>
         </View>
-      </View>
 
-      <View style={[styles.fixedTabsWrap, { borderColor }]}> 
-        <HomeTabButton
-          label="Overview"
-          active={activeTab === 'overview'}
-          onPress={() => setActiveTab('overview')}
-          tintColor={accentByTab.overview}
-        />
-        <HomeTabButton
-          label="Explore"
-          active={activeTab === 'explore'}
-          onPress={() => setActiveTab('explore')}
-          tintColor={accentByTab.explore}
-        />
-        <HomeTabButton
-          label="Help"
-          active={activeTab === 'help'}
-          onPress={() => setActiveTab('help')}
-          tintColor={accentByTab.help}
-        />
-      </View>
+        <View style={[styles.fixedTabsWrap, { borderColor: colorScheme === 'dark' ? 'rgba(255,255,255,0.25)' : 'rgba(0,0,0,0.55)', marginHorizontal: 0, marginTop: 12, marginBottom: 0 }]}>
+          <HomeTabButton label="Overview" active={activeTab === 'overview'} onPress={() => setActiveTab('overview')} tintColor={accentByTab.overview} colorScheme={colorScheme} />
+          <HomeTabButton label="News" active={activeTab === 'news'} onPress={() => setActiveTab('news')} tintColor={accentByTab.news} colorScheme={colorScheme} />
+          <HomeTabButton label="Help" active={activeTab === 'help'} onPress={() => setActiveTab('help')} tintColor={accentByTab.help} colorScheme={colorScheme} />
+        </View>
+      </LinearGradient>
 
       <ScrollView
         style={styles.listContent}
@@ -1597,11 +1596,13 @@ function HomeTabButton({
   active,
   onPress,
   tintColor,
+  colorScheme,
 }: {
   label: string;
   active: boolean;
   onPress: () => void;
   tintColor: string;
+  colorScheme: 'light' | 'dark';
 }) {
   return (
     <Pressable
@@ -1611,7 +1612,7 @@ function HomeTabButton({
         active ? { borderColor: tintColor, backgroundColor: tintColor + '20' } : { borderColor: 'transparent' },
         { opacity: pressed ? 0.75 : 1 },
       ]}>
-      <ThemedText style={[styles.tabButtonText, active ? { color: tintColor, fontWeight: '700' } : { opacity: 0.65 }]}>
+      <ThemedText style={[styles.tabButtonText, active ? { color: colorScheme === 'dark' ? '#fff' : '#1a1a1a', fontWeight: '700' } : { color: colorScheme === 'dark' ? 'rgba(255,255,255,0.75)' : '#1a1a1a', fontWeight: '500' }]}>
         {label}
       </ThemedText>
     </Pressable>
@@ -1624,14 +1625,13 @@ const styles = StyleSheet.create({
   },
   header: {
     paddingHorizontal: 16,
-    paddingTop: 16,
-    gap: 10,
-    paddingBottom: 10,
+    paddingBottom: 16,
+    overflow: 'hidden',
   },
   titleRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: 12,
   },
   fixedTabsWrap: { marginHorizontal: 12, borderWidth: 1, borderRadius: 12, padding: 4, flexDirection: 'row', marginBottom: 10 },
   listContent: { flex: 1 },

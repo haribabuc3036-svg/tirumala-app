@@ -252,19 +252,27 @@ export default function WallpapersScreen() {
 
   return (
     <ThemedView style={[styles.container, { backgroundColor: pageBg }]}>
-      <View style={[styles.header, { paddingTop: insets.top + 14, backgroundColor: headerBg, borderBottomColor: border }]}>
+      <LinearGradient
+        colors={isDark ? [accent + 'CC', accent + '88', '#111113'] : [accent + 'EE', accent + '99', pageBg]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={[styles.header, { paddingTop: insets.top + 14 }]}
+      >
+        {/* Decorative blobs */}
+        <View style={{ position: 'absolute', width: 120, height: 120, borderRadius: 60, backgroundColor: isDark ? '#fff' : '#000', opacity: 0.06, top: -30, right: -20 }} />
+        <View style={{ position: 'absolute', width: 70, height: 70, borderRadius: 35, backgroundColor: isDark ? '#fff' : '#000', opacity: 0.05, bottom: -10, left: -14 }} />
+
         <View style={styles.headerRow}>
-          <MaterialCommunityIcons name="image-multiple-outline" size={22} color={accent} />
-          <ThemedText style={styles.headerTitle}>Wallpapers</ThemedText>
-          {wallpapers.length > 0 && (
-            <View style={[styles.badge, { backgroundColor: accent + '22', borderColor: accent + '50' }]}>
-              <ThemedText style={[styles.badgeText, { color: accent }]}>{wallpapers.length}</ThemedText>
-            </View>
-          )}
+          <View style={[styles.headerIconWrap, { backgroundColor: isDark ? 'rgba(255,255,255,0.22)' : 'rgba(0,0,0,0.12)', borderColor: isDark ? 'rgba(255,255,255,0.30)' : 'rgba(0,0,0,0.18)' }]}>
+            <MaterialCommunityIcons name="image-multiple-outline" size={22} color={isDark ? '#fff' : '#1a1a1a'} />
+          </View>
+          <View style={{ flex: 1 }}>
+            <ThemedText style={[styles.headerTitle, { color: isDark ? '#fff' : '#1a1a1a' }]}>Wallpapers</ThemedText>
+            <ThemedText style={[styles.headerSub, { color: isDark ? 'rgba(255,255,255,0.72)' : 'rgba(0,0,0,0.55)' }]}>Tap any wallpaper to preview, share or set it</ThemedText>
+          </View>
         </View>
-        <ThemedText style={styles.headerSub}>Tap any wallpaper to view, share or set it</ThemedText>
-        {error ? <ThemedText style={styles.errorText}>Unable to load: {error}</ThemedText> : null}
-      </View>
+        {error ? <ThemedText style={[styles.errorText, { color: isDark ? '#FCA5A5' : '#DC2626' }]}>Unable to load: {error}</ThemedText> : null}
+      </LinearGradient>
 
       {loading && <View style={styles.stateWrap}><ThemedText style={{ opacity: 0.5 }}>Loading wallpapers…</ThemedText></View>}
       {!loading && wallpapers.length === 0 && (
@@ -304,13 +312,15 @@ export default function WallpapersScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  header: { paddingHorizontal: 16, paddingBottom: 12, borderBottomWidth: StyleSheet.hairlineWidth, gap: 4 },
-  headerRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  headerTitle: { fontSize: 20, fontWeight: '800', letterSpacing: -0.3 },
-  badge: { borderWidth: 1, borderRadius: 12, paddingHorizontal: 8, paddingVertical: 2 },
-  badgeText: { fontSize: 11, fontWeight: '700' },
-  headerSub: { fontSize: 12, opacity: 0.5 },
-  errorText: { fontSize: 12, color: '#EF4444', opacity: 0.8 },
+  header: { paddingHorizontal: 16, paddingBottom: 18, overflow: 'hidden', gap: 0 },
+  headerRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  headerIconWrap: { width: 46, height: 46, borderRadius: 23, backgroundColor: 'rgba(255,255,255,0.22)', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: 'rgba(255,255,255,0.30)' },
+  headerTitle: { fontSize: 22, fontWeight: '900', color: '#fff', letterSpacing: -0.3 },
+  badge: { alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.22)', borderRadius: 14, paddingHorizontal: 12, paddingVertical: 6, borderWidth: 1, borderColor: 'rgba(255,255,255,0.20)' },
+  badgeText: { fontSize: 18, fontWeight: '900', color: '#fff', lineHeight: 22 },
+  badgeLabel: { fontSize: 9, fontWeight: '700', color: 'rgba(255,255,255,0.70)', letterSpacing: 0.8 },
+  headerSub: { fontSize: 11.5, color: 'rgba(255,255,255,0.72)', marginTop: 2 },
+  errorText: { fontSize: 12, color: '#FCA5A5', marginTop: 6 },
   listContent: { padding: TILE_GAP },
   row: { gap: TILE_GAP, marginBottom: TILE_GAP },
   tile: { width: TILE_W, height: TILE_H, borderRadius: 4, overflow: 'hidden', backgroundColor: '#1a1a1a' },

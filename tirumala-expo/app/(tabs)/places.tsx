@@ -1,5 +1,6 @@
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { Image } from 'expo-image';
+import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { FlatList, Pressable, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -25,34 +26,41 @@ export default function PlacesScreen() {
   const tintColor = MainTabAccent.places;
   const borderColor = tintColor;
   const backgroundColor = Colors[colorScheme].background;
+  const isDark = colorScheme === 'dark';
   const { regions, loading, error } = usePlacesRegions();
 
   return (
     <ThemedView style={styles.container}>
+      {/* ── Fixed gradient header ── */}
+      <LinearGradient
+        colors={isDark ? [tintColor + 'CC', tintColor + '66', 'transparent'] : [tintColor + 'DD', tintColor + '88', 'transparent']}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={[styles.header, { paddingTop: insets.top + 14 }]}
+      >
+        {/* Decorative blobs */}
+        <View style={{ position: 'absolute', width: 130, height: 130, borderRadius: 65, backgroundColor: '#fff', opacity: 0.05, top: -28, right: -20 }} />
+        <View style={{ position: 'absolute', width: 70, height: 70, borderRadius: 35, backgroundColor: '#fff', opacity: 0.04, bottom: -10, left: -12 }} />
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+          <View style={{ width: 46, height: 46, borderRadius: 23, backgroundColor: isDark ? 'rgba(255,255,255,0.18)' : 'rgba(0,0,0,0.12)', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: isDark ? 'rgba(255,255,255,0.25)' : 'rgba(0,0,0,0.15)' }}>
+            <MaterialCommunityIcons name="map-marker-star-outline" size={22} color={isDark ? '#fff' : '#1a1a1a'} />
+          </View>
+          <View style={{ flex: 1 }}>
+            <ThemedText style={{ fontSize: 22, fontWeight: '900', letterSpacing: -0.3, color: isDark ? '#fff' : '#1a1a1a' }}>Places</ThemedText>
+            <ThemedText style={{ fontSize: 11, color: isDark ? 'rgba(255,255,255,0.65)' : 'rgba(0,0,0,0.50)', marginTop: 1 }}>Browse temples & pilgrim destinations</ThemedText>
+          </View>
+        </View>
+      </LinearGradient>
+
       <FlatList
         data={regions}
         keyExtractor={(item) => item.id}
         numColumns={2}
         columnWrapperStyle={styles.gridRow}
-        contentContainerStyle={[styles.listContent, { paddingTop: insets.top + 14 }]}
+        contentContainerStyle={styles.listContent}
         showsVerticalScrollIndicator={false}
         ListHeaderComponent={
-          <View style={styles.header}>
-            <ThemedText type="title">Places</ThemedText>
-            <View style={[styles.heroCard, { borderColor, backgroundColor: `${tintColor}12` }]}>
-              <View style={[styles.heroBlobOne, { backgroundColor: `${tintColor}14` }]} />
-              <View style={[styles.heroBlobTwo, { backgroundColor: `${borderColor}14` }]} />
-              <View style={[styles.heroIconWrap, { backgroundColor: `${tintColor}20` }]}>
-                <MaterialCommunityIcons name="map-marker-star-outline" size={20} color={tintColor} />
-              </View>
-              <View style={styles.heroTextWrap}>
-                <ThemedText type="defaultSemiBold">Pilgrim Places Explorer</ThemedText>
-                <ThemedText style={styles.heroSubtitle}>
-                  Browse by region, then open each place for distance, photos, and maps.
-                </ThemedText>
-              </View>
-            </View>
-
+          <View style={styles.listHeader}>
             <ThemedText style={[styles.sectionLabel, { color: tintColor }]}>Regions</ThemedText>
             {error ? <ThemedText style={styles.fallbackNote}>Unable to load regions: {error}</ThemedText> : null}
             {loading ? <ThemedText style={styles.fallbackNote}>Loading places...</ThemedText> : null}
@@ -135,6 +143,7 @@ const styles = StyleSheet.create({
   },
   listContent: {
     paddingHorizontal: 14,
+    paddingTop: 12,
     paddingBottom: 24,
     gap: 12,
   },
@@ -143,8 +152,19 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   header: {
-    marginBottom: 10,
-    gap: 8,
+    paddingHorizontal: 16,
+    paddingBottom: 16,
+    overflow: 'hidden',
+  },
+  listHeader: {
+    marginBottom: 6,
+    gap: 4,
+  },
+  pageHeader: {
+    borderRadius: 20,
+    padding: 16,
+    overflow: 'hidden',
+    marginBottom: 2,
   },
   heroCard: {
     borderWidth: 1,
