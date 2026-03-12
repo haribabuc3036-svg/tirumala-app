@@ -9,6 +9,7 @@ import helpRouter from './help';
 import ssdLocationsRouter from './ssd-locations';
 import authRouter from './auth';
 import aiRouter from './ai';
+import notificationsRouter from './notifications';
 import { requireAuth } from '../middleware/auth';
 
 const router = Router();
@@ -18,6 +19,9 @@ router.use('/auth', authRouter);
 
 // ─── AI chat (public — no auth required) ─────────────────────────────────────
 router.use('/ai', aiRouter);
+
+// ─── Notifications (register is public; send/count guard auth internally) ────
+router.use('/notifications', notificationsRouter);
 
 // ─── Write-protection ─────────────────────────────────────────────────────────
 // All POST / PUT / PATCH / DELETE requests on every route below this point

@@ -17,6 +17,7 @@ import { startUtsavamsPoller, getUtsavamsPollerStatus } from './jobs/utsavams-po
 import { startTempleNewsPoller, getTempleNewsPollerStatus } from './jobs/temple-news-poll.job';
 import { startVipNewsPoller, getVipNewsPollerStatus } from './jobs/vip-news-poll.job';
 import { startDarshanNewsPoller, getDarshanNewsPollerStatus } from './jobs/darshan-news-poll.job';
+import { startBookingReminderJob } from './jobs/booking-reminder.job';
 
 const app = express();
 
@@ -110,6 +111,9 @@ app.listen(env.port, () => {
 
   // Start the 4-hourly Darshan-News poller (:30 past every 4 hours IST)
   startDarshanNewsPoller();
+
+  // Start the per-minute booking reminder job (1hr + 5min before booking dates)
+  startBookingReminderJob();
 });
 
 export default app;

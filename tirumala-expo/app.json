@@ -35,6 +35,14 @@
     "plugins": [
       "expo-router",
       [
+        "expo-notifications",
+        {
+          "icon": "./assets/images/icon.png",
+          "color": "#E6F4FE",
+          "sounds": []
+        }
+      ],
+      [
         "expo-media-library",
         {
           "photosPermission": "Allow Tirumala App to save wallpapers to your gallery.",
